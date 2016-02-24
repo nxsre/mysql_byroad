@@ -9,6 +9,9 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
+/*
+binlog信息结构，包括binlog文件名和binlog位置
+*/
 type BinlogInfo struct {
 	Filename string
 	Position uint32
@@ -32,6 +35,9 @@ func NewBinlogInfo() *BinlogInfo {
 	}
 }
 
+/*
+从数据库中读取binlog信息
+*/
 func (this *BinlogInfo) Get(confdb *sqlx.DB) error {
 	var err error
 	this.Filename, err = getConfig(confdb, "last_file_name")
@@ -43,6 +49,9 @@ func (this *BinlogInfo) Get(confdb *sqlx.DB) error {
 	return err
 }
 
+/*
+将binlog信息写到数据库中
+*/
 func (this *BinlogInfo) Set(confdb *sqlx.DB) error {
 	var err error
 	_, err = setConfig(confdb, "last_file_name", this.Filename, "当前binlog文件名")
@@ -52,6 +61,9 @@ func (this *BinlogInfo) Set(confdb *sqlx.DB) error {
 	return err
 }
 
+/*
+定时将binlog信息写入数据库
+*/
 func (this *BinlogInfo) HandleUpdate(interval int) {
 	tick := time.NewTicker(time.Second * time.Duration(interval))
 	this.wg.Add(1)
@@ -68,6 +80,9 @@ func (this *BinlogInfo) HandleUpdate(interval int) {
 	}()
 }
 
+/*
+停止定时写入，退出系统时使用
+*/
 func (this *BinlogInfo) StopHandleUpdate() {
 	this.ch <- true
 	this.wg.Wait()

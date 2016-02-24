@@ -13,6 +13,9 @@ func NewEventEnqueue() *EventEnqueuer {
 	return &EventEnqueuer{}
 }
 
+/*
+根据任务数量并发的将消息写入redis中
+*/
 func (this *EventEnqueuer) Enqueue(schema, table, event string, taskFieldMap map[int64][]*common.ColumnValue) {
 	for taskid, fields := range taskFieldMap {
 		this.Add(1)

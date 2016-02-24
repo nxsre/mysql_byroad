@@ -12,6 +12,14 @@ import (
 
 var httpClient *http.Client
 
+func NewHttpClient() *http.Client {
+	return &http.Client{
+		Transport: &http.Transport{
+			MaxIdleConnsPerHost: configer.GetInt("httpclient", "MaxIdleConnsPerHost"),
+		},
+	}
+}
+
 /*
 消息推送协程，读取推送消息队列，将消息发送到对应任务的apiurl中
 如果发送失败，将消息放入重推队列中

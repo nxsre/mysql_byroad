@@ -3,7 +3,6 @@ package slave
 import (
 	"fmt"
 	"mysql-slave/common"
-	"net/http"
 	"os"
 	"os/signal"
 	"runtime"
@@ -78,17 +77,13 @@ func StartSlave() {
 	//OWL日志初始化
 	owl = common.NewOWL(configer.GetString("OWL", "path", "/tmp"), configer.GetOWL())
 	owl.LogThisException("test exception")
-
-	httpClient = &http.Client{
-		Transport: &http.Transport{
-			MaxIdleConnsPerHost: configer.GetInt("httpclient", "MaxIdleConnsPerHost"),
-		},
-	}
+	httpClient = NewHttpClient()
 	confdb, err = sqlx.Open("sqlite3", "./config.db")
 	if err != nil {
 		panic(err)
 	}
-	initNotifyAPIDB(confdb) //将任务等信息读到内存中，构建一个任务匹配的map
+	//初始化数据库，读取数据库信息
+	initNotifyAPIDB(confdb)
 	queueManager = NewQueueManager(configer.GetRedis())
 	columnManager = NewColumnManager(configer.GetMysql()) //读取数据库的information_schema表，获得所有的列信息
 	routineManager = NewRoutineManager()
@@ -203,7 +198,6 @@ func cleanUp() {
 	sysLogger.Log("event chan done")
 	binlogInfo.Set(confdb)
 	binlogInfo.StopHandleUpdate()
-	fmt.Println("update Config done")
 	sysLogger.Log("update config done")
 	routineManager.Clean()
 	queueManager.Clean()
