@@ -1,0 +1,135 @@
+{% include "header.html"%}
+<div class="container">
+  <table class="table table-bordered">
+    <tr>
+      <th>ID</th>
+      <th>名字</th>
+      <th>描述</th>
+      <th>推送地址</th>
+      <th>推送/重推并发数</th>
+      <th>推送/重推消息数量</th>
+      <th>状态</th>
+      <th>订阅</th>
+      <th>操作</th>
+      {%if (isAdmin)%}
+      <th>用户</th>
+      {%endif%}
+    </tr>
+    {% for task in tasks%}
+    <tr>
+      <td>{{task.ID}}</td>
+      <td>{{task.Name}}</td>
+      <td>{{task.Desc}}</td>
+      <td>{{task.Apiurl}}</td>
+      <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
+      <td>{{task.QueueLength}}/{{task.ReQueueLength}}</td>
+      <td>
+        {%if (task.Stat=="正常")%}
+        <span class="label label-success">{{task.Stat}}</span> 
+        {%else%}
+        <span class="label label-danger">{{task.Stat}}</span> 
+        {%endif%}
+      </td>
+      <td>
+        <a class="btn btn-info btn-sm" data-toggle="modal" data-target="#{{task.Name}}">详情</a>
+        <div class="modal fade" id="{{task.Name}}" tabindex="-1" role="dialog" aria-labelledby="{{task.Name}}">
+          <div class="modal-dialog" role="document">
+            <div class="modal-content">
+              <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title">{{task.Name}}</h4>
+              </div>
+              <div class="modal-body">
+                <table class="table table-condensed">
+                  <tr>
+                    <th>数据库</th>
+                    <th>表名</th>
+                    <th>字段</th>
+                    <th>是否推送值</th>
+                  </tr>
+                  {% for field in task.Fields %}
+                  <tr>
+                    <td>
+                      {{field.Schema}}
+                    </td>
+                    <td>
+                      {{field.Table}}
+                    </td>
+                    <td>
+                      {{field.Column}}
+                    </td>
+                    <td>
+                      {%if field.Send%}是{%else%}否{%endif%}
+                    </td>
+                  </tr>
+                  {% endfor%}
+                </table>
+              </div>
+              <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </td>
+      <td>
+        <div class="btn-group">
+          <button type="button" class="btn btn-primary btn-sm dropdown-toggle" data-toggle="dropdown">
+            操作 <span class="caret"></span>
+          </button>
+          <ul class="dropdown-menu">
+            <li><a href="/taskmodify/{{task.ID}}" class="modify-task">修改</a></li>
+            <li><a href="javascript:void(0)" onclick="deleteTask({{task.ID}})" class="delete-task">删除</a></li>
+            <li role="separator" class="divider"></li>
+            {% if (task.Stat == "正常")%}
+            <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'停止')">停止</a></li>
+            {% else %}
+            <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'正常')">启动</a></li>
+            {% endif %}
+          </ul>
+        </div>
+      </td>
+      {%if (isAdmin)%}
+      <td>{{task.CreateUser}}</td>
+      {%endif%}
+    </tr>
+    {% endfor%}
+  </table>
+</div>
+<script>
+  function deleteTask(taskid) {
+     if(confirm("确认删除？")){
+       var option = {
+        type: 'delete',
+        url: '/task/'+taskid,
+        dataType: 'json',
+        success: function(data) {
+          location.reload();
+        },
+        error: function(data) {
+          alert("操作失败");
+        }
+      };
+      $.ajax(option);
+     }
+    }
+  function changeTaskStat(taskid, stat) {
+    var option = {
+      type: 'post',
+      url: 'task/changeStat/' + taskid,
+      dataType: 'json',
+      data: {"stat": stat},
+      success: function(data) {
+        location.reload();
+      },
+      error: function(data) {
+        alert("操作失败")
+      }
+    };
+    $.ajax(option);
+  }
+  $(document).ready(function(){
+  });
+
+</script>
+{% include "footer.html"%}

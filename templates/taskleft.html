@@ -1,0 +1,9 @@
+<a href="javascript:void(0)" onclick="updateColumn()">刷新</a>
+{% include "columnlist.html"%}
+<script>
+	function updateColumn() {
+		$.get("/column/update",function(data, status) {
+			$("#column-list").replaceWith(data);
+		});
+	}
+</script>

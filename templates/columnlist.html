@@ -1,0 +1,21 @@
+<ul class="nav nav-sidebar" id="column-list">
+	{% for key in colslist %}
+	<li>
+		<a data-toggle="collapse" aria-expanded="false" aria-controls="{{key.Schema}}" href="#{{key.Schema}}">{{key.Schema}}</a>
+		<ul class="collapse" id="{{key.Schema}}">
+			{% for t in key.OrderedTables %}
+			<li>
+				<a data-toggle="collapse" aria-expanded="false" aria-controls="{{key.Schema}}{{t.Table}}" href="#{{key.Schema}}{{t.Table}}">{{t.Table}}</a>
+				<ul class="collapse" id="{{key.Schema}}{{t.Table}}">
+					{% for c in t.Columns %}
+					<li>
+						<a href="javascript:void(0)" onclick="addRightField('{{key.Schema}}','{{t.Table}}','{{c}}')">{{c}}</a>
+					</li>
+					{% endfor %}
+				</ul>
+			</li>
+			{% endfor %}
+		</ul>
+	</li>
+	{% endfor %}
+</ul>

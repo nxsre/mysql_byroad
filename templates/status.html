@@ -1,0 +1,52 @@
+{% include "header.html" %}
+<div class="container">
+<table class="table table-bordered">
+    <caption>系统信息</caption>
+    <tr>
+        <td>启动时间</td>
+        <td>{{Start}}</td>
+    </tr>
+    <tr>
+        <td>运行时间</td>
+        <td>{{Duration}}</td>
+    </tr>
+    <tr>
+        <td>系统总协程数</td>
+        <td>{{routineNumber}}</td>
+    </tr>
+    <tr>
+        <td>已发消息数量</td>
+        <td>{{sendEventCount}}</td>
+    </tr>
+    <tr>
+        <td>重发消息数量</td>
+        <td>{{resendEventCount}}</td>
+    </tr>
+    <tr>
+        <td>发送成功消息数</td>
+        <td>{{sendSuccessEventCount}}</td>
+    </tr>
+    <tr>
+        <td>发送失败消息数</td>
+        <td>{{sendFailedEventCount}}</td>
+    </tr>
+</table>
+<table class="table table-bordered">
+    <caption>binlog事件统计</caption>
+    <tr>
+        <th>数据库</th>
+        <th>表名</th>
+        <th>事件</th>
+        <th>数量</th>
+    </tr>
+    {% for st in Status %}
+    <tr>
+        <td>{{st.Schema}}</td>
+        <td>{{st.Table}}</td>
+        <td>{{st.Event}}</td>
+        <td>{{st.Count}}</td>
+    </tr>
+    {% endfor %}
+</table>
+</div>
+{% include "footer.html" %}

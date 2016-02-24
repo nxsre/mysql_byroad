@@ -1,0 +1,17 @@
+{
+  "name": "mysql_byroad",
+  "version": "1.0.0",
+  "description": "mysql byroad ",
+  "main": "index.js",
+  "dependencies": {
+    "bootstrap": "^3.3.6",
+    "jquery": "^2.1.4",
+    "jquery.cookie": "^1.4.1"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "xiny1",
+  "license": "MIT"
+}

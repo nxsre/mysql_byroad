@@ -1,0 +1,135 @@
+{% include "header.html"%}
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+      <form method="post" id="form">
+        <div class="col-md-12">
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="name">任务名称</label>
+              <p class="form-control-static">(只能是数字、字母、下划线；长度不超过50；不能修改)</p>
+            </div>
+            <input class="form-control" type="text" name="name" id="name">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="desc">任务描述</label>
+              <p class="form-control-static">(任务描述)</p>
+            </div>
+            <input class="form-control" type="text" name="desc" id="desc">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="apiurl">推送地址</label>
+              <p class="form-control-static">(HTTP POST推送消息)</p>
+            </div>
+            <input class="form-control" type="text" name="apiurl" id="apiurl">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="routineCount">推送消息并发数</label>
+              <p class="form-control-static">(1-10)</p>
+            </div>
+            <input class="form-control" type="text" name="routineCount" id="routineCount" value="1">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="reRoutineCount">重推消息并发数</label>
+              <p class="form-control-static">(1-10)</p>
+            </div>
+            <input class="form-control" type="text" name="reRoutineCount" id="reRoutineCount" value="1">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="reSendTime">重推时间间隔</label>
+              <p class="form-control-static">(0-30000ms)</p>
+            </div>
+            <input class="form-control" type="text" name="reSendTime" id="reSendTime" value="5000">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="retryCount">重推消息次数</label>
+              <p class="form-control-static">(0-10)</p>
+            </div>
+            <input class="form-control" type="text" name="retryCount" id="retryCount" value="3">
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
+              <label for="timeout">推送消息超时</label>
+              <p class="form-control-static">(1-30000ms)</p>
+            </div>
+            <input class="form-control" type="text" name="timeout" id="timeout" value="10000">
+          </div>
+          <div class="form-group">
+            <button type="button" class="btn btn-primary" id="submit" onclick="addTask()">添加</button>
+          </div>
+        </div>
+        <div id="rightdiv" class="form-inline"></div>
+      </form>
+    </div>
+    <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
+      {% include "taskleft.html" %}
+    </div>
+  </div>
+  <script>
+    function removeField(obj) {
+      $(obj).closest('.form-group').parent().remove();
+    }
+    function removeFieldDiv(obj) {
+      $(obj).parent().parent().remove();
+    }
+    function addRightField(schema, table, column) {
+      var field = schema + '.' + table + '.' + column;
+      var divid = schema + '-' +table;
+    
+      var data = '<div class="col-md-4" style="margin-bottom:5px;">\
+      <div class="form-group">\
+      <div class="input-group">\
+      <input name="fields" value="'+ field + '" readonly type="text" class="form-control">\
+      </div>\
+      <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div>\
+      <a href="javascript:void(0)" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>\
+      </div>\
+      </div>';
+      addRightDiv(schema, table);    
+    //  $('#'+divid).append(data);
+      $('#'+divid).find('.rowCont').append(data);
+    }
+    function addRightDiv(schema, table) {
+      var field = schema + '-' + table;
+      var data = '<div class="col-md-12 right-field-div" id="' + field + '">\
+      <h3><span class="label label-primary">' + schema + '.' + table + '</span>\
+      <a href="javascript:void(0)" onclick="removeFieldDiv(this)">\
+      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>\
+      </a>\
+      </h3>\
+      <div class="row rowCont"></div></div>';
+      var d = document.getElementById(field);
+      if(!d){
+        $('#rightdiv').append(data);
+      }
+    }
+    function addTask() {
+      if(confirm('确认添加？')){
+        var options = {
+          url: '/task',
+          type: 'post',
+          dataType: 'json',
+          data: $('#form').serialize(),
+          success: function(data) {
+            alert(data.Message);
+          },
+          error: function(data) {
+              if(data.status == 422) {
+                alert("任务数据格式错误");
+              }else {
+                alert('添加失败');
+              }
+          }
+        };
+        $.ajax(options);
+        return false;
+      }
+    }
+  </script>
+  {% include "footer.html"%}

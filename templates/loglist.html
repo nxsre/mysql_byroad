@@ -1,0 +1,16 @@
+{% include "header.html"%}
+<div class="container">
+  <table class="table table-bordered">
+    <tr>
+      <th>文件</th>
+      <th>操作</th>
+    </tr>
+    {% for logfile in loglist %}
+      <tr>
+        <td>{{logfile}}</td>
+        <td><a href="/log/download/{{logfile}}">下载</a></td>
+      </tr>
+    {% endfor %}
+  </table>
+</div>
+{% include "footer.html" %}
