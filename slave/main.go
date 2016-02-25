@@ -42,6 +42,8 @@ var (
 	confdb              *sqlx.DB
 	binlogInfo          *BinlogInfo
 	rpcserver           *ByRoad
+	totalStatic         Static
+	binlogStatics       BinlogStatics
 )
 
 func StartSlave() {

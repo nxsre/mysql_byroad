@@ -37,7 +37,7 @@ func notifyRoutine(name string) {
 		owl.LogThisException(err.Error())
 	}
 	ret, _ := sendMessage(evt)
-	//atomic.AddUint64(&sendEventCount, 1)
+	totalStatic.IncSendMessageCount()
 	if ret != "success" {
 		task := GetTask(evt.TaskID)
 		if task == nil {
@@ -45,7 +45,7 @@ func notifyRoutine(name string) {
 		}
 		queueManager.Enqueue(genTaskReQueueName(task), evt)
 	} else {
-		//	atomic.AddUint64(&sendSuccessEventCount, 1)
+		totalStatic.IncSendSuccessCount()
 	}
 }
 
@@ -72,14 +72,14 @@ func notifyRetryRoutine(name string) {
 	}
 	evt.RetryCount++
 	ret, err := sendMessage(evt)
-	//atomic.AddUint64(&resendEventCount, 1)
+	totalStatic.IncReSendMessageCount()
 	if ret != "success" {
 		task := GetTask(evt.TaskID)
 		if task == nil {
 			return
 		}
 		if evt.RetryCount >= task.RetryCount {
-			//atomic.AddUint64(&sendFailedEventCount, 1)
+			totalStatic.IncSendFailedCount()
 			if err != nil {
 				logNotifyMessage(evt, err)
 			} else {
@@ -89,7 +89,7 @@ func notifyRetryRoutine(name string) {
 		}
 		queueManager.Enqueue(name, evt)
 	} else {
-		//atomic.AddUint64(&sendSuccessEventCount, 1)
+		totalStatic.IncSendSuccessCount()
 	}
 }
 

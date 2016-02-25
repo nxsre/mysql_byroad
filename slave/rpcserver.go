@@ -7,7 +7,9 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"runtime"
 	"sort"
+	"time"
 )
 
 type ServiceSignal struct {
@@ -194,24 +196,24 @@ func (b *ByRoad) UpdateColumns(username string, columns *OrderedSchemas) error {
 	*columns = columnManager.GetOrderedColumns()
 	return nil
 }
+*/
+
+func (b *ByRoad) GetStatics(username string, statics *[]*BinlogStatic) error {
+	*statics = binlogStatics.Statics
+	return nil
+}
 
 func (b *ByRoad) GetStatus(username string, st *map[string]interface{}) error {
 	start := startTime
 	duration := time.Now().Sub(start)
 	statusMap := make(map[string]interface{})
-	statusMap["sendEventCount"] = sendEventCount
-	statusMap["resendEventCount"] = resendEventCount
-	statusMap["sendSuccessEventCount"] = sendSuccessEventCount
-	statusMap["sendFailedEventCount"] = sendFailedEventCount
+	statusMap["sendEventCount"] = totalStatic.SendMessageCount
+	statusMap["resendEventCount"] = totalStatic.ReSendMessageCount
+	statusMap["sendSuccessEventCount"] = totalStatic.SendSuccessCount
+	statusMap["sendFailedEventCount"] = totalStatic.SendFailedCount
 	statusMap["Start"] = start.String()
 	statusMap["Duration"] = duration.String()
 	statusMap["routineNumber"] = runtime.NumGoroutine()
 	*st = statusMap
 	return nil
 }
-
-func (b *ByRoad) GetStatics(username string, statics *[]*StaticInfo) error {
-	*statics = getStaticStatus()
-	return nil
-}
-*/

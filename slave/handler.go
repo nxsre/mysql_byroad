@@ -18,11 +18,7 @@ func handleWriteEvent(e *replication.RowsEvent) {
 	}
 	for _, row := range e.Rows {
 		columns := []*common.ColumnValue{}
-		/*
-			staticInfo := getStaticInfo(schema, table, event)
-			atomic.AddUint64(&staticInfo.Count, 1)
-			atomic.AddUint64(&insertCount, 1)
-		*/
+		binlogStatics.IncStatic(schema, table, event)
 		for j, r := range row {
 			column := columnManager.GetColumnName(schema, table, j)
 			if inNotifyFields(schema, table, column) {
@@ -52,11 +48,7 @@ func handleDeleteEvent(e *replication.RowsEvent) {
 	}
 	for _, row := range e.Rows {
 		columns := []*common.ColumnValue{}
-		/*
-			staticInfo := getStaticInfo(schema, table, event)
-			atomic.AddUint64(&staticInfo.Count, 1)
-			atomic.AddUint64(&insertCount, 1)
-		*/
+		binlogStatics.IncStatic(schema, table, event)
 		for j, r := range row {
 			column := columnManager.GetColumnName(schema, table, j)
 			if inNotifyFields(schema, table, column) {
@@ -88,11 +80,7 @@ func handleUpdateEvent(e *replication.RowsEvent) {
 	oldRows, newRows := getUpdateRows(e)
 	for i := 0; i < len(oldRows) && i < len(newRows); i++ {
 		columns := []*common.ColumnValue{}
-		/*
-			staticInfo := getStaticInfo(schema, table, event)
-			atomic.AddUint64(&staticInfo.Count, 1)
-			atomic.AddUint64(&updateCount, 1)
-		*/
+		binlogStatics.IncStatic(schema, table, event)
 		oldRow := oldRows[i]
 		newRow := newRows[i]
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
