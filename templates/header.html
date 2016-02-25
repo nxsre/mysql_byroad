@@ -46,6 +46,7 @@
             client = $.cookie('client');
             if (!client) {
                 $("#client option:first").attr('selected', true);
+                $.cookie('client', $('#client').val(), { path: '/'});
             } else {
                 $('#client option').each(function(){
                     if( $(this).val() == client){

@@ -1,14 +1,19 @@
 package slave
 
 import (
+	"encoding/json"
 	"errors"
-	"fmt"
 	"mysql-slave/common"
 	"net"
 	"net/http"
 	"net/rpc"
 	"sort"
 )
+
+type ServiceSignal struct {
+	Code   string
+	Schema string
+}
 
 type ByRoad struct {
 	protocol string
@@ -23,7 +28,7 @@ func NewRPCServer(protocol, schema string) *ByRoad {
 	return &byroad
 }
 
-func (this *ByRoad) Start() {
+func (this *ByRoad) start() {
 	rpc.Register(this)
 	rpc.HandleHTTP()
 	l, e := net.Listen(this.protocol, this.schema)
@@ -31,7 +36,40 @@ func (this *ByRoad) Start() {
 		panic(e.Error())
 	}
 	go http.Serve(l, nil)
+	this.register(configer.GetString("rpc", "schema"))
+
 }
+
+func (this *ByRoad) register(server string) error {
+	return this.sendMessage(server, "0")
+}
+
+func (this *ByRoad) deregister(server string) error {
+	return this.sendMessage(server, "1")
+}
+
+func (this *ByRoad) sendMessage(server, code string) error {
+	tcpAddr, err := net.ResolveTCPAddr("tcp4", server)
+	if err != nil {
+		return err
+	}
+	conn, err := net.DialTCP("tcp", nil, tcpAddr)
+	if err != nil {
+		return err
+	}
+	ss := ServiceSignal{
+		Code:   code,
+		Schema: this.schema,
+	}
+	message, err := json.Marshal(ss)
+	if err != nil {
+		return err
+	}
+	conn.Write(message)
+	conn.Close()
+	return nil
+}
+
 func (b *ByRoad) GetTask(taskid int64, task *Task) error {
 	t := GetTask(taskid)
 	if t == nil {
@@ -101,7 +139,6 @@ func (b *ByRoad) ChangeTaskStat(task *Task, status *string) error {
 	t := GetTask(task.ID)
 	t.Stat = task.Stat
 	err := t.SetStat()
-	fmt.Println(t)
 	if err != nil {
 		*status = "fail"
 		return err

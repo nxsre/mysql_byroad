@@ -41,6 +41,7 @@ var (
 	startTime           time.Time
 	confdb              *sqlx.DB
 	binlogInfo          *BinlogInfo
+	rpcserver           *ByRoad
 )
 
 func StartSlave() {
@@ -94,8 +95,8 @@ func StartSlave() {
 	binlogInfo = NewBinlogInfo()
 	binlogInfo.HandleUpdate(configer.GetInt("system", "config_update_duration", 5))
 	rpcConfiger := configer.GetRPCServer()
-	rpcserver := NewRPCServer("tcp", rpcConfiger.Schema)
-	rpcserver.Start()
+	rpcserver = NewRPCServer("tcp", rpcConfiger.Schema)
+	rpcserver.start()
 	startChan <- true
 	startTime = time.Now()
 	registerSignal()
@@ -202,6 +203,7 @@ func cleanUp() {
 	routineManager.Clean()
 	queueManager.Clean()
 	confdb.Close()
+	rpcserver.deregister(configer.GetString("rpc", "schema"))
 	//showStatics()
 	//fmt.Println(fmt.Sprintf("insert %d, delete %d, update %d", insertCount, deleteCount, updateCount))
 	//sysLogger.Log(fmt.Sprintf("insert %d, delete %d, update %d", insertCount, deleteCount, updateCount))
