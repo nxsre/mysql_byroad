@@ -78,6 +78,7 @@
             操作 <span class="caret"></span>
           </button>
           <ul class="dropdown-menu">
+            <li><a href="/taskdetail/{{task.ID}}" target="_blank" class="detail-task">详情</a></li>
             <li><a href="/taskmodify/{{task.ID}}" class="modify-task">修改</a></li>
             <li><a href="javascript:void(0)" onclick="deleteTask({{task.ID}})" class="delete-task">删除</a></li>
             <li role="separator" class="divider"></li>

@@ -44,6 +44,7 @@ var (
 	rpcserver           *ByRoad
 	totalStatic         Static
 	binlogStatics       BinlogStatics
+	taskStatic          TaskStatic
 )
 
 func StartSlave() {

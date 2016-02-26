@@ -38,6 +38,7 @@ func notifyRoutine(name string) {
 	}
 	ret, _ := sendMessage(evt)
 	totalStatic.IncSendMessageCount()
+	taskStatic.IncSendMessageCount(evt.TaskID)
 	if ret != "success" {
 		task := GetTask(evt.TaskID)
 		if task == nil {
@@ -46,6 +47,7 @@ func notifyRoutine(name string) {
 		queueManager.Enqueue(genTaskReQueueName(task), evt)
 	} else {
 		totalStatic.IncSendSuccessCount()
+		taskStatic.IncSendSuccessCount(evt.TaskID)
 	}
 }
 
@@ -73,6 +75,7 @@ func notifyRetryRoutine(name string) {
 	evt.RetryCount++
 	ret, err := sendMessage(evt)
 	totalStatic.IncReSendMessageCount()
+	taskStatic.IncReSendMessageCount(evt.TaskID)
 	if ret != "success" {
 		task := GetTask(evt.TaskID)
 		if task == nil {
@@ -80,6 +83,7 @@ func notifyRetryRoutine(name string) {
 		}
 		if evt.RetryCount >= task.RetryCount {
 			totalStatic.IncSendFailedCount()
+			taskStatic.IncSendFailedCount(evt.TaskID)
 			if err != nil {
 				logNotifyMessage(evt, err)
 			} else {
@@ -90,6 +94,7 @@ func notifyRetryRoutine(name string) {
 		queueManager.Enqueue(name, evt)
 	} else {
 		totalStatic.IncSendSuccessCount()
+		taskStatic.IncSendSuccessCount(evt.TaskID)
 	}
 }
 
