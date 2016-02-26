@@ -44,7 +44,7 @@ var (
 	rpcserver           *ByRoad
 	totalStatic         Static
 	binlogStatics       BinlogStatics
-	taskStatic          TaskStatic
+	taskStatic          *TaskStatic
 )
 
 func StartSlave() {
@@ -93,6 +93,7 @@ func StartSlave() {
 	routineManager = NewRoutineManager()
 	routineManager.InitTaskRoutines()
 	eventEnqueuer = NewEventEnqueue()
+	taskStatic = NewTaskStatic()
 
 	//定时将binlog文件的信息写到数据库，下次启动时将从该位置继续处理
 	binlogInfo = NewBinlogInfo()

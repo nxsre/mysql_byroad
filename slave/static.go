@@ -31,6 +31,12 @@ type TaskStatic struct {
 	statics map[int64]*Static
 }
 
+func NewTaskStatic() *TaskStatic {
+	return &TaskStatic{
+		statics: make(map[int64]*Static),
+	}
+}
+
 func (this *TaskStatic) IncSendMessageCount(taskid int64) {
 	static, ok := this.statics[taskid]
 	if !ok {

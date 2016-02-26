@@ -190,13 +190,11 @@ func (b *ByRoad) TasksQueueLen(tasks []*Task, results *[][]int64) error {
 	return nil
 }
 
-/*
-func (b *ByRoad) UpdateColumns(username string, columns *OrderedSchemas) error {
-	reloadColumnsMap()
+func (b *ByRoad) UpdateColumns(username string, columns *common.OrderedSchemas) error {
+	columnManager.ReloadColumnsMap()
 	*columns = columnManager.GetOrderedColumns()
 	return nil
 }
-*/
 
 func (b *ByRoad) GetStatics(username string, statics *[]*BinlogStatic) error {
 	*statics = binlogStatics.Statics
@@ -215,5 +213,15 @@ func (b *ByRoad) GetStatus(username string, st *map[string]interface{}) error {
 	statusMap["Duration"] = duration.String()
 	statusMap["routineNumber"] = runtime.NumGoroutine()
 	*st = statusMap
+	return nil
+}
+
+func (b *ByRoad) GetTaskStatic(taskid int64, static *Static) error {
+	st := taskStatic.Get(taskid)
+	if st == nil {
+		*static = *new(Static)
+		return nil
+	}
+	*static = *st
 	return nil
 }
