@@ -2,7 +2,7 @@ package slave
 
 import (
 	"fmt"
-	"mysql-slave/common"
+	"mysql_byroad/common"
 	"os"
 	"os/signal"
 	"runtime"

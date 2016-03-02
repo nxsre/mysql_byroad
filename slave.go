@@ -3,7 +3,7 @@
 package main
 
 import (
-	"mysql-slave/slave"
+	"mysql_byroad/slave"
 )
 
 func main() {

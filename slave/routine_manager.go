@@ -1,8 +1,8 @@
 package slave
 
 import (
-	"mysql-slave/common"
-	"mysql-slave/gorpool"
+	"mysql_byroad/common"
+	"mysql_byroad/gorpool"
 )
 
 type RoutineManager struct {

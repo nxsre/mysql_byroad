@@ -1,7 +1,7 @@
 package slave
 
 import (
-	"mysql-slave/common"
+	"mysql_byroad/common"
 
 	"github.com/jmoiron/sqlx"
 )

@@ -3,7 +3,7 @@ package slave
 import (
 	"encoding/json"
 	"errors"
-	"mysql-slave/common"
+	"mysql_byroad/common"
 	"net"
 	"net/http"
 	"net/rpc"

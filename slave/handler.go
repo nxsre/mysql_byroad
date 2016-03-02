@@ -2,7 +2,7 @@ package slave
 
 import (
 	"fmt"
-	"mysql-slave/common"
+	"mysql_byroad/common"
 
 	"github.com/siddontang/go-mysql/replication"
 )

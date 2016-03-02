@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"io/ioutil"
-	"mysql-slave/common"
+	"mysql_byroad/common"
 	"net/http"
 	"time"
 )

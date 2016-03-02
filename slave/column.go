@@ -3,7 +3,7 @@ package slave
 import (
 	"database/sql"
 	"fmt"
-	"mysql-slave/common"
+	"mysql_byroad/common"
 	"sort"
 	"strings"
 	"sync"

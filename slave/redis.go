@@ -2,7 +2,7 @@ package slave
 
 import (
 	"encoding/json"
-	"mysql-slave/common"
+	"mysql_byroad/common"
 	"time"
 
 	"github.com/garyburd/redigo/redis"
