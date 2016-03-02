@@ -85,6 +85,7 @@ func (b *ByRoad) GetTasks(username string, tasks *[]*Task) error {
 	taskIdcmap.RLock()
 	for _, t := range taskIdcmap.cmap {
 		if username == t.CreateUser {
+			t.Static = taskStatic.Get(t.ID)
 			*tasks = append(*tasks, t)
 		}
 	}
@@ -196,7 +197,7 @@ func (b *ByRoad) UpdateColumns(username string, columns *common.OrderedSchemas) 
 	return nil
 }
 
-func (b *ByRoad) GetStatics(username string, statics *[]*BinlogStatic) error {
+func (b *ByRoad) GetBinlogStatics(username string, statics *[]*BinlogStatic) error {
 	*statics = binlogStatics.Statics
 	return nil
 }
@@ -223,5 +224,10 @@ func (b *ByRoad) GetTaskStatic(taskid int64, static *Static) error {
 		return nil
 	}
 	*static = *st
+	return nil
+}
+
+func (b *ByRoad) GetTaskStatics(taskid int64, statics *TaskStatic) error {
+	*statics = *taskStatic
 	return nil
 }

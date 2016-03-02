@@ -27,6 +27,7 @@ type Task struct {
 	QueueLength    int64
 	ReQueueLength  int64
 	Desc           string
+	Static         *Static
 }
 
 /*

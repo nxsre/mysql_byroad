@@ -5,7 +5,7 @@
       <th>ID</th>
       <th>名字</th>
       <th>描述</th>
-      <th>推送地址</th>
+      <th>已发/重发/成功/失败消息数</th>
       <th>推送/重推并发数</th>
       <th>推送/重推消息数量</th>
       <th>状态</th>
@@ -20,7 +20,7 @@
       <td>{{task.ID}}</td>
       <td>{{task.Name}}</td>
       <td>{{task.Desc}}</td>
-      <td>{{task.Apiurl}}</td>
+      <td>{{task.Static.SendMessageCount}}/{{task.Static.ReSendMessageCount}}/{{task.Static.SendSuccessCount}}/{{task.Static.SendFailedCount}}</td>
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
       <td>{{task.QueueLength}}/{{task.ReQueueLength}}</td>
       <td>
@@ -78,7 +78,6 @@
             操作 <span class="caret"></span>
           </button>
           <ul class="dropdown-menu">
-            <li><a href="/taskdetail/{{task.ID}}" target="_blank" class="detail-task">详情</a></li>
             <li><a href="/taskmodify/{{task.ID}}" class="modify-task">修改</a></li>
             <li><a href="javascript:void(0)" onclick="deleteTask({{task.ID}})" class="delete-task">删除</a></li>
             <li role="separator" class="divider"></li>
