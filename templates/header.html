@@ -46,7 +46,6 @@
             client = $.cookie('client');
             if (!client) {
                 $("#client option:first").attr('selected', true);
-                $.cookie('client', $('#client').val(), { path: '/'});
             } else {
                 $('#client option').each(function(){
                     if( $(this).val() == client){
@@ -55,6 +54,7 @@
                 });
             }
         });
+        $.cookie('client', $('#client').val(), { path: '/'});
         $('#client').change(function() {
             $.cookie('client', $(this).val(), { path: '/'});
             location.reload();
