@@ -34,6 +34,13 @@ func NewEventLogger(dir string) (*EventLogger, error) {
 	logger := EventLogger{
 		dir: dir,
 	}
+	if !FileExist(dir) {
+		err := os.MkdirAll(dir, 0777)
+		if err != nil {
+			return &logger, err
+		}
+	}
+
 	return &logger, nil
 }
 
@@ -70,6 +77,13 @@ func NewSysLogger(dir, filename string) (*SysLogger, error) {
 		filename: filename,
 	}
 	fullname := filepath.Join(dir, filename)
+	dirname := filepath.Dir(filename)
+	if !FileExist(dirname) {
+		err := os.MkdirAll(dirname, 0777)
+		if err != nil {
+			return nil, err
+		}
+	}
 	file, err := os.OpenFile(fullname, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0664)
 	if err != nil {
 		return nil, err
@@ -85,6 +99,12 @@ func (this *SysLogger) Log(msg string) {
 func (this *SysLogger) LogErr(err error) {
 	if err != nil {
 		this.logger.Println(err.Error())
+	}
+}
+
+func (this *SysLogger) PanicErr(err error) {
+	if err != nil {
+		this.logger.Panic(err)
 	}
 }
 

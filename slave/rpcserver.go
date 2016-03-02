@@ -97,6 +97,7 @@ func (b *ByRoad) GetTasks(username string, tasks *[]*Task) error {
 
 func (b *ByRoad) GetAllTasks(username string, tasks *[]*Task) error {
 	for _, t := range taskIdcmap.cmap {
+		t.Static = taskStatic.Get(t.ID)
 		*tasks = append(*tasks, t)
 	}
 	sort.Sort(TaskSlice(*tasks))

@@ -128,7 +128,13 @@ func startReplication() {
 	mc := configer.GetMysql()
 	err := syncer.RegisterSlave(mc.Host, uint16(mc.Port), mc.Username, mc.Password)
 	sysLogger.LogErr(err)
-	binlogInfo.Get(confdb)
+	filename := configer.GetString("binlog", "filename")
+	pos := uint32(configer.GetInt("binlog", "position"))
+	binlogInfo.Filename = filename
+	binlogInfo.Position = pos
+	if binlogInfo.Filename == "" || binlogInfo.Position == 0 {
+		binlogInfo.Get(confdb)
+	}
 	if binlogInfo.Filename == "" || binlogInfo.Position == 0 {
 		addr := fmt.Sprintf("%s:%d", mc.Host, mc.Port)
 		c, err := client.Connect(addr, mc.Username, mc.Password, "")
@@ -149,7 +155,7 @@ func startReplication() {
 			if err == replication.ErrGetEventTimeout {
 				continue
 			} else {
-				sysLogger.LogErr(err)
+				sysLogger.PanicErr(err)
 				os.Exit(2)
 			}
 		}
