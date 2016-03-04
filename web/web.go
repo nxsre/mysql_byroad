@@ -140,19 +140,16 @@ func getUsername(sess session.Store) string {
 
 //判断用户是否拥有flag的权限
 func checkAuth(ctx *macaron.Context, sess session.Store, flag string) bool {
-	/*
-		groups := sess.Get("groups").(string)
-		isAdmin := strings.Index(groups, "admin")
-		if isAdmin != -1 {
-			return true
-		}
-		index := strings.Index(groups, flag)
-		if index != -1 {
-			return true
-		}
-		return false
-	*/
-	return true
+	groups := sess.Get("groups").(string)
+	isAdmin := strings.Index(groups, "admin")
+	if isAdmin != -1 {
+		return true
+	}
+	index := strings.Index(groups, flag)
+	if index != -1 {
+		return true
+	}
+	return false
 }
 
 //判断任务是否属于该用户
@@ -228,11 +225,9 @@ func login(ctx *macaron.Context, sess session.Store) string {
 		return "api请求错误.#5"
 	}
 
-	/*
-		if len(groups.Groups) == 0 {
-			return "你没有旁路平台权限."
-		}
-	*/
+	if len(groups.Groups) == 0 {
+		return "你没有旁路平台权限."
+	}
 	sess.Set("username", user.FullName)
 	sess.Set("groups", array2string(groups.Groups))
 	sess.Set("user", user.UserName)
@@ -266,8 +261,9 @@ func index(ctx *macaron.Context, sess session.Store) {
 }
 
 func status(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
+	if !checkAuth(ctx, sess, "admin") {
 		ctx.HTML(403, "403")
+		return
 	}
 	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
 	if rpcclient != nil {
@@ -301,6 +297,7 @@ func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 func modifytask(ctx *macaron.Context, sess session.Store) {
 	if !checkAuth(ctx, sess, "all") {
 		ctx.HTML(403, "403")
+		return
 	}
 	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
 	if rpcclient != nil {
@@ -477,17 +474,18 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 }
 
 func tasklist(ctx *macaron.Context, sess session.Store) {
+	if !checkAuth(ctx, sess, "all") {
+		ctx.HTML(403, "403")
+		return
+	}
 	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
 	if rpcclient != nil {
 		var sortTasks []*Task
-		/*
-			if checkAuth(ctx, sess, "admin") {
-				sortTasks, _ = rpcclient.GetAllTasks(sess.Get("user").(string))
-			} else {
-				sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
-			}
-		*/
-		sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
+		if checkAuth(ctx, sess, "admin") {
+			sortTasks, _ = rpcclient.GetAllTasks(sess.Get("user").(string))
+		} else {
+			sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
+		}
 		ctx.Data["tasks"] = sortTasks
 	}
 
@@ -554,6 +552,7 @@ func loglist(ctx *macaron.Context, sess session.Store) {
 func downloadlog(ctx *macaron.Context, sess session.Store) {
 	if !checkAuth(ctx, sess, "admin") {
 		ctx.HTML(403, "403")
+		return
 	}
 	filename := ctx.Params("filename")
 	dir := ctx.GetCookie("client")
