@@ -64,6 +64,7 @@ func (this *EventLogger) Log(evt *NotifyEvent, reason error) error {
 	}
 	msgStr, _ := json.Marshal(se)
 	logfile.WriteString(string(msgStr))
+	//logfile.WriteString("\n")
 	logfile.Close()
 	return nil
 }
