@@ -140,17 +140,18 @@ func getUsername(sess session.Store) string {
 
 //判断用户是否拥有flag的权限
 func checkAuth(ctx *macaron.Context, sess session.Store, flag string) bool {
-	//123
-	groups := sess.Get("groups").(string)
-	isAdmin := strings.Index(groups, "admin")
-	if isAdmin != -1 {
-		return true
-	}
-	index := strings.Index(groups, flag)
-	if index != -1 {
-		return true
-	}
-	return false
+	/*
+		groups := sess.Get("groups").(string)
+		isAdmin := strings.Index(groups, "admin")
+		if isAdmin != -1 {
+			return true
+		}
+		index := strings.Index(groups, flag)
+		if index != -1 {
+			return true
+		}
+		return false
+	*/
 }
 
 //判断任务是否属于该用户
@@ -478,11 +479,13 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
 	if rpcclient != nil {
 		var sortTasks []*Task
-		if checkAuth(ctx, sess, "admin") {
-			sortTasks, _ = rpcclient.GetAllTasks(sess.Get("user").(string))
-		} else {
-			sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
-		}
+		/*
+			if checkAuth(ctx, sess, "admin") {
+				sortTasks, _ = rpcclient.GetAllTasks(sess.Get("user").(string))
+			} else {
+				sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
+			}
+		*/
 		sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
 		ctx.Data["tasks"] = sortTasks
 	}
