@@ -10,8 +10,6 @@ config.db-journal
 .vscode
 *.conf
 todo.md
-web
-main
 slave-main
 slave-web
 slave-src.tar.gz
