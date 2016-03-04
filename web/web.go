@@ -152,6 +152,7 @@ func checkAuth(ctx *macaron.Context, sess session.Store, flag string) bool {
 		}
 		return false
 	*/
+	return true
 }
 
 //判断任务是否属于该用户
