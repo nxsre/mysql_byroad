@@ -48,6 +48,18 @@ var (
 )
 
 func StartSlave() {
+	defer func() {
+		if err := recover(); err != nil {
+			switch e := err.(type) {
+			case error:
+				sysLogger.LogErr(e)
+			default:
+				fmt.Println(e)
+			}
+			cleanUp()
+			os.Exit(2)
+		}
+	}()
 	var err error
 	runtime.GOMAXPROCS(runtime.NumCPU())
 	//writePid()
