@@ -23,8 +23,10 @@
                 <ul class="nav navbar-nav navbar-center">
                     <li><a href="/addtask">任务添加</a></li>
                     <li><a href="/task">任务管理</a></li>
+                    {% if (isAdmin)%}
                     <li><a href="/status">状态</a></li>
                     <li><a href="/log">日志</a></li>
+                    {% endif %}
                 </ul>
                 <ul class="nav navbar-nav navbar-right">
                     <li class="">
