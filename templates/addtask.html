@@ -81,19 +81,20 @@
     function addRightField(schema, table, column) {
       var field = schema + '.' + table + '.' + column;
       var divid = schema + '-' +table;
-    
       var data = '<div class="col-md-4" style="margin-bottom:5px;">\
       <div class="form-group">\
       <div class="input-group">\
-      <input name="fields" value="'+ field + '" readonly type="text" class="form-control">\
+      <input value="'+ column + '" readonly type="text" class="form-control">\
+      <input name="fields" type="hidden" value="'+ field + '">\
       </div>\
       <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div>\
       <a href="javascript:void(0)" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>\
       </div>\
       </div>';
-      addRightDiv(schema, table);    
-    //  $('#'+divid).append(data);
-      $('#'+divid).find('.rowCont').append(data);
+      addRightDiv(schema, table);   
+      if(!checkRightField(schema, table, column)) {
+        $('#'+divid).find('.rowCont').append(data);
+      } 
     }
     function addRightDiv(schema, table) {
       var field = schema + '-' + table;
@@ -108,6 +109,11 @@
       if(!d){
         $('#rightdiv').append(data);
       }
+    }
+    function checkRightField(schema, table, column) {
+      var field = schema + '-' + table;
+      var d = document.getElementById(field);
+      return $(d).find(':text').is($(':text[value=' + column + ']'));
     }
     function addTask() {
       if(confirm('确认添加？')){
