@@ -226,8 +226,5 @@ func cleanUp() {
 	queueManager.Clean()
 	confdb.Close()
 	rpcserver.deregister(configer.GetString("rpc", "schema"))
-	//showStatics()
-	//fmt.Println(fmt.Sprintf("insert %d, delete %d, update %d", insertCount, deleteCount, updateCount))
-	//sysLogger.Log(fmt.Sprintf("insert %d, delete %d, update %d", insertCount, deleteCount, updateCount))
 	cleanUpDone <- true
 }
