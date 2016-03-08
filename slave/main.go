@@ -95,7 +95,7 @@ func StartSlave() {
 	owl = common.NewOWL(configer.GetString("OWL", "path", "/tmp"), configer.GetOWL())
 	owl.LogThisException("test exception")
 	httpClient = NewHttpClient()
-	confdb, err = sqlx.Open("sqlite3", "./config.db")
+	confdb, err = sqlx.Open("sqlite3", configer.GetString("db", "filename", "config.db"))
 	if err != nil {
 		panic(err)
 	}
