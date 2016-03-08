@@ -48,7 +48,7 @@ todo:
 	@grep --color=auto -r -n TODO ./*.go
 
 tarsource:
-	tar -cvzf slave-src.tar.gz *.go gorpool templates public Makefile
+	tar -cvzf slave-src.tar.gz *.go gorpool slave web common templates public Makefile
 
 tarbin:build
 	tar -cvzf slave-bin.tar.gz slave-main slave-web templates public
