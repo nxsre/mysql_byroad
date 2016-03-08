@@ -206,3 +206,13 @@ func (this *RPCClient) GetTaskStatics() (static *TaskStatic, err error) {
 	err = client.Call("ByRoad.GetTaskStatics", 0, &static)
 	return
 }
+
+func (this *RPCClient) GetLogList() (logList *LogList, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("ByRoad.GetLogList", "", &logList)
+	return
+}

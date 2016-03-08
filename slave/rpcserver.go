@@ -232,3 +232,8 @@ func (b *ByRoad) GetTaskStatics(taskid int64, statics *TaskStatic) error {
 	*statics = *taskStatic
 	return nil
 }
+
+func (b *ByRoad) GetLogList(username string, logs *LogList) error {
+	*logs = *(logList.GetLogList())
+	return nil
+}

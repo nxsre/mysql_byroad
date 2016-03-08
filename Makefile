@@ -30,8 +30,8 @@ build:slaveserver webserver
 
 
 run:
-	${WORKPATH}/slave-main > slave-main.log 2>&1&
 	${WORKPATH}/slave-web > slave-web.log 2>&1&
+	${WORKPATH}/slave-main > slave-main.log 2>&1&
 
 runmain:
 	${WORKPATH}/slave-main > slave-main.log 2>&1&

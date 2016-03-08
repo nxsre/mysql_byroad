@@ -543,9 +543,12 @@ func loglist(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	client := ctx.GetCookie("client")
-	loglist, _ := getLogList(client)
-	ctx.Data["loglist"] = loglist
+	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
+	if rpcclient != nil {
+		logList, _ := rpcclient.GetLogList()
+		ctx.Data["loglist"] = logList.Logs
+		ctx.Data["Host"] = logList.Host
+	}
 	ctx.HTML(200, "loglist")
 }
 

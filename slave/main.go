@@ -26,6 +26,7 @@ var (
 	eventEnqueuer  *EventEnqueuer
 	columnManager  *ColumnManager
 	routineManager *RoutineManager
+	logList        *LogList
 )
 
 var (
@@ -106,7 +107,8 @@ func StartSlave() {
 	routineManager.InitTaskRoutines()
 	eventEnqueuer = NewEventEnqueue()
 	taskStatic = NewTaskStatic()
-
+	logList = NewLogList(configer.GetString("loglist", "host"), configer.GetString("loglist", "path"))
+	logList.Serve()
 	//定时将binlog文件的信息写到数据库，下次启动时将从该位置继续处理
 	binlogInfo = NewBinlogInfo()
 	binlogInfo.HandleUpdate(configer.GetInt("system", "config_update_duration", 5))

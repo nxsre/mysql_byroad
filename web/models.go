@@ -61,3 +61,9 @@ type Static struct {
 type TaskStatic struct {
 	statics map[int64]*Static
 }
+
+type LogList struct {
+	Logs []string
+	Host string
+	Path string
+}
