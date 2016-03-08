@@ -70,7 +70,7 @@
             {% for table, fields in tables %}
             <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
             <h3><span class="label label-primary">{{schema}}.{{table}}</span>
-                <a href="javascript:void(0)" onclick="removeFieldDiv(this)">
+                <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                 </a>
             </h3>
@@ -122,13 +122,12 @@
       </div>';
       addRightDiv(schema, table);    
       if(!checkRightField(schema, table, column)) {
-          console.log()
         $('#'+divid).find('.rowCont').append(data);
       }
     }
     function addRightDiv(schema, table) {
       var field = schema + '-' + table;
-      var data = '<div class="col-md-12 right-field-div" id="' + field + '"><h3><span class="label label-primary">' + schema + '.' + table + '</span><a href="javascript:void(0)" onclick="removeFieldDiv(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></h3><div class="row rowCont"></div></div>';
+      var data = '<div class="col-md-12 right-field-div" id="' + field + '"><h3><span class="label label-primary">' + schema + '.' + table + '</span><a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></h3><div class="row rowCont"></div></div>';
       var d = document.getElementById(field);
       if(!d){
         $('#rightdiv').append(data);

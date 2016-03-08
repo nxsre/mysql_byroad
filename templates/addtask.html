@@ -87,7 +87,7 @@
       <input value="'+ column + '" readonly type="text" class="form-control">\
       <input name="fields" type="hidden" value="'+ field + '">\
       </div>\
-      <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div>\
+      <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div> \
       <a href="javascript:void(0)" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>\
       </div>\
       </div>';
@@ -99,8 +99,8 @@
     function addRightDiv(schema, table) {
       var field = schema + '-' + table;
       var data = '<div class="col-md-12 right-field-div" id="' + field + '">\
-      <h3><span class="label label-primary">' + schema + '.' + table + '</span>\
-      <a href="javascript:void(0)" onclick="removeFieldDiv(this)">\
+      <h3><span class="label label-primary">' + schema + '.' + table + '</span> \
+      <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">\
       <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>\
       </a>\
       </h3>\
