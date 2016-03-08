@@ -6,7 +6,7 @@ tags
 *.db
 .hg
 .hgignore
-config.db-journal
+*.db-journal
 .vscode
 *.conf
 todo.md
