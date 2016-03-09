@@ -61,6 +61,19 @@
             </div>
             <input class="form-control" type="text" name="timeout" id="timeout" value="{{task.Timeout}}">
           </div>
+          <div class="form-group col-md-12">
+            <div class="form-inline">
+              <label for="state">状态：</label>
+              <div class="radio">
+                <label>
+                    <input type="radio" name="state" id="state" value="正常" {%if (task.Stat=="正常")%}checked {%endif%}> 正常
+                </label>
+                <label>
+                    <input type="radio" name="state" id="state" value="停止" {%if (task.Stat=="停止")%}checked {%endif%}> 停止
+                </label>
+              </div>
+            </div>
+          </div>         
           <div class="form-group">
             <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新</button>
           </div>
