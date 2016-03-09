@@ -1,7 +1,9 @@
 package slave
 
 import (
+	"sync"
 	"sync/atomic"
+	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -31,6 +33,8 @@ func (this *Static) IncSendFailedCount() {
 
 type TaskStatic struct {
 	statics map[int64]*Static
+	wg      sync.WaitGroup
+	ch      chan bool
 }
 
 func createStaticTable(confdb *sqlx.DB) {
@@ -48,7 +52,66 @@ func createStaticTable(confdb *sqlx.DB) {
 func NewTaskStatic() *TaskStatic {
 	return &TaskStatic{
 		statics: make(map[int64]*Static),
+		ch:      make(chan bool, 1),
 	}
+}
+
+func (this *TaskStatic) Save(confdb *sqlx.DB) {
+	for taskid, static := range this.statics {
+		var cnt int64
+		err := confdb.Get(&cnt, "SELECT COUNT(*) FROM static WHERE `task_id`=?", taskid)
+		sysLogger.LogErr(err)
+		if cnt == 0 {
+			_, err = confdb.Exec("INSERT INTO static(task_id, send_message_count, resend_message_count, send_success_count, send_failed_count) VALUES(?,?,?,?,?)", taskid, static.SendMessageCount, static.ReSendMessageCount, static.SendSuccessCount, static.SendFailedCount)
+			sysLogger.LogErr(err)
+		} else {
+			_, err = confdb.Exec("UPDATE static SET send_message_count=?, resend_message_count=?, send_success_count=?, send_failed_count=? WHERE task_id=?", static.SendMessageCount, static.ReSendMessageCount, static.SendSuccessCount, static.SendFailedCount, taskid)
+			sysLogger.LogErr(err)
+		}
+	}
+}
+
+func (this *TaskStatic) Init(confdb *sqlx.DB) {
+	s := "SELECT task_id, send_message_count, resend_message_count, send_success_count, send_failed_count FROM static"
+	rows, err := confdb.Query(s)
+	if err != nil {
+		sysLogger.LogErr(err)
+		return
+	}
+	for rows.Next() {
+		static := Static{}
+		var id int64
+		err := rows.Scan(&id, &static.SendMessageCount, &static.ReSendMessageCount, &static.SendSuccessCount, &static.SendFailedCount)
+		if err != nil {
+			sysLogger.LogErr(err)
+			return
+		}
+		this.statics[id] = &static
+	}
+}
+
+func (this *TaskStatic) Ticker(interval int) {
+	tick := time.NewTicker(time.Second * time.Duration(interval))
+	this.wg.Add(1)
+	go func() {
+		for {
+			select {
+			case <-tick.C:
+				this.Save(confdb)
+			case <-this.ch:
+				this.wg.Done()
+				return
+			}
+		}
+	}()
+}
+
+/*
+停止定时写入，退出系统时使用
+*/
+func (this *TaskStatic) StopTicker() {
+	this.ch <- true
+	this.wg.Wait()
 }
 
 func (this *TaskStatic) IncSendMessageCount(taskid int64) {

@@ -107,6 +107,8 @@ func StartSlave() {
 	routineManager.InitTaskRoutines()
 	eventEnqueuer = NewEventEnqueue()
 	taskStatic = NewTaskStatic()
+	taskStatic.Init(confdb)
+	taskStatic.Ticker(configer.GetInt("static", "interval", 10))
 	logList = NewLogList(configer.GetString("loglist", "host"), configer.GetString("loglist", "path"))
 	logList.Serve()
 	//定时将binlog文件的信息写到数据库，下次启动时将从该位置继续处理
@@ -223,6 +225,7 @@ func cleanUp() {
 	sysLogger.Log("event chan done")
 	binlogInfo.Set(confdb)
 	binlogInfo.StopHandleUpdate()
+	taskStatic.StopTicker()
 	sysLogger.Log("update config done")
 	routineManager.Clean()
 	queueManager.Clean()
