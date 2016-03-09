@@ -56,8 +56,12 @@ func (task *Task) Add() (id int64, err error) {
 	}
 	task.ID = id
 	taskIdcmap.Set(id, task)
-	ntytasks.AddTask(task)
-	routineManager.AddTaskRoutines(task)
+	if task.Stat == common.TASK_STATE_START {
+		ntytasks.AddTask(task)
+		routineManager.AddTaskRoutines(task)
+	} else if task.Stat == common.TASK_STATE_STOP {
+		routineManager.AddStopTaskRoutines(task)
+	}
 	return
 }
 

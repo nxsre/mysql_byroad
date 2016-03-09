@@ -45,7 +45,8 @@ type TaskForm struct {
 	ReSendTime     int    `form:"reSendTime" binding:"Range(0,30000)"`
 	RetryCount     int    `form:"retryCount" binding:"Range(0,10)"`
 	Timeout        int    `form:"timeout" binding:"Range(1,30000)"`
-	Desc           string `from:"desc" binding:"MaxSize(255)"`
+	Desc           string `form:"desc" binding:"MaxSize(255)"`
+	State          string `form:"state"`
 }
 
 var rpcManager *RPCClientManager
@@ -349,7 +350,6 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	task := new(Task)
 	copyTask(&t, task)
 	task.CreateUser = sess.Get("user").(string)
-	task.Stat = common.TASK_STATE_START
 	task.Fields = make([]*NotifyField, 0)
 	for _, c := range fields {
 		send := ctx.QueryInt(c)
@@ -586,6 +586,7 @@ func copyTask(src *TaskForm, dst *Task) {
 	dst.Timeout = src.Timeout
 	dst.CreateTime = time.Now()
 	dst.Desc = strings.TrimSpace(src.Desc)
+	dst.Stat = src.State
 }
 
 func FieldExists(task *Task, field *NotifyField) bool {
