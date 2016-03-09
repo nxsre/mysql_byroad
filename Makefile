@@ -1,5 +1,5 @@
 WORKPATH = $(PWD)
-GOGET = go get
+GOGET = go get -v
 default: run
 backend_env:
 	${GOGET} github.com/mattn/go-sqlite3
@@ -16,6 +16,9 @@ backend_env:
 	${GOGET} github.com/siddontang/go-mysql/mysql
 	${GOGET} gopkg.in/redis.v2
 	${GOGET} github.com/sadlil/gologger
+	${GOGET} github.com/mattbaird/elastigo/lib
+	${GOGET} github.com/mattn/go-isatty
+	${GOGET} github.com/shiena/ansicolor
 
 front_env:
 	cd ${WORKPATH}/public && npm install
