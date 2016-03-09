@@ -2,6 +2,8 @@ package slave
 
 import (
 	"sync/atomic"
+
+	"github.com/jmoiron/sqlx"
 )
 
 type Static struct {
@@ -29,6 +31,18 @@ func (this *Static) IncSendFailedCount() {
 
 type TaskStatic struct {
 	statics map[int64]*Static
+}
+
+func createStaticTable(confdb *sqlx.DB) {
+	s := "CREATE TABLE IF NOT EXISTS `static`(" +
+		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`task_id` INTEGER NOT NULL," +
+		"`send_message_count` INTEGER," +
+		"`resend_message_count` INTEGER," +
+		"`send_success_count` INTEGER," +
+		"`send_failed_count` INTEGER" +
+		")"
+	confdb.MustExec(s)
 }
 
 func NewTaskStatic() *TaskStatic {
