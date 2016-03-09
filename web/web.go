@@ -1,6 +1,7 @@
 package web
 
 import (
+	"bytes"
 	"crypto/sha1"
 	"encoding/json"
 	"fmt"
@@ -558,10 +559,24 @@ func downloadlog(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	filename := ctx.Params("filename")
-	dir := ctx.GetCookie("client")
-	path := configer.GetString("web", "logdir", "log/")
-	file := filepath.Join(path, dir, filename)
-	ctx.ServeFile(file)
+	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
+	if rpcclient != nil {
+		logList, _ := rpcclient.GetLogList()
+		host := logList.Host
+		resp, err := http.Get("http://" + host + "/" + filename)
+		if err != nil {
+			logger.Error(err.Error())
+			ctx.Write([]byte(err.Error()))
+			return
+		}
+		b, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			logger.Error(err.Error())
+			ctx.Write([]byte(err.Error()))
+			return
+		}
+		ctx.ServeContent(filename, bytes.NewReader(b))
+	}
 }
 
 func updateColumnMap(ctx *macaron.Context, sess session.Store) {
