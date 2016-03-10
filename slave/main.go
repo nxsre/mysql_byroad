@@ -27,6 +27,7 @@ var (
 	columnManager  *ColumnManager
 	routineManager *RoutineManager
 	logList        *LogList
+	tickerManager  *TickerManager
 )
 
 var (
@@ -57,7 +58,6 @@ func StartSlave() {
 			default:
 				fmt.Println(e)
 			}
-			cleanUp()
 			os.Exit(2)
 		}
 	}()
@@ -83,6 +83,7 @@ func StartSlave() {
 	if err != nil {
 		panic(err.Error())
 	}
+	sysLogger.Log("start")
 
 	//消息日志初始化
 	evtdir := configer.GetString("log", "err_log_path")
@@ -107,11 +108,15 @@ func StartSlave() {
 	routineManager.InitTaskRoutines()
 	eventEnqueuer = NewEventEnqueue()
 	taskStatic = NewTaskStatic()
+	taskStatic.Init(confdb)
+	binlogInfo = NewBinlogInfo()
+
+	//定时写入数据库
+	tickerManager = NewTickerManager()
+	tickerManager.Init()
 	logList = NewLogList(configer.GetString("loglist", "host"), configer.GetString("loglist", "path"))
 	logList.Serve()
-	//定时将binlog文件的信息写到数据库，下次启动时将从该位置继续处理
-	binlogInfo = NewBinlogInfo()
-	binlogInfo.HandleUpdate(configer.GetInt("system", "config_update_duration", 5))
+
 	rpcConfiger := configer.GetRPCServer()
 	rpcserver = NewRPCServer("tcp", rpcConfiger.Schema)
 	rpcserver.start()
@@ -141,7 +146,10 @@ func startReplication() {
 	syncer := replication.NewBinlogSyncer(sysConfiger.ServerID, "mysql")
 	mc := configer.GetMysql()
 	err := syncer.RegisterSlave(mc.Host, uint16(mc.Port), mc.Username, mc.Password)
-	sysLogger.LogErr(err)
+	if err != nil {
+		sysLogger.LogErr(err)
+		os.Exit(2)
+	}
 	filename := configer.GetString("binlog", "filename")
 	pos := uint32(configer.GetInt("binlog", "position"))
 	binlogInfo.Filename = filename
@@ -222,7 +230,8 @@ func cleanUp() {
 	<-eventDoneChan
 	sysLogger.Log("event chan done")
 	binlogInfo.Set(confdb)
-	binlogInfo.StopHandleUpdate()
+	//binlogInfo.StopHandleUpdate()
+	tickerManager.StopAll()
 	sysLogger.Log("update config done")
 	routineManager.Clean()
 	queueManager.Clean()

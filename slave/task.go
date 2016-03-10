@@ -28,6 +28,7 @@ func initNotifyAPIDB(confdb *sqlx.DB) {
 	createConfigTable(confdb)
 	createTaskTable(confdb)
 	createNotifyFieldTable(confdb)
+	createStaticTable(confdb)
 	taskIdcmap = _selectAllTasks(confdb)
 	ntytasks = NewNotifyTaskMap(taskIdcmap)
 }

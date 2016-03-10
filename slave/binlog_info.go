@@ -4,7 +4,6 @@ import (
 	"database/sql"
 	"strconv"
 	"sync"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -61,31 +60,9 @@ func (this *BinlogInfo) Set(confdb *sqlx.DB) error {
 	return err
 }
 
-/*
-定时将binlog信息写入数据库
-*/
-func (this *BinlogInfo) HandleUpdate(interval int) {
-	tick := time.NewTicker(time.Second * time.Duration(interval))
-	this.wg.Add(1)
-	go func() {
-		for {
-			select {
-			case <-tick.C:
-				this.Set(confdb)
-			case <-this.ch:
-				this.wg.Done()
-				return
-			}
-		}
-	}()
-}
-
-/*
-停止定时写入，退出系统时使用
-*/
-func (this *BinlogInfo) StopHandleUpdate() {
-	this.ch <- true
-	this.wg.Wait()
+func (this *BinlogInfo) Tick(arg interface{}) {
+	confdb := arg.(*sqlx.DB)
+	this.Set(confdb)
 }
 
 func setConfig(confdb *sqlx.DB, key, value, desc string) (int64, error) {
@@ -95,11 +72,17 @@ func setConfig(confdb *sqlx.DB, key, value, desc string) (int64, error) {
 	var res sql.Result
 	if cnt == 0 {
 		res, err = confdb.Exec("INSERT INTO config(key, value, description) VALUES(?, ?, ?)", key, value, desc)
-		sysLogger.LogErr(err)
+		if err != nil {
+			sysLogger.LogErr(err)
+			return 0, err
+		}
 		return res.LastInsertId()
 	} else {
 		res, err = confdb.Exec("UPDATE config SET value=?, description=? WHERE key=?", value, desc, key)
-		sysLogger.LogErr(err)
+		if err != nil {
+			sysLogger.LogErr(err)
+			return 0, err
+		}
 		return res.RowsAffected()
 	}
 }
