@@ -3,7 +3,6 @@ package slave
 import (
 	"sync"
 	"sync/atomic"
-	"time"
 
 	"github.com/jmoiron/sqlx"
 )
@@ -47,6 +46,13 @@ func createStaticTable(confdb *sqlx.DB) {
 		"`send_failed_count` INTEGER" +
 		")"
 	confdb.MustExec(s)
+	s = "CREATE TABLE IF NOT EXISTS `binlog_static`(" +
+		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`schema` VARCHAR(255) NOT NULL," +
+		"`table` VARCHAR(255) NOT NULL," +
+		"`count` INTEGER" +
+		")"
+	confdb.MustExec(s)
 }
 
 func NewTaskStatic() *TaskStatic {
@@ -88,30 +94,15 @@ func (this *TaskStatic) Init(confdb *sqlx.DB) {
 		}
 		this.statics[id] = &static
 	}
+	if ts, ok := this.statics[0]; ok {
+		totalStatic = *ts
+	}
+	this.statics[0] = &totalStatic
 }
 
-func (this *TaskStatic) Ticker(interval int) {
-	tick := time.NewTicker(time.Second * time.Duration(interval))
-	this.wg.Add(1)
-	go func() {
-		for {
-			select {
-			case <-tick.C:
-				this.Save(confdb)
-			case <-this.ch:
-				this.wg.Done()
-				return
-			}
-		}
-	}()
-}
-
-/*
-停止定时写入，退出系统时使用
-*/
-func (this *TaskStatic) StopTicker() {
-	this.ch <- true
-	this.wg.Wait()
+func (this *TaskStatic) Tick(arg interface{}) {
+	confdb := arg.(*sqlx.DB)
+	this.Save(confdb)
 }
 
 func (this *TaskStatic) IncSendMessageCount(taskid int64) {
@@ -174,4 +165,13 @@ func (this *BinlogStatics) IncStatic(schema, table, event string) {
 	}
 	info := &BinlogStatic{schema, table, event, 1}
 	this.Statics = append(this.Statics, info)
+}
+
+func (this *BinlogStatics) Save(confdb *sqlx.DB) {
+
+}
+
+func (this *BinlogStatics) Tick(arg interface{}) {
+	confdb := arg.(*sqlx.DB)
+	this.Save(confdb)
 }
