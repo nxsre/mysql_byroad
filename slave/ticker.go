@@ -23,13 +23,14 @@ func (this *TickerManager) StopAll() {
 }
 
 func (this *TickerManager) Init() {
-	taskStaticTicker := goticker.New(5, taskStatic.Tick)
+	interval := configer.GetSys().UpdateDuration
+	taskStaticTicker := goticker.New(interval, taskStatic.Tick)
 	this.Add(taskStaticTicker)
 	go taskStaticTicker.Tick(confdb)
-	binlogTicker := goticker.New(5, binlogInfo.Tick)
+	binlogTicker := goticker.New(interval, binlogInfo.Tick)
 	this.Add(binlogTicker)
 	go binlogTicker.Tick(confdb)
-	binlogStaticTicker := goticker.New(5, binlogStatics.Tick)
+	binlogStaticTicker := goticker.New(interval, binlogStatics.Tick)
 	this.Add(binlogStaticTicker)
 	go binlogStaticTicker.Tick(confdb)
 }

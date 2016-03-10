@@ -58,7 +58,6 @@ func StartSlave() {
 			default:
 				fmt.Println(e)
 			}
-			cleanUp()
 			os.Exit(2)
 		}
 	}()
@@ -147,7 +146,10 @@ func startReplication() {
 	syncer := replication.NewBinlogSyncer(sysConfiger.ServerID, "mysql")
 	mc := configer.GetMysql()
 	err := syncer.RegisterSlave(mc.Host, uint16(mc.Port), mc.Username, mc.Password)
-	sysLogger.LogErr(err)
+	if err != nil {
+		sysLogger.LogErr(err)
+		os.Exit(2)
+	}
 	filename := configer.GetString("binlog", "filename")
 	pos := uint32(configer.GetInt("binlog", "position"))
 	binlogInfo.Filename = filename
