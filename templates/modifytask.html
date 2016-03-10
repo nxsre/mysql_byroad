@@ -107,12 +107,7 @@
         {% endfor%}
         </div>
       </form>
-      <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
-        {% include "taskleft.html" %}
-      </div>
-    </div>
-  </div>
-  <script>
+    <script>
     function removeField(obj) {
       $(obj).closest('.form-group').parent().remove();
     }
@@ -173,5 +168,11 @@
         return false;
       }
     }
-  </script>
+   </script>
+      <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
+        {% include "taskleft.html" %}
+      </div>
+    </div>
+  </div>
+
   {% include "footer.html"%}

@@ -79,12 +79,7 @@
         </div>
         <div id="rightdiv" class="form-inline"></div>
       </form>
-    </div>
-    <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
-      {% include "taskleft.html" %}
-    </div>
-  </div>
-  <script>
+    <script>
     function removeField(obj) {
       $(obj).closest('.form-group').parent().remove();
     }
@@ -151,4 +146,10 @@
       }
     }
   </script>
+    </div>
+    <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
+      {% include "taskleft.html" %}
+    </div>
+  </div>
+
   {% include "footer.html"%}
