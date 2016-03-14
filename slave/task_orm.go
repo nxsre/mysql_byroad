@@ -199,8 +199,14 @@ func _selectAllTasks(confdb *sqlx.DB) *TaskIdMap {
 	stmt, err := confdb.Prepare(s)
 	defer stmt.Close()
 	sysLogger.LogErr(err)
+	if err != nil {
+		return tasks
+	}
 	rows, err := stmt.Query()
 	sysLogger.LogErr(err)
+	if err != nil {
+		return tasks
+	}
 	for rows.Next() {
 		t := new(Task)
 		rows.Scan(&t.ID, &t.Name, &t.Apiurl, &t.Event, &t.Stat, &t.CreateTime, &t.CreateUser, &t.RoutineCount, &t.ReRoutineCount, &t.ReSendTime, &t.RetryCount, &t.Timeout, &t.Desc)
@@ -209,8 +215,14 @@ func _selectAllTasks(confdb *sqlx.DB) *TaskIdMap {
 	s = "SELECT `id`, `schema`, `table`, `column`, `send`, `task_id` FROM `notify_field`"
 	stmt, err = confdb.Prepare(s)
 	sysLogger.LogErr(err)
+	if err != nil {
+		return tasks
+	}
 	rows, err = stmt.Query()
 	sysLogger.LogErr(err)
+	if err != nil {
+		return tasks
+	}
 	for rows.Next() {
 		f := new(NotifyField)
 		rows.Scan(&f.ID, &f.Schema, &f.Table, &f.Column, &f.Send, &f.TaskID)

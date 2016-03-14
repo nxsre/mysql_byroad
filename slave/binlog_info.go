@@ -69,6 +69,9 @@ func setConfig(confdb *sqlx.DB, key, value, desc string) (int64, error) {
 	var cnt int64
 	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM config WHERE key=?", key)
 	sysLogger.LogErr(err)
+	if err != nil {
+		return 0, err
+	}
 	var res sql.Result
 	if cnt == 0 {
 		res, err = confdb.Exec("INSERT INTO config(key, value, description) VALUES(?, ?, ?)", key, value, desc)

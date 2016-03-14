@@ -67,6 +67,9 @@ func (this *TaskStatic) Save(confdb *sqlx.DB) {
 		var cnt int64
 		err := confdb.Get(&cnt, "SELECT COUNT(*) FROM static WHERE `task_id`=?", taskid)
 		sysLogger.LogErr(err)
+		if err != nil {
+			return
+		}
 		if cnt == 0 {
 			_, err = confdb.Exec("INSERT INTO static(task_id, send_message_count, resend_message_count, send_success_count, send_failed_count) VALUES(?,?,?,?,?)", taskid, static.SendMessageCount, static.ReSendMessageCount, static.SendSuccessCount, static.SendFailedCount)
 			sysLogger.LogErr(err)

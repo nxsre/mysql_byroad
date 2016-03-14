@@ -169,7 +169,10 @@ func startReplication() {
 		c.Close()
 	}
 	streamer, err := syncer.StartSync(mysql.Position{binlogInfo.Filename, binlogInfo.Position})
-	sysLogger.LogErr(err)
+	if err != nil {
+		sysLogger.LogErr(err)
+		os.Exit(2)
+	}
 	timeout := time.Second
 	for running {
 		ev, err := streamer.GetEventTimeout(timeout)

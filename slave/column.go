@@ -73,10 +73,16 @@ func (this *ColumnManager) UpdateGetColumnNames(schema, table string) []string {
 	defer this.db.Close()
 	stmt, err := this.db.Prepare("SELECT COLUMN_NAME FROM columns WHERE table_schema = ? AND table_name = ?")
 	sysLogger.LogErr(err)
+	columnNames := []string{}
+	if err != nil {
+		return columnNames
+	}
 	defer stmt.Close()
 	rows, err := stmt.Query(schema, table)
 	sysLogger.LogErr(err)
-	columnNames := []string{}
+	if err != nil {
+		return columnNames
+	}
 	for rows.Next() {
 		var name string
 		rows.Scan(&name)
@@ -103,8 +109,10 @@ func (this *ColumnManager) getColumnsMap() {
 	sysLogger.LogErr(err)
 	nodisplay := getNoDisplaySchema()
 	rows, err := this.db.Query("SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM columns WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")")
-
 	sysLogger.LogErr(err)
+	if err != nil {
+		return
+	}
 	for rows.Next() {
 		var tableSchema, tableName, columnName string
 		rows.Scan(&tableSchema, &tableName, &columnName)
