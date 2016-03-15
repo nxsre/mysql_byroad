@@ -36,7 +36,7 @@
                 <div class="form-group navbar-form navbar-right">
                     <select class="form-control" id="client">
                         {%for client in clients%}
-                            <option>{{client}}</option>
+                            <option value="{{client.Schema}}">{{client.Desc}}</option>
                         {%endfor%}
                     </select>
                 </div>

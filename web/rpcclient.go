@@ -7,20 +7,22 @@ import (
 
 type RPCClient struct {
 	protocol string
-	schema   string
+	Schema   string
+	Desc     string
 }
 
-func NewRPCClient(protocol, schema string) *RPCClient {
+func NewRPCClient(protocol, schema, desc string) *RPCClient {
 	client := RPCClient{
 		protocol: protocol,
-		schema:   schema,
+		Schema:   schema,
+		Desc:     desc,
 	}
 
 	return &client
 }
 
 func (this *RPCClient) GetClient() (client *rpc.Client, err error) {
-	client, err = rpc.DialHTTP(this.protocol, this.schema)
+	client, err = rpc.DialHTTP(this.protocol, this.Schema)
 	return
 }
 

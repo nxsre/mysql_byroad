@@ -15,17 +15,20 @@ import (
 type ServiceSignal struct {
 	Code   string
 	Schema string
+	Desc   string
 }
 
 type ByRoad struct {
 	protocol string
 	schema   string
+	desc     string
 }
 
-func NewRPCServer(protocol, schema string) *ByRoad {
+func NewRPCServer(protocol, schema, desc string) *ByRoad {
 	byroad := ByRoad{
 		protocol: protocol,
 		schema:   schema,
+		desc:     desc,
 	}
 	return &byroad
 }
@@ -62,6 +65,7 @@ func (this *ByRoad) sendMessage(server, code string) error {
 	ss := ServiceSignal{
 		Code:   code,
 		Schema: this.schema,
+		Desc:   this.desc,
 	}
 	message, err := json.Marshal(ss)
 	if err != nil {

@@ -50,6 +50,7 @@ type RPCClientConfig struct {
 
 type RPCServerConfig struct {
 	Schema string
+	Desc   string
 }
 
 type OWLConfig struct {
@@ -148,8 +149,10 @@ func (this *Configer) GetRPCClients() []*RPCClientConfig {
 
 func (this *Configer) GetRPCServer() *RPCServerConfig {
 	schema := this.GetString("rpc_server", "schema")
+	desc := this.GetString("rpc_server", "description")
 	rc := RPCServerConfig{
 		Schema: schema,
+		Desc:   desc,
 	}
 	return &rc
 }

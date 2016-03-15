@@ -22,7 +22,7 @@ func NewRPCClientManager() *RPCClientManager {
 	}
 	clientsConfigs := configer.GetRPCClients()
 	for _, cc := range clientsConfigs {
-		manager.AddClient(cc.Schema)
+		manager.AddClient(cc.Schema, cc.Schema)
 	}
 
 	return &manager
@@ -32,7 +32,7 @@ func (this *RPCClientManager) GetClient(schema string) *RPCClient {
 	var client *RPCClient
 	for e := this.clients.Front(); e != nil; e = e.Next() {
 		client = e.Value.(*RPCClient)
-		if client.schema == schema {
+		if client.Schema == schema {
 			return client
 		}
 	}
@@ -47,8 +47,8 @@ func (this *RPCClientManager) GetClients() []*RPCClient {
 	return cls
 }
 
-func (this *RPCClientManager) AddClient(schema string) {
-	rpcclient := NewRPCClient("tcp", schema)
+func (this *RPCClientManager) AddClient(schema string, desc string) {
+	rpcclient := NewRPCClient("tcp", schema, desc)
 	this.clients.PushBack(rpcclient)
 }
 
@@ -56,7 +56,7 @@ func (this *RPCClientManager) RemoveClient(schema string) {
 	var client *RPCClient
 	for e := this.clients.Front(); e != nil; e = e.Next() {
 		client = e.Value.(*RPCClient)
-		if client.schema == schema {
+		if client.Schema == schema {
 			this.clients.Remove(e)
 			break
 		}
@@ -66,6 +66,7 @@ func (this *RPCClientManager) RemoveClient(schema string) {
 type ServiceSignal struct {
 	Code   string
 	Schema string
+	Desc   string
 }
 
 func (this *RPCClientManager) HandleSignal(service string) error {
@@ -97,7 +98,7 @@ func (this *RPCClientManager) handleClient(conn net.Conn) error {
 	ss := new(ServiceSignal)
 	json.Unmarshal(message, &ss)
 	if ss.Code == "0" {
-		this.AddClient(ss.Schema)
+		this.AddClient(ss.Schema, ss.Desc)
 	} else if ss.Code == "1" {
 		this.RemoveClient(ss.Schema)
 	}

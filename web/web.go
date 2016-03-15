@@ -100,11 +100,7 @@ func StartServer() {
 			}
 			ctx.Data["username"] = username.(string)
 			clients := rpcManager.GetClients()
-			schemas := make([]string, 0, 10)
-			for _, client := range clients {
-				schemas = append(schemas, client.schema)
-			}
-			ctx.Data["clients"] = schemas
+			ctx.Data["clients"] = clients
 		}
 	})
 
@@ -115,10 +111,8 @@ func StartServer() {
 	m.Get("/addtask", addTaskHTML)
 	m.Get("/task", tasklist)
 	m.Get("/taskmodify/:taskid", modifytask)
-	//m.Get("/config", configlist)
 	m.Get("/log", loglist)
 	m.Get("/log/download/:filename", downloadlog)
-	m.Get("/clients", getRPCClients)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
@@ -522,23 +516,6 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	return string(body)
 }
 
-/*
-func configlist(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "admin") {
-		ctx.HTML(403, "403")
-		return
-	}
-	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-    if rpcclient == nil {
-        123
-    }
-	configlist, _ := rpcclient.GetConfigMap()
-	ctx.Data["configlist"] = configlist
-
-	ctx.HTML(200, "configlist")
-}
-*/
-
 func loglist(ctx *macaron.Context, sess session.Store) {
 	if !checkAuth(ctx, sess, "admin") {
 		ctx.HTML(403, "403")
@@ -611,19 +588,6 @@ func FieldExists(task *Task, field *NotifyField) bool {
 		}
 	}
 	return false
-}
-
-func getRPCClients(ctx *macaron.Context, sess session.Store) string {
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
-	clients := rpcManager.GetClients()
-	schemas := make([]string, 0, 10)
-	for _, client := range clients {
-		schemas = append(schemas, client.schema)
-	}
-	body, _ := json.Marshal(schemas)
-	return string(body)
 }
 
 func getLogList(client string) ([]string, error) {

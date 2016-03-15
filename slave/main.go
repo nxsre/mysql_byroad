@@ -118,7 +118,7 @@ func StartSlave() {
 	logList.Serve()
 
 	rpcConfiger := configer.GetRPCServer()
-	rpcserver = NewRPCServer("tcp", rpcConfiger.Schema)
+	rpcserver = NewRPCServer("tcp", rpcConfiger.Schema, rpcConfiger.Desc)
 	rpcserver.start()
 	startChan <- true
 	startTime = time.Now()
