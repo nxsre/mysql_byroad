@@ -149,7 +149,7 @@ func (this *Configer) GetRPCClients() []*RPCClientConfig {
 
 func (this *Configer) GetRPCServer() *RPCServerConfig {
 	schema := this.GetString("rpc_server", "schema")
-	desc := this.GetString("rpc_server", "description")
+	desc := this.GetString("rpc_server", "description", schema)
 	rc := RPCServerConfig{
 		Schema: schema,
 		Desc:   desc,
