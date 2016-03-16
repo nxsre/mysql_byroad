@@ -15,6 +15,8 @@ import (
 	"os"
 	"path/filepath"
 
+	"sort"
+
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/pongo2"
 	"github.com/go-macaron/session"
@@ -524,6 +526,7 @@ func loglist(ctx *macaron.Context, sess session.Store) {
 	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
 	if rpcclient != nil {
 		logList, _ := rpcclient.GetLogList()
+		sort.Sort(sort.Reverse(sort.StringSlice(logList.Logs)))
 		ctx.Data["loglist"] = logList.Logs
 		ctx.Data["Host"] = logList.Host
 	}
