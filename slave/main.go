@@ -59,7 +59,7 @@ func StartSlave() {
 			default:
 				fmt.Println(e)
 			}
-			os.Exit(2)
+			os.Exit(1)
 		}
 	}()
 	var err error
@@ -150,7 +150,7 @@ func startReplication() {
 	if err != nil {
 		sysLogger.LogErr(err)
 		rpcserver.deregister(configer.GetString("rpc", "schema"))
-		os.Exit(2)
+		os.Exit(1)
 	}
 	filename := configer.GetString("binlog", "filename")
 	pos := uint32(configer.GetInt("binlog", "position"))
@@ -174,7 +174,7 @@ func startReplication() {
 	if err != nil {
 		sysLogger.LogErr(err)
 		rpcserver.deregister(configer.GetString("rpc", "schema"))
-		os.Exit(2)
+		os.Exit(1)
 	}
 	timeout := time.Second
 	for running {
@@ -185,7 +185,7 @@ func startReplication() {
 			} else {
 				rpcserver.deregister(configer.GetString("rpc", "schema"))
 				sysLogger.PanicErr(err)
-				os.Exit(2)
+				os.Exit(1)
 			}
 		}
 		switch e := ev.Event.(type) {
