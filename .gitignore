@@ -12,5 +12,5 @@ tags
 todo.md
 slave-main
 slave-web
-slave-src.tar.gz
-slave-bin.tar.gz
+*.tar.gz
+*.sh
