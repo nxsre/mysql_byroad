@@ -20,7 +20,12 @@
       <td>{{task.ID}}</td>
       <td>{{task.Name}}</td>
       <td>{{task.Desc}}</td>
-      <td>{{task.Static.SendMessageCount}}/{{task.Static.ReSendMessageCount}}/{{task.Static.SendSuccessCount}}/{{task.Static.SendFailedCount}}</td>
+      <td>
+        <span class="label label-info">{{task.Static.SendMessageCount}}</span>
+        <span class="label label-warning">{{task.Static.ReSendMessageCount}}</span>
+        <span class="label label-success">{{task.Static.SendSuccessCount}}</span>
+        <span class="label label-danger">{{task.Static.SendFailedCount}}</span>
+      </td>
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
       <td>{{task.QueueLength}}/{{task.ReQueueLength}}</td>
       <td>

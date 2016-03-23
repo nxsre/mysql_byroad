@@ -149,7 +149,7 @@ func startReplication() {
 	err := syncer.RegisterSlave(mc.Host, uint16(mc.Port), mc.Username, mc.Password)
 	if err != nil {
 		sysLogger.LogErr(err)
-		rpcserver.deregister(configer.GetString("rpc", "schema"))
+		sysClean()
 		os.Exit(1)
 	}
 	filename := configer.GetString("binlog", "filename")
@@ -173,7 +173,7 @@ func startReplication() {
 	streamer, err := syncer.StartSync(mysql.Position{binlogInfo.Filename, binlogInfo.Position})
 	if err != nil {
 		sysLogger.LogErr(err)
-		rpcserver.deregister(configer.GetString("rpc", "schema"))
+		sysClean()
 		os.Exit(1)
 	}
 	timeout := time.Second
@@ -183,7 +183,7 @@ func startReplication() {
 			if err == replication.ErrGetEventTimeout {
 				continue
 			} else {
-				rpcserver.deregister(configer.GetString("rpc", "schema"))
+				sysClean()
 				sysLogger.PanicErr(err)
 				os.Exit(1)
 			}
@@ -236,6 +236,11 @@ func cleanUp() {
 	sysLogger.Log("stop")
 	<-eventDoneChan
 	sysLogger.Log("event chan done")
+	sysClean()
+	cleanUpDone <- true
+}
+
+func sysClean() {
 	tickerManager.StopAll()
 	binlogInfo.Set(confdb)
 	taskStatic.Save(confdb)
@@ -245,5 +250,4 @@ func cleanUp() {
 	queueManager.Clean()
 	confdb.Close()
 	rpcserver.deregister(configer.GetString("rpc", "schema"))
-	cleanUpDone <- true
 }
