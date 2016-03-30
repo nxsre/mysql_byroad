@@ -5,9 +5,9 @@
       <th>ID</th>
       <th>名字</th>
       <th>描述</th>
-      <th>已发/重发/成功/失败消息数</th>
+      <th>成功/失败消息数</th>
       <th>推送/重推并发数</th>
-      <th>推送/重推消息数量</th>
+      <th>推送/重推队列</th>
       <th>状态</th>
       <th>订阅</th>
       <th>操作</th>
@@ -21,14 +21,10 @@
       <td>{{task.Name}}</td>
       <td>{{task.Desc}}</td>
       <td>
-        <div class="col-md-12">
-        <span class="label label-info">{{task.Static.SendMessageCount}}</span>
-        <span class="label label-warning">{{task.Static.ReSendMessageCount}}</span>
-        </div>
-        <div class="col-md-12">
-        <span class="label label-success">{{task.Static.SendSuccessCount}}</span>
-        <span class="label label-danger">{{task.Static.SendFailedCount}}</span>
-        </div>
+        <div data-toggle="tooltip" data-placement="top" title="发送:{{task.Static.SendMessageCount}} 重发:{{task.Static.ReSendMessageCount}} 成功:{{task.Static.SendSuccessCount}} 失败:{{task.Static.SendFailedCount}}">
+            <div class="clearfix"><span class="label label-success">{{task.Static.SendSuccessCount}}</span></div>
+            <div class="clearfix"><span class="label label-danger">{{task.Static.SendFailedCount}}</span></div>
+        <div>
       </td>
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
       <td>{{task.QueueLength}}/{{task.ReQueueLength}}</td>
