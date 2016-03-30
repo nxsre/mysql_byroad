@@ -22,8 +22,8 @@
       <td>{{task.Desc}}</td>
       <td>
         <div data-toggle="tooltip" data-placement="top" title="发送:{{task.Static.SendMessageCount}} 重发:{{task.Static.ReSendMessageCount}} 成功:{{task.Static.SendSuccessCount}} 失败:{{task.Static.SendFailedCount}}">
-            <div class="clearfix"><span class="label label-success">{{task.Static.SendSuccessCount}}</span></div>
-            <div class="clearfix"><span class="label label-danger">{{task.Static.SendFailedCount}}</span></div>
+            <span class="label label-success">{{task.Static.SendSuccessCount}}</span>
+            <span class="label label-danger">{{task.Static.SendFailedCount}}</span>
         <div>
       </td>
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
