@@ -67,3 +67,8 @@ type LogList struct {
 	Host string
 	Path string
 }
+
+type BinlogInfo struct {
+	Filename string
+	Position uint32
+}

@@ -218,3 +218,23 @@ func (this *RPCClient) GetLogList() (logList *LogList, err error) {
 	err = client.Call("ByRoad.GetLogList", "", &logList)
 	return
 }
+
+func (this *RPCClient) GetMasterStatus() (binfo *BinlogInfo, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("ByRoad.GetMasterStatus", "", &binfo)
+	return
+}
+
+func (this *RPCClient) GetCurrentBinlogInfo() (binfo *BinlogInfo, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("ByRoad.GetCurrentBinlogInfo", "", &binfo)
+	return
+}

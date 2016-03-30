@@ -275,6 +275,10 @@ func status(ctx *macaron.Context, sess session.Store) {
 		ctx.Data["routineNumber"] = st["routineNumber"]
 		status, _ := rpcclient.GetBinlogStatics()
 		ctx.Data["Status"] = status
+		masterStatus, _ := rpcclient.GetMasterStatus()
+		currentBinlogInfo, _ := rpcclient.GetCurrentBinlogInfo()
+		ctx.Data["MasterStatus"] = masterStatus
+		ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
 	}
 	ctx.HTML(200, "status")
 }

@@ -2,10 +2,12 @@ package slave
 
 import (
 	"database/sql"
+	"fmt"
 	"strconv"
 	"sync"
 
 	"github.com/jmoiron/sqlx"
+	"github.com/siddontang/go-mysql/client"
 )
 
 /*
@@ -94,4 +96,21 @@ func getConfig(confdb *sqlx.DB, key string) (string, error) {
 	var value string
 	err := confdb.Get(&value, "SELECT value FROM config WHERE key=?", key)
 	return value, err
+}
+
+func GetMasterStatus() (binfo *BinlogInfo) {
+	mc := configer.GetMysql()
+	addr := fmt.Sprintf("%s:%d", mc.Host, mc.Port)
+	c, err := client.Connect(addr, mc.Username, mc.Password, "")
+	sysLogger.LogErr(err)
+	rr, err := c.Execute("SHOW MASTER STATUS")
+	sysLogger.LogErr(err)
+	filename, _ := rr.GetString(0, 0)
+	position, _ := rr.GetInt(0, 1)
+	pos := uint32(position)
+	c.Close()
+	binfo = new(BinlogInfo)
+	binfo.Filename = filename
+	binfo.Position = pos
+	return
 }

@@ -11,6 +11,14 @@
         <td>{{Duration}}</td>
     </tr>
     <tr>
+        <td>数据库binlog信息</td>
+        <td>{{MasterStatus.Filename}}--{{MasterStatus.Position}}</td>
+    </tr>
+    <tr>
+        <td>当前处理binlog信息</td>
+        <td>{{CurrentBinlogInfo.Filename}}--{{CurrentBinlogInfo.Position}}</td>
+    </tr>
+    <tr>
         <td>系统总协程数</td>
         <td>{{routineNumber}}</td>
     </tr>

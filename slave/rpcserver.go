@@ -241,3 +241,13 @@ func (b *ByRoad) GetLogList(username string, logs *LogList) error {
 	*logs = *(logList.GetLogList())
 	return nil
 }
+
+func (b *ByRoad) GetMasterStatus(username string, binfo *BinlogInfo) error {
+	*binfo = *GetMasterStatus()
+	return nil
+}
+
+func (b *ByRoad) GetCurrentBinlogInfo(username string, binfo *BinlogInfo) error {
+	*binfo = *binlogInfo
+	return nil
+}
