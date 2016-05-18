@@ -107,7 +107,7 @@
     function addRightDiv(schema, table) {
       var field = schema + '-' + table;
       var data = '<div class="col-md-12 right-field-div" id="' + field + '">\
-      <h3><span class="label label-primary">' + schema + '.' + table + '</span> \
+      <h3><input class="" onchange="changeFieldValue(this)" value="' + schema + '.' + table + '"></input> \
       <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">\
       <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>\
       </a>\
@@ -122,6 +122,15 @@
       var field = schema + '-' + table;
       var d = document.getElementById(field);
       return $(d).find(':text').is($(':text[value=' + column + ']'));
+    }
+    function changeFieldValue(obj) {
+      var newVal = $(obj).val();
+      var pardiv = $(obj).parents(".right-field-div")[0];
+      var hiddenobj = $(pardiv).find(":hidden");
+      $(hiddenobj).each(function(){
+        var fieldVal = $(this).prev().val();
+        $(this).val(newVal + "." + fieldVal);
+      });
     }
     function addTask() {
       if(confirm('确认添加？')){
