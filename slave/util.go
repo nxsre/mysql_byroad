@@ -1,6 +1,7 @@
 package slave
 
 import "reflect"
+import "strings"
 
 func isEqual(v1, v2 interface{}) bool {
 	return reflect.DeepEqual(v1, v2)
@@ -18,4 +19,25 @@ func genTaskQueueName(t *Task) string {
 */
 func genTaskReQueueName(t *Task) string {
 	return "re:" + configer.GetRPCServer().Schema + t.Name
+}
+
+func isTableMatch(tab1, tab2 string) bool {
+	return isMatch(tab1, tab2)
+}
+
+func isSchemaMatch(sch1, sch2 string) bool {
+	return isMatch(sch1, sch2)
+}
+
+/*
+如果s1有后缀*，则判断s2是否是能匹配
+*/
+func isMatch(s1, s2 string) bool {
+	if s1 == s2 {
+		return true
+	}
+	if strings.HasSuffix(s1, "*") && strings.HasPrefix(s2, s2[:len(s2)-1]) {
+		return true
+	}
+	return false
 }

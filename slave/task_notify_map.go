@@ -44,6 +44,22 @@ func (this *NotifyTaskMap) GetNotifyTaskIDs(schema, table, column string) []int6
 	if cmap != nil && cmap[schema] != nil && cmap[schema][table] != nil && cmap[schema][table][column] != nil {
 		return cmap[schema][table][column]
 	}
+	/*if cmap != nil && cmap[schema] != nil {
+		for k, _ := range cmap[schema] {
+			if isTableMatch(k, table) && cmap[schema][k][column] != nil {
+				return cmap[schema][k][column]
+			}
+		}
+	}*/
+	for s, smap := range cmap {
+		if isSchemaMatch(s, schema) {
+			for k, _ := range smap {
+				if isTableMatch(k, table) && cmap[s][k][column] != nil {
+					return cmap[s][k][column]
+				}
+			}
+		}
+	}
 	return nil
 }
 
@@ -86,6 +102,22 @@ func (this *NotifyTaskMap) InNotifyTable(schema, table string) bool {
 	if tmap != nil && tmap[schema] != nil && tmap[schema][table] != nil {
 		return true
 	}
+	/*	if tmap != nil && tmap[schema] != nil {
+		for k, _ := range tmap[schema] {
+			if isTableMatch(k, table) {
+				return true
+			}
+		}
+	}*/
+	for s, smap := range tmap {
+		if isSchemaMatch(s, schema) {
+			for k, _ := range smap {
+				if isTableMatch(k, table) {
+					return true
+				}
+			}
+		}
+	}
 	return false
 }
 
@@ -95,6 +127,22 @@ func (this *NotifyTaskMap) InNotifyField(schema, table, column string) bool {
 	cmap := this.notifyTasks
 	if cmap != nil && cmap[schema] != nil && cmap[schema][table] != nil && cmap[schema][table][column] != nil {
 		return true
+	}
+	/*	if cmap != nil && cmap[schema] != nil {
+		for k, _ := range cmap[schema] {
+			if isTableMatch(k, table) && cmap[schema][k][column] != nil {
+				return true
+			}
+		}
+	}*/
+	for s, smap := range cmap {
+		if isSchemaMatch(s, schema) {
+			for k, _ := range smap {
+				if isTableMatch(k, table) && cmap[s][k][column] != nil {
+					return true
+				}
+			}
+		}
 	}
 	return false
 }

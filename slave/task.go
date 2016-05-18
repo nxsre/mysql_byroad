@@ -35,7 +35,7 @@ func initNotifyAPIDB(confdb *sqlx.DB) {
 
 func (t *Task) GetField(schema, table, column string) *NotifyField {
 	for _, field := range t.Fields {
-		if field.Schema == schema && field.Table == table && field.Column == column {
+		if isSchemaMatch(field.Schema, schema) && isTableMatch(field.Table, table) && field.Column == column {
 			return field
 		}
 	}

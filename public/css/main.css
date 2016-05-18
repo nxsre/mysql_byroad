@@ -55,3 +55,7 @@ body {
 .right-field-div {
   padding: 20px;
 }
+
+.span-small {
+  font-size: 0.6em;
+}
