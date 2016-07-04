@@ -22,28 +22,29 @@ backend_env:
 
 front_env:
 	cd ${WORKPATH}/public && npm install
-
+init-build-dir:
+	mkdir -p build
 slaveserver:
-	go build -tags "main" -o slave-main
+	cd slave/bin &&  go build -tags "main" -o ${WORKPATH}/build/slave-main
 
 webserver:
-	go build -tags "web" -o slave-web
+	cd web/bin/ && go build -tags "web" -o ${WORKPATH}/build/slave-web
 
-build:slaveserver webserver
+build:init-build-dir slaveserver webserver
 
 
 run:
-	${WORKPATH}/slave-web > slave-web.log 2>&1&
-	${WORKPATH}/slave-main > slave-main.log 2>&1&
+	${WORKPATH}/build/slave-web > ${WORKPATH}/build/slave-web.log 2>&1&
+	${WORKPATH}/build/slave-main > ${WORKPATH}/build/slave-main.log 2>&1&
 
 runmain:
-	${WORKPATH}/slave-main > slave-main.log 2>&1&
+	${WORKPATH}/build/slave-main > ${WORKPATH}/build/slave-main.log 2>&1&
 
 runweb:
-	${WORKPATH}/slave-web > slave-web.log 2>&1&
+	${WORKPATH}/build/slave-web > ${WORKPATH}/build/slave-web.log 2>&1&
 
 clean:
-	@rm *.log *.tar.gz
+	rm -rf *.log *.tar.gz build
 tag:
 	@gotags -R ${WORKPATH}/*.go > ${WORKPATH}/tags
 
@@ -54,6 +55,19 @@ tarsource:
 	tar -czf slave-src.tar.gz *.go gorpool slave web common goticker templates public Makefile
 
 tarbin:build
-	tar -czf slave-bin.tar.gz slave-main slave-web templates public
+	tar -czf slave-bin.tar.gz build/slave-main build/slave-web templates public
 
 
+savedep:
+	hg rm  ${WORKPATH}/slave/bin/Godeps
+	hg rm  ${WORKPATH}/web/bin/Godeps
+	hg ci -m "romove dep defs"
+	cd web/bin/ && godep save 
+	cd ${WORKPATH}/slave/bin/  &&  godep save
+	hg add ${WORKPATH}/slave/bin/Godeps
+	hg add  ${WORKPATH}/web/bin/Godeps
+	hg ci -m "update dep defs"
+
+restoredep:
+	cd web/bin/ && godep restore
+	cd ${WORKPATH}/slave/bin/ && godep restore

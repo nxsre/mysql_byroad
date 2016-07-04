@@ -1,0 +1,82 @@
+{
+	"ImportPath": "mysql_byroad/slave/bin",
+	"GoVersion": "go1.6",
+	"Deps": [
+		{
+			"ImportPath": "github.com/Unknwon/goconfig",
+			"Rev": "5f601ca6ef4d5cea8d52be2f8b3a420ee4b574a5"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/internal",
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
+		},
+		{
+			"ImportPath": "github.com/garyburd/redigo/redis",
+			"Rev": "535138d7bcd717d6531c701ef5933d98b1866257"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-188-g66312f7",
+			"Rev": "66312f7fe2678aa0f5ec770f96702f4c4ec5aa8e"
+		},
+		{
+			"ImportPath": "github.com/jmoiron/sqlx",
+			"Comment": "sqlx-v1.1-61-g398dd58",
+			"Rev": "398dd5876282499cdfd4cb8ea0f31a672abe9495"
+		},
+		{
+			"ImportPath": "github.com/juju/errors",
+			"Rev": "b2c7a7da5b2995941048f60146e67702a292e468"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.1.0-67-g7204887",
+			"Rev": "7204887cf3a42df1cfaa5505dc3a3427f6dded8b"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "v1.0.0",
+			"Rev": "f9ab0dce87d815821e221626b772e3475a0d2749"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/client",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/mysql",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/packet",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/replication",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go/hack",
+			"Rev": "354e14e6c093c661abb29fd28403b3c19cff5514"
+		},
+		{
+			"ImportPath": "mysql_byroad/model",
+			"Comment": "null-112",
+			"Rev": "040cbd5dd1ee2ab7fc49aa86f2b10ffd321a4a02"
+		},
+		{
+			"ImportPath": "mysql_byroad/gorpool",
+			"Comment": "null-112",
+			"Rev": "040cbd5dd1ee2ab7fc49aa86f2b10ffd321a4a02"
+		},
+		{
+			"ImportPath": "mysql_byroad/goticker",
+			"Comment": "null-112",
+			"Rev": "040cbd5dd1ee2ab7fc49aa86f2b10ffd321a4a02"
+		},
+		{
+			"ImportPath": "mysql_byroad/slave",
+			"Comment": "null-112",
+			"Rev": "040cbd5dd1ee2ab7fc49aa86f2b10ffd321a4a02"
+		}
+	]
+}

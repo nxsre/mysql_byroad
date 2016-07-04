@@ -2,10 +2,10 @@ package slave
 
 import (
 	"encoding/json"
-	"mysql_byroad/common"
 	"time"
-
 	"github.com/garyburd/redigo/redis"
+	"mysql_byroad/common"
+	"mysql_byroad/model"
 )
 
 /*
@@ -130,7 +130,7 @@ func (m *QueueManger) Len(name string) int64 {
 /*
 获取任务的推送队列和重推队列的大小
 */
-func (m *QueueManger) TaskQueueLen(t *Task) []int64 {
+func (m *QueueManger) TaskQueueLen(t *model.Task) []int64 {
 	conn := m.redisPool.Get()
 	defer conn.Close()
 	name := genTaskQueueName(t)
@@ -158,7 +158,7 @@ func (m *QueueManger) TaskQueueLen(t *Task) []int64 {
 /*
 获取所有任务的推送队列和重推队列的大小
 */
-func (m *QueueManger) TasksQueueLen(ts []*Task) [][]int64 {
+func (m *QueueManger) TasksQueueLen(ts []*model.Task) [][]int64 {
 	conn := m.redisPool.Get()
 	defer conn.Close()
 	res := make([][]int64, 0, 100)

@@ -3,6 +3,7 @@ package slave
 import (
 	"database/sql"
 	"fmt"
+	"mysql_byroad/model"
 	"mysql_byroad/common"
 	"sort"
 	"strings"
@@ -106,9 +107,28 @@ func (this *ColumnManager) getColumnsMap() {
 	var err error
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/information_schema", this.username, this.password, this.host, this.port)
 	this.db, err = sql.Open("mysql", dsn)
-	sysLogger.LogErr(err)
+	if err != nil {
+		sysLogger.LogErr(err)
+		return
+	}
+
+	sqlStr := "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM columns "
 	nodisplay := getNoDisplaySchema()
-	rows, err := this.db.Query("SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM columns WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")")
+	if nodisplay != "" {
+		sqlStr +=  "WHERE TABLE_SCHEMA NOT IN (?)"
+	}
+	stm, err := this.db.Prepare(sqlStr)
+	if err != nil {
+		sysLogger.LogErr(err)
+		return
+	}
+	var rows *sql.Rows
+	if nodisplay != "" {
+		rows, err = stm.Query(nodisplay)
+	} else {
+		rows, err = stm.Query()
+	}
+
 	sysLogger.LogErr(err)
 	if err != nil {
 		return
@@ -128,14 +148,14 @@ func (this *ColumnManager) getColumnsMap() {
 	this.db.Close()
 }
 
-func getOrderedColumnsList(columns columnMap) common.OrderedSchemas {
-	colslist := make(common.OrderedSchemas, 0, 10)
+func getOrderedColumnsList(columns columnMap) model.OrderedSchemas {
+	colslist := make(model.OrderedSchemas, 0, 10)
 	for schema, tables := range columns {
-		os := new(common.OrderedSchema)
+		os := new(model.OrderedSchema)
 		os.Schema = schema
-		os.OrderedTables = make([]*common.OrderedTable, 0, 10)
+		os.OrderedTables = make([]*model.OrderedTable, 0, 10)
 		for table, columns := range tables {
-			ot := new(common.OrderedTable)
+			ot := new(model.OrderedTable)
 			ot.Table = table
 			ot.Columns = make([]string, 0, 10)
 			for _, column := range columns {
@@ -147,12 +167,12 @@ func getOrderedColumnsList(columns columnMap) common.OrderedSchemas {
 	}
 	sort.Sort(colslist)
 	for _, tab := range colslist {
-		sort.Sort(common.OrderedTables(tab.OrderedTables))
+		sort.Sort(model.OrderedTables(tab.OrderedTables))
 	}
 	return colslist
 }
 
-func (this *ColumnManager) GetOrderedColumns() common.OrderedSchemas {
+func (this *ColumnManager) GetOrderedColumns() model.OrderedSchemas {
 	columns := this.columns
 	this.RLock()
 	defer this.RUnlock()

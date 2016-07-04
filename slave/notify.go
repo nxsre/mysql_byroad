@@ -4,8 +4,9 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"io/ioutil"
-	"mysql_byroad/common"
+	"mysql_byroad/model"
 	"net/http"
 	"time"
 )
@@ -30,15 +31,15 @@ func notifyRoutine(name string) {
 		time.Sleep(time.Millisecond * 10) //10 Millisecond?
 		return
 	}
-	evt := new(common.NotifyEvent)
+	evt := new(model.NotifyEvent)
 	err := json.Unmarshal(ele.([]byte), evt)
 	if err != nil {
 		sysLogger.Log(err.Error())
 		owl.LogThisException(err.Error())
 	}
 	ret, _ := sendMessage(evt)
-	totalStatic.IncSendMessageCount()
-	taskStatic.IncSendMessageCount(evt.TaskID)
+	totalStatistic.IncSendMessageCount()
+	taskStatistics.IncSendMessageCount(evt.TaskID)
 	if ret != "success" {
 		task := GetTask(evt.TaskID)
 		if task == nil {
@@ -46,8 +47,8 @@ func notifyRoutine(name string) {
 		}
 		queueManager.Enqueue(genTaskReQueueName(task), evt)
 	} else {
-		totalStatic.IncSendSuccessCount()
-		taskStatic.IncSendSuccessCount(evt.TaskID)
+		totalStatistic.IncSendSuccessCount()
+		taskStatistics.IncSendSuccessCount(evt.TaskID)
 	}
 }
 
@@ -62,7 +63,7 @@ func notifyRetryRoutine(name string) {
 		time.Sleep(time.Millisecond * 10)
 		return
 	}
-	evt := new(common.NotifyEvent)
+	evt := new(model.NotifyEvent)
 	err := json.Unmarshal(ele.([]byte), evt)
 	if err != nil {
 		sysLogger.Log(err.Error())
@@ -74,16 +75,16 @@ func notifyRetryRoutine(name string) {
 	}
 	evt.RetryCount++
 	ret, err := sendMessage(evt)
-	totalStatic.IncReSendMessageCount()
-	taskStatic.IncReSendMessageCount(evt.TaskID)
+	totalStatistic.IncReSendMessageCount()
+	taskStatistics.IncReSendMessageCount(evt.TaskID)
 	if ret != "success" {
 		task := GetTask(evt.TaskID)
 		if task == nil {
 			return
 		}
 		if evt.RetryCount >= task.RetryCount {
-			totalStatic.IncSendFailedCount()
-			taskStatic.IncSendFailedCount(evt.TaskID)
+			totalStatistic.IncSendFailedCount()
+			taskStatistics.IncSendFailedCount(evt.TaskID)
 			if err != nil {
 				logNotifyMessage(evt, err)
 			} else {
@@ -93,8 +94,8 @@ func notifyRetryRoutine(name string) {
 		}
 		queueManager.Enqueue(name, evt)
 	} else {
-		totalStatic.IncSendSuccessCount()
-		taskStatic.IncSendSuccessCount(evt.TaskID)
+		totalStatistic.IncSendSuccessCount()
+		taskStatistics.IncSendSuccessCount(evt.TaskID)
 	}
 }
 
@@ -102,7 +103,7 @@ func notifyRetryRoutine(name string) {
 比较消息上一次的推送时间，判断消息是否推送
 */
 
-func isSend(e *common.NotifyEvent) bool {
+func isSend(e *model.NotifyEvent) bool {
 	dur := time.Now().Sub(e.LastSendTime)
 	task := GetTask(e.TaskID)
 	if task == nil {
@@ -114,9 +115,10 @@ func isSend(e *common.NotifyEvent) bool {
 /*
 发送消息
 */
-func sendMessage(evt *common.NotifyEvent) (string, error) {
+func sendMessage(evt *model.NotifyEvent) (string, error) {
 	evt.LastSendTime = time.Now()
 	msg, _ := json.Marshal(evt)
+	fmt.Printf("%+v\n", evt)
 	body := bytes.NewBuffer(msg)
 	task := GetTask(evt.TaskID)
 	if task == nil {
@@ -137,6 +139,6 @@ func sendMessage(evt *common.NotifyEvent) (string, error) {
 /*
 记录消息推送失败的日志
 */
-func logNotifyMessage(msg *common.NotifyEvent, reason error) {
+func logNotifyMessage(msg *model.NotifyEvent, reason error) {
 	eventLogger.Log(msg, reason)
 }

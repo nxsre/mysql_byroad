@@ -1,7 +1,7 @@
 package web
 
 import (
-	"mysql_byroad/common"
+	"mysql_byroad/model"
 	"net/rpc"
 )
 
@@ -26,7 +26,7 @@ func (this *RPCClient) GetClient() (client *rpc.Client, err error) {
 	return
 }
 
-func (this *RPCClient) GetTask(taskid int64) (task *Task, err error) {
+func (this *RPCClient) GetTask(taskid int64) (task *model.Task, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -36,7 +36,7 @@ func (this *RPCClient) GetTask(taskid int64) (task *Task, err error) {
 	return
 }
 
-func (this *RPCClient) GetTasks(username string) (tasks []*Task, err error) {
+func (this *RPCClient) GetTasks(username string) (tasks []*model.Task, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -46,7 +46,7 @@ func (this *RPCClient) GetTasks(username string) (tasks []*Task, err error) {
 	return
 }
 
-func (this *RPCClient) GetAllTasks(username string) (tasks []*Task, err error) {
+func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -56,7 +56,7 @@ func (this *RPCClient) GetAllTasks(username string) (tasks []*Task, err error) {
 	return
 }
 
-func (this *RPCClient) AddTask(task *Task) (status string, err error) {
+func (this *RPCClient) AddTask(task *model.Task) (status string, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return "", err
@@ -76,7 +76,7 @@ func (this *RPCClient) DeleteTask(taskid int64) (status string, err error) {
 	return
 }
 
-func (this *RPCClient) UpdateTask(task *Task) (status string, err error) {
+func (this *RPCClient) UpdateTask(task *model.Task) (status string, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return "", err
@@ -86,7 +86,7 @@ func (this *RPCClient) UpdateTask(task *Task) (status string, err error) {
 	return
 }
 
-func (this *RPCClient) ChangeTaskStat(task *Task) (status string, err error) {
+func (this *RPCClient) ChangeTaskStat(task *model.Task) (status string, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return "", err
@@ -96,7 +96,7 @@ func (this *RPCClient) ChangeTaskStat(task *Task) (status string, err error) {
 	return
 }
 
-func (this *RPCClient) GetColumns() (columns common.OrderedSchemas, err error) {
+func (this *RPCClient) GetColumns() (columns model.OrderedSchemas, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -106,7 +106,7 @@ func (this *RPCClient) GetColumns() (columns common.OrderedSchemas, err error) {
 	return
 }
 
-func (this *RPCClient) GetTaskColumns(task *Task) (columns map[string]map[string][]*NotifyField, err error) {
+func (this *RPCClient) GetTaskColumns(task *model.Task) (columns map[string]map[string]model.NotifyFields, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -127,7 +127,7 @@ func (this *RPCClient) GetConfigMap() (configs []*Config, err error) {
 	return
 }
 */
-func (this *RPCClient) TaskExists(task *Task) (bool, error) {
+func (this *RPCClient) TaskExists(task *model.Task) (bool, error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return true, err
@@ -149,7 +149,7 @@ func (this *RPCClient) TaskNameExists(name string) (bool, error) {
 	return reply, err
 }
 
-func (this *RPCClient) TasksQueueLen(tasks []*Task) (results [][]int64, err error) {
+func (this *RPCClient) TasksQueueLen(tasks []*model.Task) (results [][]int64, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -159,7 +159,7 @@ func (this *RPCClient) TasksQueueLen(tasks []*Task) (results [][]int64, err erro
 	return
 }
 
-func (this *RPCClient) UpdateColumns() (columns common.OrderedSchemas, err error) {
+func (this *RPCClient) UpdateColumns() (columns model.OrderedSchemas, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
@@ -179,37 +179,37 @@ func (this *RPCClient) GetStatus() (status map[string]interface{}, err error) {
 	return
 }
 
-func (this *RPCClient) GetBinlogStatics() (statics *[]*BinlogStatic, err error) {
+func (this *RPCClient) GetBinlogStatistics() (statistics *[]*model.BinlogStatistic, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return nil, err
 	}
 	defer client.Close()
-	err = client.Call("ByRoad.GetBinlogStatics", "", &statics)
+	err = client.Call("ByRoad.GetBinlogStatistics", "", &statistics)
 	return
 }
 
-func (this *RPCClient) GetTaskStatic(taskid int64) (static *Static, err error) {
+func (this *RPCClient) GetTaskStatistic(taskid int64) (statistic *model.Statistic, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
 	}
 	defer client.Close()
-	err = client.Call("ByRoad.GetTaskStatic", taskid, &static)
+	err = client.Call("ByRoad.GetTaskStatistic", taskid, &statistic)
 	return
 }
 
-func (this *RPCClient) GetTaskStatics() (static *TaskStatic, err error) {
+func (this *RPCClient) GetTaskStatistics() (statistics *model.TaskStatistics, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
 	}
 	defer client.Close()
-	err = client.Call("ByRoad.GetTaskStatics", 0, &static)
+	err = client.Call("ByRoad.GetTaskStatistics", 0, &statistics)
 	return
 }
 
-func (this *RPCClient) GetLogList() (logList *LogList, err error) {
+func (this *RPCClient) GetLogList() (logList *model.LogList, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -219,7 +219,7 @@ func (this *RPCClient) GetLogList() (logList *LogList, err error) {
 	return
 }
 
-func (this *RPCClient) GetMasterStatus() (binfo *BinlogInfo, err error) {
+func (this *RPCClient) GetMasterStatus() (binfo *model.BinlogInfo, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -229,7 +229,7 @@ func (this *RPCClient) GetMasterStatus() (binfo *BinlogInfo, err error) {
 	return
 }
 
-func (this *RPCClient) GetCurrentBinlogInfo() (binfo *BinlogInfo, err error) {
+func (this *RPCClient) GetCurrentBinlogInfo() (binfo *model.BinlogInfo, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return

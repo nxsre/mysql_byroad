@@ -1,12 +1,10 @@
 package slave
 
 import (
-	"mysql_byroad/common"
-
-	"github.com/jmoiron/sqlx"
+	"mysql_byroad/model"
 )
 
-type TaskSlice []*Task
+type TaskSlice []*model.Task
 
 func (t TaskSlice) Len() int {
 	return len(t)
@@ -24,17 +22,34 @@ func (t TaskSlice) Swap(i, j int) {
 var taskIdcmap *TaskIdMap
 var ntytasks *NotifyTaskMap
 
-func initNotifyAPIDB(confdb *sqlx.DB) {
-	createConfigTable(confdb)
-	createTaskTable(confdb)
-	createNotifyFieldTable(confdb)
-	createStaticTable(confdb)
-	taskIdcmap = _selectAllTasks(confdb)
+func initNotifyAPIDB() {
+	model.CreateConfigTable()
+	model.CreateTaskTable()
+	model.CreateNotifyFieldTable()
+	model.CreateStatisticTable()
+	taskIdcmap = _selectAllTasks()
 	ntytasks = NewNotifyTaskMap(taskIdcmap)
 }
 
-func (t *Task) GetField(schema, table, column string) *NotifyField {
-	for _, field := range t.Fields {
+func GetTask(id int64) *model.Task {
+	return taskIdcmap.Get(id)
+}
+
+func cleanRedisEvent(task *model.Task) {
+	name := genTaskQueueName(task)
+	rename := genTaskReQueueName(task)
+	queueManager.Empty(name)
+	queueManager.Empty(rename)
+}
+
+func deleteTask(task *model.Task)error{
+	cleanRedisEvent(task)
+	return task.Delete()
+}
+
+
+func getTaskField(task *model.Task, schema, table, column string) *model.NotifyField {
+	for _, field := range task.Fields {
 		if isSchemaMatch(field.Schema, schema) && isTableMatch(field.Table, table) && field.Column == column {
 			return field
 		}
@@ -42,104 +57,49 @@ func (t *Task) GetField(schema, table, column string) *NotifyField {
 	return nil
 }
 
-func (task *Task) Add() (id int64, err error) {
-	id, err = task._insert(confdb)
+/*
+读取数据库中的task和field，将其放入内存的taskMap中
+*/
+func _selectAllTasks() *TaskIdMap {
+	tasks := NewTaskIdMap(100)
+	s := "SELECT `id`, `name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`,`routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc` FROM `task`"
+	stmt, err := confdb.Prepare(s)
+	defer stmt.Close()
+	sysLogger.LogErr(err)
 	if err != nil {
-		sysLogger.Log(err.Error())
-		owl.LogThisException(err.Error())
-		return
+		return tasks
 	}
-	err = task.Fields._insert(id, confdb)
+	rows, err := stmt.Query()
+	sysLogger.LogErr(err)
 	if err != nil {
-		sysLogger.Log(err.Error())
-		owl.LogThisException(err.Error())
-		return
+		return tasks
 	}
-	task.ID = id
-	taskIdcmap.Set(id, task)
-	if task.Stat == common.TASK_STATE_START {
-		ntytasks.AddTask(task)
-		routineManager.AddTaskRoutines(task)
-	} else if task.Stat == common.TASK_STATE_STOP {
-		routineManager.AddStopTaskRoutines(task)
+	for rows.Next() {
+		t := new(model.Task)
+		rows.Scan(&t.ID, &t.Name, &t.Apiurl, &t.Event, &t.Stat, &t.CreateTime, &t.CreateUser, &t.RoutineCount, &t.ReRoutineCount, &t.ReSendTime, &t.RetryCount, &t.Timeout, &t.Desc)
+		tasks.Set(t.ID, t)
 	}
-	return
-}
-
-func GetTask(id int64) *Task {
-	return taskIdcmap.Get(id)
-}
-
-func (task *Task) SetStat() error {
-	stat := task.Stat
-	_, err := task._update(confdb)
+	s = "SELECT `id`, `schema`, `table`, `column`, `send`, `task_id` FROM `notify_field`"
+	stmt, err = confdb.Prepare(s)
+	sysLogger.LogErr(err)
 	if err != nil {
-		sysLogger.Log(err.Error())
-		owl.LogThisException(err.Error())
-		return err
+		return tasks
 	}
-	ntytasks.UpdateNotifyTaskMap(taskIdcmap)
-	if stat == common.TASK_STATE_START {
-		routineManager.StartTaskRoutine(task)
-	} else if stat == common.TASK_STATE_STOP {
-		routineManager.StopTaskRoutine(task)
-	}
-	return nil
-}
-
-func (task *Task) Update() error {
-	taskIdcmap.Set(task.ID, task)
-	_, err := task._update(confdb)
+	rows, err = stmt.Query()
+	sysLogger.LogErr(err)
 	if err != nil {
-		sysLogger.Log(err.Error())
-		owl.LogThisException(err.Error())
-		return err
+		return tasks
 	}
-	ntytasks.UpdateNotifyTaskMap(taskIdcmap)
-	if task.Stat == common.TASK_STATE_START {
-		routineManager.UpdateTaskRoutine(task)
-	}
-
-	return nil
-}
-
-func (task *Task) Delete() error {
-	taskIdcmap.Delete(task.ID)
-	ntytasks.UpdateNotifyTaskMap(taskIdcmap)
-	routineManager.StopTaskRoutine(task)
-	task.cleanRedisEvent()
-	_, err := task._delete(confdb)
-	if err != nil {
-		sysLogger.Log(err.Error())
-		owl.LogThisException(err.Error())
-	}
-	return err
-}
-
-func (task *Task) cleanRedisEvent() {
-	name := genTaskQueueName(task)
-	rename := genTaskReQueueName(task)
-	queueManager.Empty(name)
-	queueManager.Empty(rename)
-}
-
-func (this *Task) FieldExists(field *NotifyField) bool {
-	for _, f := range this.Fields {
-		if f.Schema == field.Schema && f.Table == field.Table && f.Column == field.Column {
-			return true
+	for rows.Next() {
+		f := new(model.NotifyField)
+		rows.Scan(&f.ID, &f.Schema, &f.Table, &f.Column, &f.Send, &f.TaskID)
+		task := tasks.Get(f.TaskID)
+		if task != nil {
+			if task.Fields == nil {
+				task.Fields = make([]*model.NotifyField, 0, 10)
+			}
+			task.Fields = append(task.Fields, f)
 		}
 	}
-	return false
-}
-
-func (task *Task) GetTaskColumnsMap() map[string]map[string][]*NotifyField {
-	colsMap := make(map[string]map[string][]*NotifyField)
-	for _, field := range task.Fields {
-		if colsMap[field.Schema] == nil {
-			colsMap[field.Schema] = make(map[string][]*NotifyField)
-			colsMap[field.Schema][field.Table] = make([]*NotifyField, 0)
-		}
-		colsMap[field.Schema][field.Table] = append(colsMap[field.Schema][field.Table], field)
-	}
-	return colsMap
+	return tasks
 }

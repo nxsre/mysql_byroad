@@ -1,8 +1,9 @@
 package slave
 
 import (
-	"mysql_byroad/common"
+	"mysql_byroad/model"
 	"sync"
+	"mysql_byroad/common"
 )
 
 type EventEnqueuer struct {
@@ -16,7 +17,7 @@ func NewEventEnqueue() *EventEnqueuer {
 /*
 根据任务数量并发的将消息写入redis中
 */
-func (this *EventEnqueuer) Enqueue(schema, table, event string, taskFieldMap map[int64][]*common.ColumnValue) {
+func (this *EventEnqueuer) Enqueue(schema, table, event string, taskFieldMap map[int64][]*model.ColumnValue) {
 	for taskid, fields := range taskFieldMap {
 		this.Add(1)
 		go this.enqueue(schema, table, event, taskid, fields)
@@ -24,10 +25,10 @@ func (this *EventEnqueuer) Enqueue(schema, table, event string, taskFieldMap map
 	this.Wait()
 }
 
-func (this *EventEnqueuer) enqueue(schema, table, event string, taskid int64, fields []*common.ColumnValue) {
-	ntyevt := new(common.NotifyEvent)
+func (this *EventEnqueuer) enqueue(schema, table, event string, taskid int64, fields []*model.ColumnValue) {
+	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
-	ntyevt.Fields = make([]*common.ColumnValue, 0)
+	ntyevt.Fields = make([]*model.ColumnValue, 0)
 	task := GetTask(taskid)
 	if task == nil {
 		this.Done()
@@ -35,7 +36,7 @@ func (this *EventEnqueuer) enqueue(schema, table, event string, taskid int64, fi
 	}
 	updateChanged := false
 	for _, f := range fields {
-		tf := task.GetField(schema, table, f.ColunmName)
+		tf := getTaskField(task, schema, table, f.ColunmName)
 		if tf == nil {
 			continue
 		}

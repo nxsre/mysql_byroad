@@ -8,6 +8,7 @@ import (
 	"path"
 	"path/filepath"
 	"time"
+	"mysql_byroad/model"
 )
 
 type EventLogger struct {
@@ -46,11 +47,11 @@ func NewEventLogger(dir string) (*EventLogger, error) {
 
 type SendError struct {
 	Time   time.Time    `json:"time"`
-	Event  *NotifyEvent `json:"event"`
+	Event  *model.NotifyEvent `json:"event"`
 	Reason string       `json:"reason"`
 }
 
-func (this *EventLogger) Log(evt *NotifyEvent, reason error) error {
+func (this *EventLogger) Log(evt *model.NotifyEvent, reason error) error {
 	filename := getTodayName(this.dir)
 	logfile, err := os.OpenFile(filename, os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0664)
 	if err != nil {
@@ -88,23 +89,24 @@ func NewSysLogger(dir, filename string) (*SysLogger, error) {
 	if err != nil {
 		return nil, err
 	}
-	logger.logger = log.New(file, "", log.LstdFlags)
+	logger.logger = log.New(file, "", log.LstdFlags|log.Lshortfile)
 	return &logger, nil
 }
 
 func (this *SysLogger) Log(msg string) {
-	this.logger.Println(msg)
+	this.logger.Output(2, msg)
 }
 
 func (this *SysLogger) LogErr(err error) {
 	if err != nil {
-		this.logger.Println(err.Error())
+		this.logger.Output(2, err.Error())
 	}
 }
 
 func (this *SysLogger) PanicErr(err error) {
 	if err != nil {
-		this.logger.Panic(err)
+		this.logger.Output(2, err.Error())
+		panic(err)
 	}
 }
 

@@ -14,3 +14,4 @@ slave-main
 slave-web
 *.tar.gz
 *.sh
+build

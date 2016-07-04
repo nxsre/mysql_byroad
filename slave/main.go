@@ -2,7 +2,6 @@ package slave
 
 import (
 	"fmt"
-	"mysql_byroad/common"
 	"os"
 	"os/signal"
 	"runtime"
@@ -15,6 +14,10 @@ import (
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/replication"
+	"mysql_byroad/common"
+	"mysql_byroad/model"
+	"runtime/debug"
+	"errors"
 )
 
 var (
@@ -44,9 +47,9 @@ var (
 	confdb              *sqlx.DB
 	binlogInfo          *BinlogInfo
 	rpcserver           *ByRoad
-	totalStatic         Static
-	binlogStatics       BinlogStatics
-	taskStatic          *TaskStatic
+	totalStatistic         model.Statistic
+	binlogStatistics       model.BinlogStatistics
+	taskStatistics          *model.TaskStatistics
 )
 
 func StartSlave() {
@@ -55,7 +58,7 @@ func StartSlave() {
 			rpcserver.deregister(configer.GetString("rpc", "schema"))
 			switch e := err.(type) {
 			case error:
-				sysLogger.LogErr(e)
+				sysLogger.LogErr(errors.New(e.Error() + "\n" + string(debug.Stack())))
 			default:
 				fmt.Println(e)
 			}
@@ -101,15 +104,22 @@ func StartSlave() {
 	if err != nil {
 		panic(err)
 	}
+	// 初始化话Model环境
+	model.Init(confdb)
+
 	//初始化数据库，读取数据库信息
-	initNotifyAPIDB(confdb)
+	initNotifyAPIDB()
 	queueManager = NewQueueManager(configer.GetRedis())
 	columnManager = NewColumnManager(configer.GetMysql()) //读取数据库的information_schema表，获得所有的列信息
 	routineManager = NewRoutineManager()
 	routineManager.InitTaskRoutines()
 	eventEnqueuer = NewEventEnqueue()
-	taskStatic = NewTaskStatic()
-	taskStatic.Init(confdb)
+	taskStatistics = model.NewTaskStatistics()
+
+	err = taskStatistics.Init()
+	if err != nil {
+		sysLogger.PanicErr(err)
+	}
 	binlogInfo = NewBinlogInfo()
 
 	//定时写入数据库
@@ -157,7 +167,7 @@ func startReplication() {
 	binlogInfo.Filename = filename
 	binlogInfo.Position = pos
 	if binlogInfo.Filename == "" || binlogInfo.Position == 0 {
-		binlogInfo.Get(confdb)
+		binlogInfo.Get()
 	}
 	if binlogInfo.Filename == "" || binlogInfo.Position == 0 {
 		addr := fmt.Sprintf("%s:%d", mc.Host, mc.Port)
@@ -242,9 +252,12 @@ func cleanUp() {
 
 func sysClean() {
 	tickerManager.StopAll()
-	binlogInfo.Set(confdb)
-	taskStatic.Save(confdb)
-	binlogStatics.Save(confdb)
+	binlogInfo.Set()
+	err := taskStatistics.Save()
+	if err != nil {
+		sysLogger.LogErr(err)
+	}
+	binlogStatistics.Save()
 	sysLogger.Log("update config done")
 	routineManager.Clean()
 	queueManager.Clean()

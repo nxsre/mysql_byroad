@@ -3,6 +3,7 @@ package slave
 import (
 	"mysql_byroad/common"
 	"mysql_byroad/gorpool"
+	"mysql_byroad/model"
 )
 
 type RoutineManager struct {
@@ -35,14 +36,14 @@ func (this *RoutineManager) InitTaskRoutines() {
 /*
 为单个任务生成相应数量的协程
 */
-func (this *RoutineManager) AddTaskRoutines(task *Task) {
+func (this *RoutineManager) AddTaskRoutines(task *model.Task) {
 	name := genTaskQueueName(task)
 	this.taskRoutinePools = append(this.taskRoutinePools, gorpool.NewPool(task.RoutineCount, notifyRoutine, name))
 	rename := genTaskReQueueName(task)
 	this.taskReRoutinePools = append(this.taskReRoutinePools, gorpool.NewPool(task.ReRoutineCount, notifyRetryRoutine, rename))
 }
 
-func (this *RoutineManager) AddStopTaskRoutines(task *Task) {
+func (this *RoutineManager) AddStopTaskRoutines(task *model.Task) {
 	name := genTaskQueueName(task)
 	this.taskRoutinePools = append(this.taskRoutinePools, gorpool.NewPool(0, notifyRoutine, name))
 	rename := genTaskReQueueName(task)
@@ -52,7 +53,7 @@ func (this *RoutineManager) AddStopTaskRoutines(task *Task) {
 /*
 根据任务获得相应的推送消息的协程池
 */
-func (this *RoutineManager) getRoutinePool(task *Task) *gorpool.RoutinePool {
+func (this *RoutineManager) getRoutinePool(task *model.Task) *gorpool.RoutinePool {
 	name := genTaskQueueName(task)
 	for _, pool := range this.taskRoutinePools {
 		if pool.GetName() == name {
@@ -65,7 +66,7 @@ func (this *RoutineManager) getRoutinePool(task *Task) *gorpool.RoutinePool {
 /*
 根据任务获得相应的重推消息的协程池
 */
-func (this *RoutineManager) getReRoutinePool(task *Task) *gorpool.RoutinePool {
+func (this *RoutineManager) getReRoutinePool(task *model.Task) *gorpool.RoutinePool {
 	name := genTaskReQueueName(task)
 	for _, pool := range this.taskReRoutinePools {
 		if pool.GetName() == name {
@@ -78,12 +79,12 @@ func (this *RoutineManager) getReRoutinePool(task *Task) *gorpool.RoutinePool {
 /*
 清楚任务的协程池
 */
-func (this *RoutineManager) CleanTaskRoutinePool(task *Task) {
+func (this *RoutineManager) CleanTaskRoutinePool(task *model.Task) {
 	this.cleanRoutinePool(task)
 	this.cleanReRoutinePool(task)
 }
 
-func (this *RoutineManager) cleanRoutinePool(task *Task) {
+func (this *RoutineManager) cleanRoutinePool(task *model.Task) {
 	name := genTaskQueueName(task)
 	for i, pool := range this.taskRoutinePools {
 		if pool.GetName() == name {
@@ -93,7 +94,7 @@ func (this *RoutineManager) cleanRoutinePool(task *Task) {
 	}
 }
 
-func (this *RoutineManager) cleanReRoutinePool(task *Task) {
+func (this *RoutineManager) cleanReRoutinePool(task *model.Task) {
 	name := genTaskReQueueName(task)
 	for i, pool := range this.taskReRoutinePools {
 		if pool.GetName() == name {
@@ -106,12 +107,12 @@ func (this *RoutineManager) cleanReRoutinePool(task *Task) {
 /*
 更新任务的协程数
 */
-func (this *RoutineManager) UpdateTaskRoutine(task *Task) {
+func (this *RoutineManager) UpdateTaskRoutine(task *model.Task) {
 	this.updateRoutines(task)
 	this.updateReRoutines(task)
 }
 
-func (this *RoutineManager) updateRoutines(task *Task) {
+func (this *RoutineManager) updateRoutines(task *model.Task) {
 	rp := this.getRoutinePool(task)
 	if rp != nil {
 		num := task.RoutineCount
@@ -119,7 +120,7 @@ func (this *RoutineManager) updateRoutines(task *Task) {
 	}
 }
 
-func (this *RoutineManager) updateReRoutines(task *Task) {
+func (this *RoutineManager) updateReRoutines(task *model.Task) {
 	rp := this.getReRoutinePool(task)
 	if rp != nil {
 		num := task.ReRoutineCount
@@ -130,12 +131,12 @@ func (this *RoutineManager) updateReRoutines(task *Task) {
 /*
 停止任务的所有协程
 */
-func (this *RoutineManager) StopTaskRoutine(task *Task) {
+func (this *RoutineManager) StopTaskRoutine(task *model.Task) {
 	this.stopRoutines(task)
 	this.stopReRoutines(task)
 }
 
-func (this *RoutineManager) stopRoutines(task *Task) {
+func (this *RoutineManager) stopRoutines(task *model.Task) {
 	rp := this.getRoutinePool(task)
 	if rp != nil {
 		rp.Clean()
@@ -143,7 +144,7 @@ func (this *RoutineManager) stopRoutines(task *Task) {
 	}
 }
 
-func (this *RoutineManager) stopReRoutines(task *Task) {
+func (this *RoutineManager) stopReRoutines(task *model.Task) {
 	rp := this.getReRoutinePool(task)
 	if rp != nil {
 		rp.Clean()
@@ -151,7 +152,7 @@ func (this *RoutineManager) stopReRoutines(task *Task) {
 	}
 }
 
-func (this *RoutineManager) StartTaskRoutine(task *Task) {
+func (this *RoutineManager) StartTaskRoutine(task *model.Task) {
 	rp := this.getRoutinePool(task)
 	if rp != nil {
 		rp.ChangeTo(task.RoutineCount)

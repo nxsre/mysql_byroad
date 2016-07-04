@@ -1,8 +1,8 @@
-// +build web
-
 package main
 
-import "mysql_byroad/web"
+import (
+	"mysql_byroad/web"
+)
 
 func main() {
 	web.StartWebServer()

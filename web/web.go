@@ -8,15 +8,13 @@ import (
 	"io"
 	"io/ioutil"
 	"mysql_byroad/common"
+	"mysql_byroad/model"
 	"net/http"
 	"strings"
 	"time"
-
 	"os"
 	"path/filepath"
-
 	"sort"
-
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/pongo2"
 	"github.com/go-macaron/session"
@@ -50,6 +48,7 @@ type TaskForm struct {
 	Timeout        int    `form:"timeout" binding:"Range(1,30000)"`
 	Desc           string `form:"desc" binding:"MaxSize(255)"`
 	State          string `form:"state"`
+	PackProtocal   model.DataPackProtocal     `form:"packProtocal`
 }
 
 var rpcManager *RPCClientManager
@@ -124,7 +123,7 @@ func StartServer() {
 	m.Delete("/task/:taskid", doDeleteTask)
 
 	m.Get("/column/update", updateColumnMap)
-	m.Get("/taskdetail/:taskid", getTaskStatic)
+	m.Get("/taskdetail/:taskid", getTaskStatistic)
 	m.Run()
 }
 
@@ -151,7 +150,7 @@ func checkAuth(ctx *macaron.Context, sess session.Store, flag string) bool {
 }
 
 //判断任务是否属于该用户
-func checkTaskUser(t *Task, sess session.Store) bool {
+func checkTaskUser(t *model.Task, sess session.Store) bool {
 	groups := sess.Get("groups").(string)
 	isAdmin := strings.Index(groups, "admin")
 	if isAdmin != -1 {
@@ -273,7 +272,7 @@ func status(ctx *macaron.Context, sess session.Store) {
 		ctx.Data["Start"] = st["Start"]
 		ctx.Data["Duration"] = st["Duration"]
 		ctx.Data["routineNumber"] = st["routineNumber"]
-		status, _ := rpcclient.GetBinlogStatics()
+		status, _ := rpcclient.GetBinlogStatistics()
 		ctx.Data["Status"] = status
 		masterStatus, _ := rpcclient.GetMasterStatus()
 		currentBinlogInfo, _ := rpcclient.GetCurrentBinlogInfo()
@@ -348,13 +347,13 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
-	task := new(Task)
+	task := new(model.Task)
 	copyTask(&t, task)
 	task.CreateUser = sess.Get("user").(string)
-	task.Fields = make([]*NotifyField, 0)
+	task.Fields = *new(model.NotifyFields)
 	for _, c := range fields {
 		send := ctx.QueryInt(c)
-		f := new(NotifyField)
+		f := new(model.NotifyField)
 		f.Send = send
 		nfs := strings.Split(c, ".")
 		if len(nfs) < 3 {
@@ -442,10 +441,10 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		return string(body)
 	}
 	copyTask(&t, task)
-	task.Fields = make([]*NotifyField, 0)
+	task.Fields = *new(model.NotifyFields)
 	for _, c := range fields {
 		send := ctx.QueryInt(c)
-		f := new(NotifyField)
+		f := new(model.NotifyField)
 		f.Send = send
 		nfs := strings.Split(c, ".")
 		if len(nfs) < 3 {
@@ -461,6 +460,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 			task.Fields = append(task.Fields, f)
 		}
 	}
+
 	_, err := rpcclient.UpdateTask(task)
 	if err != nil {
 		resp.Error = true
@@ -481,7 +481,7 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 	}
 	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
 	if rpcclient != nil {
-		var sortTasks []*Task
+		var sortTasks []*model.Task
 		if checkAuth(ctx, sess, "admin") {
 			sortTasks, _ = rpcclient.GetAllTasks(sess.Get("user").(string))
 		} else {
@@ -575,11 +575,12 @@ func updateColumnMap(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "columnlist")
 }
 
-func copyTask(src *TaskForm, dst *Task) {
+func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Name = strings.TrimSpace(src.Name)
 	dst.Apiurl = strings.TrimSpace(src.Apiurl)
 	dst.RoutineCount = src.RoutineCount
 	dst.ReRoutineCount = src.ReRoutineCount
+	dst.PackProtocal = src.PackProtocal
 	dst.ReSendTime = src.ReSendTime
 	dst.RetryCount = src.RetryCount
 	dst.Timeout = src.Timeout
@@ -588,7 +589,7 @@ func copyTask(src *TaskForm, dst *Task) {
 	dst.Stat = src.State
 }
 
-func FieldExists(task *Task, field *NotifyField) bool {
+func FieldExists(task *model.Task, field *model.NotifyField) bool {
 	for _, f := range task.Fields {
 		if f.Schema == field.Schema && f.Table == field.Table && f.Column == field.Column {
 			return true
@@ -613,7 +614,7 @@ func getLogList(client string) ([]string, error) {
 	return files, nil
 }
 
-func getTaskStatic(ctx *macaron.Context, sess session.Store) {
+func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
 	taskid := ctx.ParamsInt64("taskid")
 	if !checkAuth(ctx, sess, "all") {
 		ctx.HTML(403, "403")
@@ -624,7 +625,7 @@ func getTaskStatic(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(404, "404")
 		return
 	}
-	static, _ := rpcclient.GetTaskStatic(taskid)
-	ctx.Data["static"] = static
+	statistic, _ := rpcclient.GetTaskStatistic(taskid)
+	ctx.Data["statistic"] = statistic
 	ctx.HTML(200, "taskdetail")
 }

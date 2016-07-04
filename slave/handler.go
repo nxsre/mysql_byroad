@@ -2,9 +2,10 @@ package slave
 
 import (
 	"fmt"
-	"mysql_byroad/common"
+	"mysql_byroad/model"
 
 	"github.com/siddontang/go-mysql/replication"
+	"mysql_byroad/common"
 )
 
 /*
@@ -17,12 +18,12 @@ func handleWriteEvent(e *replication.RowsEvent) {
 		return
 	}
 	for _, row := range e.Rows {
-		columns := []*common.ColumnValue{}
-		binlogStatics.IncStatic(schema, table, event)
+		columns := []*model.ColumnValue{}
+		binlogStatistics.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := columnManager.GetColumnName(schema, table, j)
 			if inNotifyFields(schema, table, column) {
-				c := new(common.ColumnValue)
+				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := r.(type) {
 				case int, int16, int32, int64:
@@ -47,12 +48,12 @@ func handleDeleteEvent(e *replication.RowsEvent) {
 		return
 	}
 	for _, row := range e.Rows {
-		columns := []*common.ColumnValue{}
-		binlogStatics.IncStatic(schema, table, event)
+		columns := []*model.ColumnValue{}
+		binlogStatistics.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := columnManager.GetColumnName(schema, table, j)
 			if inNotifyFields(schema, table, column) {
-				c := new(common.ColumnValue)
+				c := new(model.ColumnValue)
 				c.ColunmName = column
 				//c.Value = r
 				switch t := r.(type) {
@@ -79,14 +80,14 @@ func handleUpdateEvent(e *replication.RowsEvent) {
 	}
 	oldRows, newRows := getUpdateRows(e)
 	for i := 0; i < len(oldRows) && i < len(newRows); i++ {
-		columns := []*common.ColumnValue{}
-		binlogStatics.IncStatic(schema, table, event)
+		columns := []*model.ColumnValue{}
+		binlogStatistics.IncStatistic(schema, table, event)
 		oldRow := oldRows[i]
 		newRow := newRows[i]
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
 			column := columnManager.GetColumnName(schema, table, j)
 			if inNotifyFields(schema, table, column) {
-				c := new(common.ColumnValue)
+				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := newRow[j].(type) {
 				case int, int16, int32, int64:
@@ -132,14 +133,14 @@ func inNotifyTable(schema, table string) bool {
 /*
 根据`数据库-表-字段` 匹配订阅了该字段的任务，为每个任务生成相应的消息，放入推送消息队列中
 */
-func genNotifyEvents(schema, table string, columns []*common.ColumnValue, event string) {
+func genNotifyEvents(schema, table string, columns []*model.ColumnValue, event string) {
 	//为相应的任务添加订阅了的字段
-	taskFieldMap := make(map[int64][]*common.ColumnValue)
+	taskFieldMap := make(map[int64][]*model.ColumnValue)
 	for _, column := range columns {
 		ids := ntytasks.GetNotifyTaskIDs(schema, table, column.ColunmName)
 		for _, taskID := range ids {
 			if taskFieldMap[taskID] == nil {
-				taskFieldMap[taskID] = make([]*common.ColumnValue, 0)
+				taskFieldMap[taskID] = make([]*model.ColumnValue, 0)
 			}
 			taskFieldMap[taskID] = append(taskFieldMap[taskID], column)
 		}

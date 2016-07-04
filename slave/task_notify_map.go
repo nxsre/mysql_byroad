@@ -3,6 +3,7 @@ package slave
 import (
 	"mysql_byroad/common"
 	"sync"
+	"mysql_byroad/model"
 )
 
 type TaskMatchMap map[string]map[string]map[string][]int64
@@ -73,13 +74,13 @@ func (this *NotifyTaskMap) UpdateNotifyTaskMap(tasks *TaskIdMap) {
 	this.notifyTasks = tmap
 }
 
-func (this *NotifyTaskMap) AddTask(task *Task) {
+func (this *NotifyTaskMap) AddTask(task *model.Task) {
 	this.Lock()
 	defer this.Unlock()
 	addToTaskNoitfyMap(this.notifyTasks, task)
 }
 
-func addToTaskNoitfyMap(cmap TaskMatchMap, task *Task) {
+func addToTaskNoitfyMap(cmap TaskMatchMap, task *model.Task) {
 	for _, field := range task.Fields {
 		schema, table, column := field.Schema, field.Table, field.Column
 		if cmap[schema] == nil {

@@ -28,6 +28,18 @@
           </div>
           <div class="form-group col-md-6">
             <div class="form-inline">
+                <label for="apiurl">数据封装协议</label>
+                <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
+            </div>
+            <div class="form-control-static">
+              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal != 1) %}checked {%endif%}/>
+            默认
+                <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal == 1) %}checked {%endif%}/>
+            消息中心推送协议
+            </div>
+          </div>
+          <div class="form-group col-md-6">
+            <div class="form-inline">
               <label for="routineCount">推送消息并发数</label>
               <p class="form-control-static">(1-10)</p>
             </div>
@@ -74,7 +86,7 @@
               </div>
             </div>
           </div>         
-          <div class="form-group">
+          <div class="form-group col-md-12">
             <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新</button>
           </div>
         </div>
@@ -178,6 +190,16 @@
         return false;
       }
     }
+    $(function () {
+        $("#pack-help").popover(
+                {
+                    trigger: 'hover',
+                    title: '数据封装协议',
+                    html: true,
+                    content: '<dd><dt>默认</dt><dl>旁路系统原有格式: 消息内容从post请求的body中读取。</dl><dl>消费方处理完成后返回 success</dl><dt>消息中心推送协议</dt><dl>使用消息中心的推送协议进行数据封装: message=POST["message"], jobid=GET["jobid"], retry_times=GET["retry_times"]</dl><dl>消费方处理完成后返回{"status": 1}</dl></dd>',
+                }
+        );
+    });
    </script>
       <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
         {% include "taskleft.html" %}

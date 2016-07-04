@@ -22,7 +22,7 @@ func NewRPCClientManager() *RPCClientManager {
 	}
 	clientsConfigs := configer.GetRPCClients()
 	for _, cc := range clientsConfigs {
-		manager.AddClient(cc.Schema, cc.Schema)
+		manager.AddClient(cc.Schema, cc.Desc)
 	}
 
 	return &manager

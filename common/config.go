@@ -46,6 +46,7 @@ type WebConfig struct {
 
 type RPCClientConfig struct {
 	Schema string
+	Desc   string
 }
 
 type RPCServerConfig struct {
@@ -136,11 +137,15 @@ func (this *Configer) GetWeb() *WebConfig {
 }
 
 func (this *Configer) GetRPCClients() []*RPCClientConfig {
-	schemas := this.GetArray("rpc_client", "schemas", " ")
-	configs := make([]*RPCClientConfig, 0, 10)
-	for _, schema := range schemas {
+	configs := make([]*RPCClientConfig, 0)
+	schemas, err := this.configer.GetSection("rpc_clients")
+	if err != nil {
+		return configs
+	}
+	for desc, schema := range schemas {
 		conf := RPCClientConfig{
 			Schema: schema,
+			Desc: desc,
 		}
 		configs = append(configs, &conf)
 	}

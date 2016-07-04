@@ -3,13 +3,14 @@ package slave
 import (
 	"encoding/json"
 	"errors"
-	"mysql_byroad/common"
 	"net"
 	"net/http"
 	"net/rpc"
 	"runtime"
 	"sort"
 	"time"
+	"mysql_byroad/model"
+	"mysql_byroad/common"
 )
 
 type ServiceSignal struct {
@@ -76,7 +77,7 @@ func (this *ByRoad) sendMessage(server, code string) error {
 	return nil
 }
 
-func (b *ByRoad) GetTask(taskid int64, task *Task) error {
+func (b *ByRoad) GetTask(taskid int64, task *model.Task) error {
 	t := GetTask(taskid)
 	if t == nil {
 		return errors.New("task not found")
@@ -85,11 +86,11 @@ func (b *ByRoad) GetTask(taskid int64, task *Task) error {
 	return nil
 }
 
-func (b *ByRoad) GetTasks(username string, tasks *[]*Task) error {
+func (b *ByRoad) GetTasks(username string, tasks *[]*model.Task) error {
 	taskIdcmap.RLock()
 	for _, t := range taskIdcmap.cmap {
 		if username == t.CreateUser {
-			t.Static = taskStatic.Get(t.ID)
+			t.Statistic = taskStatistics.Get(t.ID)
 			*tasks = append(*tasks, t)
 		}
 	}
@@ -99,9 +100,9 @@ func (b *ByRoad) GetTasks(username string, tasks *[]*Task) error {
 	return nil
 }
 
-func (b *ByRoad) GetAllTasks(username string, tasks *[]*Task) error {
+func (b *ByRoad) GetAllTasks(username string, tasks *[]*model.Task) error {
 	for _, t := range taskIdcmap.cmap {
-		t.Static = taskStatic.Get(t.ID)
+		t.Statistic = taskStatistics.Get(t.ID)
 		*tasks = append(*tasks, t)
 	}
 	sort.Sort(TaskSlice(*tasks))
@@ -109,13 +110,22 @@ func (b *ByRoad) GetAllTasks(username string, tasks *[]*Task) error {
 	return nil
 }
 
-func (b *ByRoad) AddTask(task *Task, status *string) error {
-	_, err := task.Add()
+func (b *ByRoad) AddTask(task *model.Task, status *string) error {
+	id, err := task.Add()
 	if err != nil {
 		*status = "fail"
+		sysLogger.Log(err.Error())
+		owl.LogThisException(err.Error())
 		return err
 	}
 	*status = "sucess"
+	taskIdcmap.Set(id, task)
+	if task.Stat == common.TASK_STATE_START {
+		ntytasks.AddTask(task)
+		routineManager.AddTaskRoutines(task)
+	} else if task.Stat == common.TASK_STATE_STOP {
+		routineManager.AddStopTaskRoutines(task)
+	}
 	return nil
 }
 
@@ -124,43 +134,64 @@ func (b *ByRoad) DeleteTask(taskid int64, status *string) error {
 	if task == nil {
 		return errors.New("not found")
 	}
-	err := task.Delete()
+	taskIdcmap.Delete(task.ID)
+	ntytasks.UpdateNotifyTaskMap(taskIdcmap)
+	routineManager.StopTaskRoutine(task)
+	err := deleteTask(task)
 	if err != nil {
 		*status = "fail"
+		sysLogger.Log(err.Error())
+		owl.LogThisException(err.Error())
 		return err
 	}
 	*status = "success"
 	return nil
 }
 
-func (b *ByRoad) UpdateTask(task *Task, status *string) error {
+func (b *ByRoad) UpdateTask(task *model.Task, status *string) error {
+	taskIdcmap.Set(task.ID, task)
 	err := task.Update()
 	if err != nil {
 		*status = "fail"
+		sysLogger.Log(err.Error())
+		owl.LogThisException(err.Error())
 		return err
+	}
+	ntytasks.UpdateNotifyTaskMap(taskIdcmap)
+	if task.Stat == common.TASK_STATE_START {
+		routineManager.UpdateTaskRoutine(task)
 	}
 	*status = "success"
 	return nil
 }
 
-func (b *ByRoad) ChangeTaskStat(task *Task, status *string) error {
+func (b *ByRoad) ChangeTaskStat(task *model.Task, status *string) error {
 	t := GetTask(task.ID)
 	t.Stat = task.Stat
 	err := t.SetStat()
 	if err != nil {
+		sysLogger.Log(err.Error())
+		owl.LogThisException(err.Error())
 		*status = "fail"
 		return err
 	}
 	*status = "success"
+	ntytasks.UpdateNotifyTaskMap(taskIdcmap)
+	stat := task.Stat
+	if stat == common.TASK_STATE_START {
+		routineManager.StartTaskRoutine(task)
+	} else if stat == common.TASK_STATE_STOP {
+		routineManager.StopTaskRoutine(task)
+	}
 	return nil
 }
 
-func (b *ByRoad) GetColumns(username string, columns *common.OrderedSchemas) error {
+func (b *ByRoad) GetColumns(username string, columns *model.OrderedSchemas) error {
 	*columns = columnManager.GetOrderedColumns()
 	return nil
 }
 
-func (b *ByRoad) GetTaskColumns(task *Task, columns *map[string]map[string][]*NotifyField) error {
+func (b *ByRoad) GetTaskColumns(task *model.Task, columns *map[string]map[string]model.NotifyFields) error {
 	*columns = task.GetTaskColumnsMap()
 	return nil
 }
@@ -176,7 +207,7 @@ func (b *ByRoad) GetConfigMap(username string, configs *[]*Config) error {
 	return nil
 }
 */
-func (b *ByRoad) TaskExists(task *Task, reply *bool) error {
+func (b *ByRoad) TaskExists(task *model.Task, reply *bool) error {
 	return nil
 }
 
@@ -191,19 +222,19 @@ func (b *ByRoad) TaskNameExists(name string, reply *bool) error {
 	return nil
 }
 
-func (b *ByRoad) TasksQueueLen(tasks []*Task, results *[][]int64) error {
+func (b *ByRoad) TasksQueueLen(tasks []*model.Task, results *[][]int64) error {
 	*results = queueManager.TasksQueueLen(tasks)
 	return nil
 }
 
-func (b *ByRoad) UpdateColumns(username string, columns *common.OrderedSchemas) error {
+func (b *ByRoad) UpdateColumns(username string, columns *model.OrderedSchemas) error {
 	columnManager.ReloadColumnsMap()
 	*columns = columnManager.GetOrderedColumns()
 	return nil
 }
 
-func (b *ByRoad) GetBinlogStatics(username string, statics *[]*BinlogStatic) error {
-	*statics = binlogStatics.Statics
+func (b *ByRoad) GetBinlogStatistics(username string, statistics *[]*model.BinlogStatistic) error {
+	*statistics = binlogStatistics.Statistics
 	return nil
 }
 
@@ -211,10 +242,10 @@ func (b *ByRoad) GetStatus(username string, st *map[string]interface{}) error {
 	start := startTime
 	duration := time.Now().Sub(start)
 	statusMap := make(map[string]interface{})
-	statusMap["sendEventCount"] = totalStatic.SendMessageCount
-	statusMap["resendEventCount"] = totalStatic.ReSendMessageCount
-	statusMap["sendSuccessEventCount"] = totalStatic.SendSuccessCount
-	statusMap["sendFailedEventCount"] = totalStatic.SendFailedCount
+	statusMap["sendEventCount"] = totalStatistic.SendMessageCount
+	statusMap["resendEventCount"] = totalStatistic.ReSendMessageCount
+	statusMap["sendSuccessEventCount"] = totalStatistic.SendSuccessCount
+	statusMap["sendFailedEventCount"] = totalStatistic.SendFailedCount
 	statusMap["Start"] = start.String()
 	statusMap["Duration"] = duration.String()
 	statusMap["routineNumber"] = runtime.NumGoroutine()
@@ -222,18 +253,18 @@ func (b *ByRoad) GetStatus(username string, st *map[string]interface{}) error {
 	return nil
 }
 
-func (b *ByRoad) GetTaskStatic(taskid int64, static *Static) error {
-	st := taskStatic.Get(taskid)
+func (b *ByRoad) GetTaskStatistic(taskid int64, statistic *model.Statistic) error {
+	st := taskStatistics.Get(taskid)
 	if st == nil {
-		*static = *new(Static)
+		*statistic = *new(model.Statistic)
 		return nil
 	}
-	*static = *st
+	*statistic = *st
 	return nil
 }
 
-func (b *ByRoad) GetTaskStatics(taskid int64, statics *TaskStatic) error {
-	*statics = *taskStatic
+func (b *ByRoad) GetTaskStatistics(taskid int64, statistics *model.TaskStatistics) error {
+	*statistics = *taskStatistics
 	return nil
 }
 
