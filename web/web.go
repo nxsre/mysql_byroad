@@ -10,11 +10,12 @@ import (
 	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"net/http"
-	"strings"
-	"time"
 	"os"
 	"path/filepath"
 	"sort"
+	"strings"
+	"time"
+
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/pongo2"
 	"github.com/go-macaron/session"
@@ -39,16 +40,16 @@ type UserGroup struct {
 }
 
 type TaskForm struct {
-	Name           string `form:"name" binding:"AlphaDash;MaxSize(50);Required"`
-	Apiurl         string `form:"apiurl" binding:"Required"`
-	RoutineCount   int    `form:"routineCount" binding:"Range(1,100)"`
-	ReRoutineCount int    `form:"reRoutineCount" binding:"Range(1,100)"`
-	ReSendTime     int    `form:"reSendTime" binding:"Range(0,30000)"`
-	RetryCount     int    `form:"retryCount" binding:"Range(0,10)"`
-	Timeout        int    `form:"timeout" binding:"Range(1,30000)"`
-	Desc           string `form:"desc" binding:"MaxSize(255)"`
-	State          string `form:"state"`
-	PackProtocal   model.DataPackProtocal     `form:"packProtocal`
+	Name           string                 `form:"name" binding:"AlphaDash;MaxSize(50);Required"`
+	Apiurl         string                 `form:"apiurl" binding:"Required"`
+	RoutineCount   int                    `form:"routineCount" binding:"Range(1,100)"`
+	ReRoutineCount int                    `form:"reRoutineCount" binding:"Range(1,100)"`
+	ReSendTime     int                    `form:"reSendTime" binding:"Range(0,30000)"`
+	RetryCount     int                    `form:"retryCount" binding:"Range(0,10)"`
+	Timeout        int                    `form:"timeout" binding:"Range(1,30000)"`
+	Desc           string                 `form:"desc" binding:"MaxSize(255)"`
+	State          string                 `form:"state"`
+	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
 }
 
 var rpcManager *RPCClientManager
@@ -587,6 +588,7 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.CreateTime = time.Now()
 	dst.Desc = strings.TrimSpace(src.Desc)
 	dst.Stat = src.State
+	dst.PackProtocal = src.PackProtocal
 }
 
 func FieldExists(task *model.Task, field *model.NotifyField) bool {

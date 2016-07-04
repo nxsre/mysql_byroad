@@ -1,8 +1,6 @@
 package slave
 
-import (
-	"mysql_byroad/model"
-)
+import "mysql_byroad/model"
 
 type TaskSlice []*model.Task
 
@@ -42,11 +40,10 @@ func cleanRedisEvent(task *model.Task) {
 	queueManager.Empty(rename)
 }
 
-func deleteTask(task *model.Task)error{
+func deleteTask(task *model.Task) error {
 	cleanRedisEvent(task)
 	return task.Delete()
 }
-
 
 func getTaskField(task *model.Task, schema, table, column string) *model.NotifyField {
 	for _, field := range task.Fields {
@@ -62,7 +59,7 @@ func getTaskField(task *model.Task, schema, table, column string) *model.NotifyF
 */
 func _selectAllTasks() *TaskIdMap {
 	tasks := NewTaskIdMap(100)
-	s := "SELECT `id`, `name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`,`routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc` FROM `task`"
+	s := "SELECT `id`, `name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`,`routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal` FROM `task`"
 	stmt, err := confdb.Prepare(s)
 	defer stmt.Close()
 	sysLogger.LogErr(err)
@@ -76,7 +73,7 @@ func _selectAllTasks() *TaskIdMap {
 	}
 	for rows.Next() {
 		t := new(model.Task)
-		rows.Scan(&t.ID, &t.Name, &t.Apiurl, &t.Event, &t.Stat, &t.CreateTime, &t.CreateUser, &t.RoutineCount, &t.ReRoutineCount, &t.ReSendTime, &t.RetryCount, &t.Timeout, &t.Desc)
+		rows.Scan(&t.ID, &t.Name, &t.Apiurl, &t.Event, &t.Stat, &t.CreateTime, &t.CreateUser, &t.RoutineCount, &t.ReRoutineCount, &t.ReSendTime, &t.RetryCount, &t.Timeout, &t.Desc, &t.PackProtocal)
 		tasks.Set(t.ID, t)
 	}
 	s = "SELECT `id`, `schema`, `table`, `column`, `send`, `task_id` FROM `notify_field`"

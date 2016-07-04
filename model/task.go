@@ -24,32 +24,33 @@ type Task struct {
 	QueueLength    int64
 	ReQueueLength  int64
 	Desc           string
-	Statistic         *Statistic
+	Statistic      *Statistic
 	PackProtocal   DataPackProtocal
 }
 
 func CreateTaskTable() {
 	s := "CREATE TABLE IF NOT EXISTS `task` (" +
-	"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
-	"`name` VARCHAR(120) NOT NULL," +
-	"`apiurl` VARCHAR(120) NOT NULL," +
-	"`event` VARCHAR(120) NOT NULL," +
-	"`stat` VARCHAR(120) NOT NULL," +
-	"`create_time` DATE NOT NULL," +
-	"`create_user` VARCHAR(120) NOT NULL," +
-	"`routine_count` INTEGER NOT NULL," +
-	"`re_routine_count` INTEGER NOT NULL," +
-	"`re_send_time` INTEGER NOT NULL," +
-	"`retry_count` INTEGER NOT NULL," +
-	"`timeout` INTEGER NOT NULL," +
-	"`desc` VARCHAR(255)" +
-	")"
+		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`name` VARCHAR(120) NOT NULL," +
+		"`apiurl` VARCHAR(120) NOT NULL," +
+		"`event` VARCHAR(120) NOT NULL," +
+		"`stat` VARCHAR(120) NOT NULL," +
+		"`create_time` DATE NOT NULL," +
+		"`create_user` VARCHAR(120) NOT NULL," +
+		"`routine_count` INTEGER NOT NULL," +
+		"`re_routine_count` INTEGER NOT NULL," +
+		"`re_send_time` INTEGER NOT NULL," +
+		"`retry_count` INTEGER NOT NULL," +
+		"`timeout` INTEGER NOT NULL," +
+		"`desc` VARCHAR(255)," +
+		"`pack_protocal` INTEGER" +
+		")"
 	confdb.MustExec(s)
 }
 
 func (task *Task) _insert() (id int64, err error) {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
-	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat, task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc)
+	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat, task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal)
 	if err != nil {
 		return 0, err
 	}
@@ -80,8 +81,8 @@ func (task *Task) _getByID() (*Task, error) {
 
 func (task *Task) _update() (int64, error) {
 	task.Fields._delete(task.ID)
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=? WHERE `id`=?"
-	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.ID)
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=? WHERE `id`=?"
+	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal, task.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -103,7 +104,6 @@ func (task *Task) _delete() (int64, error) {
 	}
 	return res.RowsAffected()
 }
-
 
 func (task *Task) SetStat() error {
 	_, err := task._update()

@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"fmt"
 	"io/ioutil"
 	"mysql_byroad/model"
 	"net/http"
+	"net/url"
+	"strconv"
 	"time"
 )
 
@@ -40,7 +41,7 @@ func notifyRoutine(name string) {
 	ret, _ := sendMessage(evt)
 	totalStatistic.IncSendMessageCount()
 	taskStatistics.IncSendMessageCount(evt.TaskID)
-	if ret != "success" {
+	if !isSuccessSend(ret) {
 		task := GetTask(evt.TaskID)
 		if task == nil {
 			return
@@ -77,7 +78,7 @@ func notifyRetryRoutine(name string) {
 	ret, err := sendMessage(evt)
 	totalStatistic.IncReSendMessageCount()
 	taskStatistics.IncReSendMessageCount(evt.TaskID)
-	if ret != "success" {
+	if !isSuccessSend(ret) {
 		task := GetTask(evt.TaskID)
 		if task == nil {
 			return
@@ -116,24 +117,37 @@ func isSend(e *model.NotifyEvent) bool {
 发送消息
 */
 func sendMessage(evt *model.NotifyEvent) (string, error) {
-	evt.LastSendTime = time.Now()
-	msg, _ := json.Marshal(evt)
-	fmt.Printf("%+v\n", evt)
-	body := bytes.NewBuffer(msg)
 	task := GetTask(evt.TaskID)
 	if task == nil {
 		return "success", nil
 	}
+	evt.LastSendTime = time.Now()
+	msg, _ := json.Marshal(evt)
 	timeout := time.Millisecond * time.Duration(task.Timeout)
-
-	httpClient.Timeout = timeout
-	resp, err := httpClient.Post(task.Apiurl, "application/json", body)
-	if err != nil {
-		return "fail", err
+	if task.PackProtocal == model.PackProtocalEventCenter {
+		idStr := strconv.FormatInt(task.ID, 10)
+		retryCountStr := strconv.Itoa(evt.RetryCount)
+		pushurl := task.Apiurl + "?" + url.Values{"jobid": {idStr}, "retry_times": {retryCountStr}}.Encode()
+		body := url.Values{"message": {string(msg)}}
+		resp, err := httpClient.PostForm(pushurl, body)
+		if err != nil {
+			return "fail", err
+		}
+		defer resp.Body.Close()
+		retStat, err := ioutil.ReadAll(resp.Body)
+		return string(retStat), err
+	} else {
+		body := bytes.NewBuffer(msg)
+		httpClient.Timeout = timeout
+		resp, err := httpClient.Post(task.Apiurl, "application/json", body)
+		if err != nil {
+			return "fail", err
+		}
+		defer resp.Body.Close()
+		retStat, err := ioutil.ReadAll(resp.Body)
+		return string(retStat), err
 	}
-	defer resp.Body.Close()
-	retStat, err := ioutil.ReadAll(resp.Body)
-	return string(retStat), err
+	return "success", nil
 }
 
 /*
@@ -141,4 +155,22 @@ func sendMessage(evt *model.NotifyEvent) (string, error) {
 */
 func logNotifyMessage(msg *model.NotifyEvent, reason error) {
 	eventLogger.Log(msg, reason)
+}
+
+type SendResp struct {
+	Status int `json:"status"`
+}
+
+func isSuccessSend(msg string) bool {
+	if msg == "success" {
+		return true
+	} else {
+		var sendResp SendResp
+		if json.Unmarshal([]byte(msg), &sendResp) == nil {
+			if sendResp.Status == 1 {
+				return true
+			}
+		}
+		return false
+	}
 }

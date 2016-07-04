@@ -3,14 +3,14 @@ package slave
 import (
 	"encoding/json"
 	"errors"
+	"mysql_byroad/common"
+	"mysql_byroad/model"
 	"net"
 	"net/http"
 	"net/rpc"
 	"runtime"
 	"sort"
 	"time"
-	"mysql_byroad/model"
-	"mysql_byroad/common"
 )
 
 type ServiceSignal struct {

@@ -32,9 +32,9 @@
                 <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
             </div>
             <div class="form-control-static">
-              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal != 1) %}checked {%endif%}/>
+              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer != 1) %} checked {%endif%}>
             默认
-                <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal == 1) %}checked {%endif%}/>
+                <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer == 1) %} checked {%endif%}>
             消息中心推送协议
             </div>
           </div>
