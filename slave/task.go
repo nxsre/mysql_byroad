@@ -1,6 +1,9 @@
 package slave
 
-import "mysql_byroad/model"
+import (
+	"fmt"
+	"mysql_byroad/model"
+)
 
 type TaskSlice []*model.Task
 
@@ -59,37 +62,26 @@ func getTaskField(task *model.Task, schema, table, column string) *model.NotifyF
 */
 func _selectAllTasks() *TaskIdMap {
 	tasks := NewTaskIdMap(100)
-	s := "SELECT `id`, `name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`,`routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal` FROM `task`"
-	stmt, err := confdb.Prepare(s)
-	defer stmt.Close()
-	sysLogger.LogErr(err)
-	if err != nil {
-		return tasks
-	}
-	rows, err := stmt.Query()
+	rows, err := confdb.Queryx("SELECT * FROM `task`")
 	sysLogger.LogErr(err)
 	if err != nil {
 		return tasks
 	}
 	for rows.Next() {
 		t := new(model.Task)
-		rows.Scan(&t.ID, &t.Name, &t.Apiurl, &t.Event, &t.Stat, &t.CreateTime, &t.CreateUser, &t.RoutineCount, &t.ReRoutineCount, &t.ReSendTime, &t.RetryCount, &t.Timeout, &t.Desc, &t.PackProtocal)
+		err := rows.StructScan(t)
+		if err != nil {
+			fmt.Println(err)
+		}
 		tasks.Set(t.ID, t)
 	}
-	s = "SELECT `id`, `schema`, `table`, `column`, `send`, `task_id` FROM `notify_field`"
-	stmt, err = confdb.Prepare(s)
-	sysLogger.LogErr(err)
-	if err != nil {
-		return tasks
-	}
-	rows, err = stmt.Query()
-	sysLogger.LogErr(err)
-	if err != nil {
-		return tasks
-	}
+	rows, err = confdb.Queryx("SELECT * FROM notify_field")
 	for rows.Next() {
 		f := new(model.NotifyField)
-		rows.Scan(&f.ID, &f.Schema, &f.Table, &f.Column, &f.Send, &f.TaskID)
+		err := rows.StructScan(f)
+		if err != nil {
+			fmt.Println(err)
+		}
 		task := tasks.Get(f.TaskID)
 		if task != nil {
 			if task.Fields == nil {

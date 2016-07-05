@@ -14,18 +14,18 @@ type Task struct {
 	Event          string
 	Stat           string
 	Fields         NotifyFields //任务订阅的字段
-	CreateTime     time.Time
-	CreateUser     string
-	RoutineCount   int //推送协程数
-	ReRoutineCount int //重推协程数
-	ReSendTime     int //重推时间间隔
-	RetryCount     int //重推次数
-	Timeout        int //消息处理超时
+	CreateTime     time.Time    `db:"create_time"`
+	CreateUser     string       `db:"create_user"`
+	RoutineCount   int          `db:"routine_count"`    //推送协程数
+	ReRoutineCount int          `db:"re_routine_count"` //重推协程数
+	ReSendTime     int          `db:"re_send_time"`     //重推时间间隔
+	RetryCount     int          `db:"retry_count"`      //重推次数
+	Timeout        int          //消息处理超时
 	QueueLength    int64
 	ReQueueLength  int64
 	Desc           string
 	Statistic      *Statistic
-	PackProtocal   DataPackProtocal
+	PackProtocal   DataPackProtocal `db:"pack_protocal"`
 }
 
 func CreateTaskTable() {

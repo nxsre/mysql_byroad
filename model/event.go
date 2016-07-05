@@ -1,8 +1,8 @@
 package model
 
 import (
-	"time"
 	"strings"
+	"time"
 )
 
 /*
@@ -19,7 +19,6 @@ type NotifyEvent struct {
 	TaskID       int64          `json:"taskID"`
 }
 
-
 /*
 数据库-表-字段对应任务的一个订阅
 */
@@ -29,25 +28,24 @@ type NotifyField struct {
 	Table      string
 	Column     string
 	Send       int
-	TaskID     int64
-	CreateTime time.Time
+	TaskID     int64     `db:"task_id"`
+	CreateTime time.Time `db:"create_time"`
 }
 
 func CreateNotifyFieldTable() {
 	s := "CREATE TABLE IF NOT EXISTS `notify_field`(" +
-	"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
-	"`schema` VARCHAR(120) NOT NULL," +
-	"`table` VARCHAR(120) NOT NULL," +
-	"`column` VARCHAR(120) NOT NULL," +
-	"`send` INTERGE NOT NULL," +
-	"`task_id` INTEGER NOT NULL," +
-	"`create_time` DATE NOT NULL" +
-	")"
+		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`schema` VARCHAR(120) NOT NULL," +
+		"`table` VARCHAR(120) NOT NULL," +
+		"`column` VARCHAR(120) NOT NULL," +
+		"`send` INTERGE NOT NULL," +
+		"`task_id` INTEGER NOT NULL," +
+		"`create_time` DATE NOT NULL" +
+		")"
 	confdb.Exec(s)
 }
 
 type NotifyFields []*NotifyField
-
 
 func (field *NotifyField) _insert() (id int64, err error) {
 	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES(?, ?, ?, ?, ?, ?)"
