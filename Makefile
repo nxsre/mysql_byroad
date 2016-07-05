@@ -52,7 +52,7 @@ todo:
 	@grep --color=auto -r -n TODO ./*.go
 
 tarsource:
-	tar -czf slave-src.tar.gz *.go gorpool slave web common goticker templates public Makefile
+	tar -czf slave-src.tar.gz common gorpool goticker model public slave templates web Makefile
 
 tarbin:build
 	tar -czf slave-bin.tar.gz build/slave-main build/slave-web templates public
