@@ -9,15 +9,16 @@ import (
 	"syscall"
 	"time"
 
+	"errors"
+	"mysql_byroad/common"
+	"mysql_byroad/model"
+	"runtime/debug"
+
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/replication"
-	"mysql_byroad/common"
-	"mysql_byroad/model"
-	"runtime/debug"
-	"errors"
 )
 
 var (
@@ -47,9 +48,9 @@ var (
 	confdb              *sqlx.DB
 	binlogInfo          *BinlogInfo
 	rpcserver           *ByRoad
-	totalStatistic         model.Statistic
-	binlogStatistics       model.BinlogStatistics
-	taskStatistics          *model.TaskStatistics
+	totalStatistic      model.Statistic
+	binlogStatistics    model.BinlogStatistics
+	taskStatistics      *model.TaskStatistics
 )
 
 func StartSlave() {
@@ -193,9 +194,12 @@ func startReplication() {
 			if err == replication.ErrGetEventTimeout {
 				continue
 			} else {
-				sysClean()
+				/*sysClean()
 				sysLogger.PanicErr(err)
-				os.Exit(1)
+				os.Exit(1)*/
+				// continue anyway
+				sysLogger.LogErr(err)
+				continue
 			}
 		}
 		switch e := ev.Event.(type) {
