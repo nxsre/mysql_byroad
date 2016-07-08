@@ -1,10 +1,11 @@
 package model
 
 import (
+	"database/sql"
 	"sync"
 	"sync/atomic"
+
 	"github.com/juju/errors"
-	"database/sql"
 )
 
 type Statistic struct {
@@ -16,20 +17,20 @@ type Statistic struct {
 
 func CreateStatisticTable() {
 	s := "CREATE TABLE IF NOT EXISTS `statistic`(" +
-	"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
-	"`task_id` INTEGER NOT NULL," +
-	"`send_message_count` INTEGER," +
-	"`resend_message_count` INTEGER," +
-	"`send_success_count` INTEGER," +
-	"`send_failed_count` INTEGER" +
-	")"
+		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
+		"`task_id` INTEGER NOT NULL," +
+		"`send_message_count` INTEGER," +
+		"`resend_message_count` INTEGER," +
+		"`send_success_count` INTEGER," +
+		"`send_failed_count` INTEGER" +
+		")"
 	confdb.MustExec(s)
 	s = "CREATE TABLE IF NOT EXISTS `binlog_statistic`(" +
-	"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
-	"`schema` VARCHAR(255) NOT NULL," +
-	"`table` VARCHAR(255) NOT NULL," +
-	"`count` INTEGER" +
-	")"
+		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
+		"`schema` VARCHAR(255) NOT NULL," +
+		"`table` VARCHAR(255) NOT NULL," +
+		"`count` INTEGER" +
+		")"
 	confdb.MustExec(s)
 }
 
@@ -51,18 +52,18 @@ func (this *Statistic) IncSendFailedCount() {
 
 type TaskStatistics struct {
 	statistics map[int64]*Statistic
-	wg      sync.WaitGroup
-	ch      chan bool
+	wg         sync.WaitGroup
+	ch         chan bool
 }
 
 func NewTaskStatistics() *TaskStatistics {
 	return &TaskStatistics{
 		statistics: make(map[int64]*Statistic),
-		ch:      make(chan bool, 1),
+		ch:         make(chan bool, 1),
 	}
 }
 
-func (this *TaskStatistics) Save()(err error){
+func (this *TaskStatistics) Save() (err error) {
 	errs := []error{}
 	for taskid, statistic := range this.statistics {
 		var cnt int64
@@ -79,9 +80,9 @@ func (this *TaskStatistics) Save()(err error){
 			errs = append(errs, err)
 		}
 	}
-	if len(errs) > 0{
+	if len(errs) > 0 {
 		errStr := ""
-		for _, e := range errs{
+		for _, e := range errs {
 			errStr += "[" + e.Error() + "] "
 		}
 		err = errors.New(errStr)
@@ -89,7 +90,7 @@ func (this *TaskStatistics) Save()(err error){
 	return
 }
 
-func (this *TaskStatistics) Init()(err error) {
+func (this *TaskStatistics) Init() (err error) {
 	s := "SELECT task_id, send_message_count, resend_message_count, send_success_count, send_failed_count FROM statistic"
 	var rows *sql.Rows
 	rows, err = confdb.Query(s)
@@ -151,4 +152,3 @@ func (this *TaskStatistics) IncSendFailedCount(taskid int64) {
 func (this *TaskStatistics) Get(taskid int64) *Statistic {
 	return this.statistics[taskid]
 }
-

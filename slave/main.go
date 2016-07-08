@@ -14,6 +14,7 @@ import (
 	"mysql_byroad/model"
 	"runtime/debug"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 	"github.com/siddontang/go-mysql/client"
@@ -101,7 +102,8 @@ func StartSlave() {
 	owl = common.NewOWL(configer.GetString("OWL", "path", "/tmp"), configer.GetOWL())
 	owl.LogThisException("test exception")
 	httpClient = NewHttpClient()
-	confdb, err = sqlx.Open("sqlite3", configer.GetString("db", "filename", "config.db"))
+	//confdb, err = sqlx.Open("sqlite3", configer.GetString("db", "filename", "config.db"))
+	confdb, err = sqlx.Open("mysql", "root:root@/byroad?charset=utf8")
 	if err != nil {
 		panic(err)
 	}

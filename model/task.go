@@ -30,12 +30,12 @@ type Task struct {
 
 func CreateTaskTable() {
 	s := "CREATE TABLE IF NOT EXISTS `task` (" +
-		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
 		"`name` VARCHAR(120) NOT NULL," +
 		"`apiurl` VARCHAR(120) NOT NULL," +
 		"`event` VARCHAR(120) NOT NULL," +
 		"`stat` VARCHAR(120) NOT NULL," +
-		"`create_time` DATE NOT NULL," +
+		"`create_time` DATETIME NOT NULL," +
 		"`create_user` VARCHAR(120) NOT NULL," +
 		"`routine_count` INTEGER NOT NULL," +
 		"`re_routine_count` INTEGER NOT NULL," +

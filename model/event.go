@@ -34,15 +34,15 @@ type NotifyField struct {
 
 func CreateNotifyFieldTable() {
 	s := "CREATE TABLE IF NOT EXISTS `notify_field`(" +
-		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
 		"`schema` VARCHAR(120) NOT NULL," +
 		"`table` VARCHAR(120) NOT NULL," +
 		"`column` VARCHAR(120) NOT NULL," +
-		"`send` INTERGE NOT NULL," +
+		"`send` INTEGER NOT NULL," +
 		"`task_id` INTEGER NOT NULL," +
-		"`create_time` DATE NOT NULL" +
+		"`create_time` DATETIME NOT NULL" +
 		")"
-	confdb.Exec(s)
+	confdb.MustExec(s)
 }
 
 type NotifyFields []*NotifyField
