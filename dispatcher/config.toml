@@ -1,0 +1,21 @@
+[[mysql]]
+server_id = 2002
+host = "127.0.0.1"
+port = 3306
+username = "root"
+password = "root"
+binlog_filename = ""
+binlog_position = 0
+exclude = ["information_schema", "performance_schema", "mysql"]
+
+[monitor]
+host = "127.0.0.1"
+rpc_port = 1234
+
+[rpc_client]
+host = "127.0.0.1"
+port = 1235
+
+[nsq]
+lookupd_http_address = "127.0.0.1:4160"
+nsqd_tcp_address = []
