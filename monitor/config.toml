@@ -1,0 +1,19 @@
+[mysql]
+host = "127.0.0.1"
+port = 3306
+username = "root"
+password = "root"
+
+#做为rpcserver监听信息
+[rpcserver]
+host = "127.0.0.1"
+port = 1236
+dbname = "byroad"
+
+[web]
+host = "127.0.0.1"
+port = 4000
+auth_url = "http://auth.jumeird.com"
+#appkey = "560f13a69e4711e5a0ca842b2b738d12"
+appkey = "457e3930b5cc11e589e1842b2b738d12"
+appname = "bypass"

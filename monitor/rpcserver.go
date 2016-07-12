@@ -5,7 +5,9 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
-	"sort"
+
+	log "github.com/Sirupsen/logrus"
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type Monitor struct {
@@ -31,28 +33,14 @@ func (this *Monitor) start() {
 		panic(e.Error())
 	}
 	go http.Serve(l, nil)
-	//this.register(configer.GetString("rpc", "schema"))
 }
 
 func (m *Monitor) GetAllTasks(username string, tasks *[]*model.Task) error {
-	task := model.Task{
-		ID:     2,
-		Name:   "test",
-		Apiurl: "http://localhost:8091/get",
-		Stat:   "正常",
+	ts, err := model.GetAllTask()
+	if err != nil {
+		return err
 	}
-	fields := make([]*model.NotifyField, 0, 10)
-	field := model.NotifyField{
-		Schema: "byroad",
-		Table:  "task",
-		Column: "name",
-	}
-	fields = append(fields, &field)
-	task.Fields = fields
-	ts := make([]*model.Task, 0, 10)
-	ts = append(ts, &task)
 	*tasks = ts
-	sort.Sort(TaskSlice(*tasks))
-	//queueManager.TasksQueueLen(*tasks)
+	log.Debugf("tasks :%+v", ts)
 	return nil
 }

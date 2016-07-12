@@ -5,7 +5,8 @@ import "github.com/BurntSushi/toml"
 type Config struct {
 	MysqlConfs    []MysqlConf   `toml:"mysql"`
 	MonitorConf   MonitorConf   `toml:"monitor"`
-	RPCClientConf RPCClientConf `toml:"rpc_client"`
+	RPCServerConf RPCServerConf `toml:"rpc_server"`
+	NSQConf       NSQConf       `toml:"nsq"`
 }
 
 type MysqlConf struct {
@@ -24,14 +25,14 @@ type MonitorConf struct {
 	RpcPort int `toml:"rpc_port"`
 }
 
-type RPCClientConf struct {
+type RPCServerConf struct {
 	Host string
 	Port int
 }
 
 type NSQConf struct {
-	LookupdHttpAddr string   `toml:"lookupd_http_address"`
-	NsqdAddrs       []string `toml:"nsqd_tcp_address"`
+	LookupdHttpAddrs []string `toml:"lookupd_http_address"`
+	NsqdAddrs        []string `toml:"nsqd_tcp_address"`
 }
 
 var Conf Config

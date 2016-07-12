@@ -17,6 +17,7 @@ func NewTaskManager(rpcClientSchema, rpcServerSchema string) *TaskManager {
 	tm := &TaskManager{}
 	tm.rpcClient = NewRPCClient("tcp", rpcClientSchema, "")
 	tm.rpcServer = NewRPCServer("tcp", rpcServerSchema, "")
+	tm.rpcServer.tm = tm
 	tm.rpcServer.startRpcServer()
 	tm.initTasks()
 	return tm
@@ -37,12 +38,12 @@ func (tm *TaskManager) initTasks() {
 }
 
 func (tm *TaskManager) InNotifyTable(schema, table string) bool {
-	log.Debug("in notify table:", tm.notifyTaskMap.InNotifyTable(schema, table))
+	log.Debugf("%s, %s in notify table: %v", schema, table, tm.notifyTaskMap.InNotifyTable(schema, table))
 	return tm.notifyTaskMap.InNotifyTable(schema, table)
 }
 
 func (tm *TaskManager) InNotifyField(schema, table, column string) bool {
-	log.Debug("in notify field:", tm.notifyTaskMap.InNotifyField(schema, table, column))
+	log.Debugf("%s, %s, %s in notify field: %v", schema, table, column, tm.notifyTaskMap.InNotifyField(schema, table, column))
 	return tm.notifyTaskMap.InNotifyField(schema, table, column)
 }
 

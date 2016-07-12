@@ -15,6 +15,20 @@ type RowsEventHandler struct {
 	eventEnqueuer *EventEnqueuer
 }
 
+func NewRowsEventHandler(conf MysqlConf) *RowsEventHandler {
+	reh := &RowsEventHandler{}
+	cm := NewColumnManager(conf)
+	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
+	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
+	tm := NewTaskManager(rpcClientSchema, rpcServerSchema)
+	ee := NewEventEnqueuer(Conf.NSQConf.LookupdHttpAddrs)
+	reh.columnManager = cm
+	reh.taskManager = tm
+	reh.eventEnqueuer = ee
+
+	return reh
+}
+
 func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 	switch e := ev.Event.(type) {
 	case *replication.RowsEvent:

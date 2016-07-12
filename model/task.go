@@ -1,6 +1,7 @@
 package model
 
 import (
+	"mysql_byroad/model"
 	"time"
 )
 
@@ -158,4 +159,25 @@ func (task *Task) Add() (id int64, err error) {
 	}
 	task.ID = id
 	return
+}
+
+func GetAllTask() ([]*Task, error) {
+	ts := []*model.Task{}
+	err = confdb.Select(&ts, "SELECT * FROM `task`")
+	if err != nil {
+		return nil, err
+	}
+	fields := []*model.NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range ts {
+		for _, field := range fields {
+			if task.ID == field.TaskID {
+				task.Fields = append(task.Fields, field)
+			}
+		}
+	}
+	return ts, nil
 }

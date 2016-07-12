@@ -1,7 +1,6 @@
 package main
 
 import (
-	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -15,14 +14,7 @@ var replicationClients = make([]*ReplicationClient, 0, 5)
 func main() {
 	log.Debugf("Conf: %+v", Conf)
 	for _, conf := range Conf.MysqlConfs {
-		columnManager := NewColumnManager(conf)
-		rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
-		rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCClientConf.Host, Conf.RPCClientConf.Port)
-		taskManager := NewTaskManager(rpcClientSchema, rpcServerSchema)
-		handler := &RowsEventHandler{
-			columnManager: columnManager,
-			taskManager:   taskManager,
-		}
+		handler := NewRowsEventHandler(conf)
 		client := &ReplicationClient{
 			ServerId:       conf.ServerId,
 			Host:           conf.Host,

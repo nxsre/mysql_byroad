@@ -4,6 +4,8 @@ import (
 	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"sync"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type EventEnqueuer struct {
@@ -11,11 +13,23 @@ type EventEnqueuer struct {
 	sync.WaitGroup
 }
 
+func NewEventEnqueuer(lookupAddrs []string) *EventEnqueuer {
+	ee := &EventEnqueuer{}
+	qm, err := NewQueueManager(lookupAddrs)
+	if err != nil {
+		log.Error(err.Error())
+	}
+	ee.queueManager = qm
+	return ee
+}
+
 /*
 根据任务数量并发的将消息写入消息队列中
 */
 func (this *RowsEventHandler) Enqueue(schema, table, event string, taskFieldMap map[int64][]*model.ColumnValue) {
+	log.Debug(taskFieldMap)
 	for taskid, fields := range taskFieldMap {
+		log.Debug("rows event handler enqueue", taskid)
 		this.eventEnqueuer.Add(1)
 		go this.enqueue(schema, table, event, taskid, fields)
 	}
@@ -23,6 +37,7 @@ func (this *RowsEventHandler) Enqueue(schema, table, event string, taskFieldMap 
 }
 
 func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64, fields []*model.ColumnValue) {
+	log.Debug("eventEnqueuer enqueue")
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
 	ntyevt.Fields = make([]*model.ColumnValue, 0)

@@ -1,18 +1,21 @@
 package model
 
 import (
+	"fmt"
+
 	"github.com/jmoiron/sqlx"
 )
 
 var confdb *sqlx.DB
 
 // 不允许并发调用
-func Init(db *sqlx.DB){
+func Init(db *sqlx.DB) {
 	confdb = db
 }
 
 type DataPackProtocal int
-const(
+
+const (
 	// 旁路系统默认数据封装格式: 消息内容从post的body中读取。
 	PackProtocalDefault DataPackProtocal = iota
 	// 使用消息中心的推送协议进行数据封装: message=POST["message"], jobid=GET["jobid"], retry_times=GET["retry_times"]
@@ -34,6 +37,10 @@ type ColumnValue struct {
 	ColunmName string      `json:"columnName"`
 	Value      interface{} `json:"value"`
 	OldValue   interface{} `json:"oldValue"`
+}
+
+func (cv *ColumnValue) String() string {
+	return fmt.Sprintf("%s: %v -> %v", cv.ColunmName, cv.OldValue, cv.Value)
 }
 
 type OrderedSchema struct {
