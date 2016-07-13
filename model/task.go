@@ -1,7 +1,6 @@
 package model
 
 import (
-	"mysql_byroad/model"
 	"time"
 )
 
@@ -105,7 +104,9 @@ func (task *Task) _delete() (int64, error) {
 	}
 	return res.RowsAffected()
 }
-
+func (task *Task) Get() (*Task, error) {
+	return task._getByID()
+}
 func (task *Task) SetStat() error {
 	_, err := task._update()
 	if err != nil {
@@ -162,12 +163,12 @@ func (task *Task) Add() (id int64, err error) {
 }
 
 func GetAllTask() ([]*Task, error) {
-	ts := []*model.Task{}
-	err = confdb.Select(&ts, "SELECT * FROM `task`")
+	ts := []*Task{}
+	err := confdb.Select(&ts, "SELECT * FROM `task`")
 	if err != nil {
 		return nil, err
 	}
-	fields := []*model.NotifyField{}
+	fields := []*NotifyField{}
 	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
 	if err != nil {
 		return nil, err
@@ -180,4 +181,14 @@ func GetAllTask() ([]*Task, error) {
 		}
 	}
 	return ts, nil
+}
+
+func (task *Task) Exists() (bool, error) {
+	t, err := task._getByID()
+	if t != nil {
+		return true, nil
+	} else {
+		return false, err
+	}
+
 }

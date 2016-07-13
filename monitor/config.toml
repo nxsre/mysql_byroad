@@ -3,12 +3,17 @@ host = "127.0.0.1"
 port = 3306
 username = "root"
 password = "root"
+dbname = "byroad"
 
 #做为rpcserver监听信息
 [rpcserver]
 host = "127.0.0.1"
 port = 1236
 dbname = "byroad"
+
+[dispatcher]
+host = "127.0.0.1"
+rpc_port = 1235
 
 [web]
 host = "127.0.0.1"

@@ -1,0 +1,11 @@
+[nsq]
+lookupd_http_address = ["127.0.0.1:4161"]
+nsqd_tcp_address = []
+
+[monitor]
+host = "127.0.0.1"
+rpc_port = 1234
+
+[rpc_server]
+host = "127.0.0.1"
+port = 1236

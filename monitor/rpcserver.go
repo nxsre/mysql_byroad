@@ -15,6 +15,11 @@ type Monitor struct {
 	schema   string
 	desc     string
 }
+type ServiceSignal struct {
+	Code   string
+	Schema string
+	Desc   string
+}
 
 func NewRPCServer(protocol, schema, desc string) *Monitor {
 	monitor := Monitor{
@@ -42,5 +47,16 @@ func (m *Monitor) GetAllTasks(username string, tasks *[]*model.Task) error {
 	}
 	*tasks = ts
 	log.Debugf("tasks :%+v", ts)
+	return nil
+}
+
+func (m *Monitor) HandlePushClientSignal(ss *ServiceSignal, status *string) error {
+	log.Debugf("push client signal %+v", ss)
+	if ss.Code == "1" {
+		pusherManager.AddPushClient(ss.Schema)
+	} else if ss.Code == "0" {
+		pusherManager.DeletePushClient(ss.Schema)
+	}
+	*status = "OK"
 	return nil
 }

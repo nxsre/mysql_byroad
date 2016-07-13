@@ -62,7 +62,7 @@ func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	return nil
 }
 
-func (rs *RPCServer) GetDBMap(dbname string, os *model.OrderedSchemas) error {
+func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Debug("get db map:", dbname)
 	var cm columnMap = make(map[string]map[string][]string, 1)
 	cm[dbname] = DBMap[dbname]
@@ -70,7 +70,7 @@ func (rs *RPCServer) GetDBMap(dbname string, os *model.OrderedSchemas) error {
 	return nil
 }
 
-func (rs *RPCServer) GetAllDBMap(dbname string, os *model.OrderedSchemas) error {
+func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Debug("get all db map")
 	*os = getOrderedColumnsList(DBMap)
 	return nil

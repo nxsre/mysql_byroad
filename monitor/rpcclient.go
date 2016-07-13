@@ -36,12 +36,12 @@ func (this *RPCClient) AddTask(task *model.Task) (status string, err error) {
 	return
 }
 
-func (this *RPCClient) GetDBMap(dbname string) (dbmap model.OrderedSchemas, err error) {
+func (this *RPCClient) GetColumns(dbname string) (dbmap model.OrderedSchemas, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
 	}
 	defer client.Close()
-	err = client.Call("RPCServer.GetDBMap", dbname, &dbmap)
+	err = client.Call("RPCServer.GetColumns", dbname, &dbmap)
 	return
 }
