@@ -1,12 +1,12 @@
 package main
 
 import (
-	"epg/log"
 	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"net"
 	"net/http"
 	"net/rpc"
+	log "github.com/Sirupsen/logrus"
 )
 
 type RPCServer struct {

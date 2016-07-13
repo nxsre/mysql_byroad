@@ -1,7 +1,6 @@
 package main
 
 import (
-	"epg/log"
 	"fmt"
 	"mysql_byroad/model"
 	"os"
@@ -9,6 +8,7 @@ import (
 	"syscall"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 )
 
