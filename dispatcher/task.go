@@ -26,7 +26,7 @@ func NewTaskManager(rpcClientSchema, rpcServerSchema string) *TaskManager {
 func (tm *TaskManager) initTasks() {
 	tasks, err := tm.rpcClient.GetAllTasks("")
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("get all tasks: ", err.Error())
 	}
 	tm.taskIdMap = NewTaskIdMap(100)
 	for _, t := range tasks {

@@ -9,9 +9,10 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-var replicationClients = make([]*ReplicationClient, 0, 5)
+var replicationClients []*ReplicationClient
 
 func main() {
+	replicationClients = make([]*ReplicationClient, 0, 5)
 	log.Debugf("Conf: %+v", Conf)
 	for _, conf := range Conf.MysqlConfs {
 		handler := NewRowsEventHandler(conf)

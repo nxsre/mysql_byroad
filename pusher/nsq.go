@@ -20,18 +20,18 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 	return nil
 }
 
-func NewNSQConsumer(topic, channel string, concurrency int) *nsq.Consumer{
+func NewNSQConsumer(topic, channel string, concurrency int) *nsq.Consumer {
 	log.Debugf("new consumer %s/%s", topic, channel)
 	config := nsq.NewConfig()
 	c, err := nsq.NewConsumer(topic, channel, config)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("nsq new comsumer: ", err.Error())
 	}
 	h := &MessageHandler{}
 	c.AddConcurrentHandlers(h, concurrency)
 	err = c.ConnectToNSQLookupds(Conf.NSQConf.LookupdHttpAddrs)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("nsq connect to nsq lookupds: ", err.Error())
 	}
-    return c
+	return c
 }

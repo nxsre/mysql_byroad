@@ -34,6 +34,7 @@ func (this *RPCServer) startRpcServer() {
 		panic(e.Error())
 	}
 	go http.Serve(l, nil)
+	log.Infof("start rpc server at %s", this.schema)
 }
 
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
@@ -63,7 +64,7 @@ func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 }
 
 func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Debug("get db map:", dbname)
+	log.Debug("get columns:", dbname)
 	var cm columnMap = make(map[string]map[string][]string, 1)
 	cm[dbname] = DBMap[dbname]
 	*os = getOrderedColumnsList(cm)
@@ -71,7 +72,7 @@ func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
 }
 
 func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Debug("get all db map")
+	log.Debug("get all columns")
 	*os = getOrderedColumnsList(DBMap)
 	return nil
 }

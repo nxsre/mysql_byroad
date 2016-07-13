@@ -3,6 +3,8 @@ package main
 import (
 	"mysql_byroad/model"
 	"net/rpc"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type RPCClient struct {
@@ -27,6 +29,7 @@ func (this *RPCClient) GetClient() (client *rpc.Client, err error) {
 }
 
 func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err error) {
+	log.Debug("rpc client get all tasks")
 	client, err := this.GetClient()
 	if err != nil {
 		return

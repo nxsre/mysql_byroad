@@ -15,6 +15,9 @@ type RowsEventHandler struct {
 	eventEnqueuer *EventEnqueuer
 }
 
+/*
+	对row格式的数据进行处理
+*/
 func NewRowsEventHandler(conf MysqlConf) *RowsEventHandler {
 	reh := &RowsEventHandler{}
 	cm := NewColumnManager(conf)
@@ -40,13 +43,13 @@ func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 		case replication.UPDATE_ROWS_EVENTv1, replication.UPDATE_ROWS_EVENTv2:
 			reh.HandleUpdateEvent(e)
 		default:
-			log.Debug("Event type %s not supported", ev.Header.EventType)
+			log.Info("Event type %s not supported", ev.Header.EventType)
 		}
 	}
 }
 
 func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
-	log.Debug("handle write event")
+	log.Info("handle write event")
 	event := common.INSERT_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
 	if !eh.taskManager.InNotifyTable(schema, table) {
@@ -54,7 +57,6 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
-		//binlogStatistics.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := eh.columnManager.GetColumnName(schema, table, j)
 			if eh.taskManager.InNotifyField(schema, table, column) {
@@ -74,7 +76,7 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 }
 
 func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
-	log.Debug("handle delete event")
+	log.Info("handle delete event")
 	event := common.DELETE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
 	if !eh.taskManager.InNotifyTable(schema, table) {
@@ -82,7 +84,6 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
-		//binlogStatistics.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := eh.columnManager.GetColumnName(schema, table, j)
 			if eh.taskManager.InNotifyField(schema, table, column) {
@@ -103,7 +104,7 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 }
 
 func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
-	log.Debug("handle update event")
+	log.Info("handle update event")
 	event := common.UPDATE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
 	if !eh.taskManager.InNotifyTable(schema, table) {
@@ -112,7 +113,6 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 	oldRows, newRows := getUpdateRows(e)
 	for i := 0; i < len(oldRows) && i < len(newRows); i++ {
 		columns := []*model.ColumnValue{}
-		//binlogStatistics.IncStatistic(schema, table, event)
 		oldRow := oldRows[i]
 		newRow := newRows[i]
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
@@ -151,12 +151,12 @@ func getUpdateRows(e *replication.RowsEvent) (oldRows [][]interface{}, newRows [
 根据`数据库-表-字段` 匹配订阅了该字段的任务，为每个任务生成相应的消息，放入推送消息队列中
 */
 func (eh *RowsEventHandler) genNotifyEvents(schema, table string, columns []*model.ColumnValue, event string) {
-	log.Debugf("gen notify event: %s %s %s %v", event, schema, table, columns)
+	log.Infof("gen notify event: %s %s %s %v", event, schema, table, columns)
 	//为相应的任务添加订阅了的字段
 	taskFieldMap := make(map[int64][]*model.ColumnValue)
 	for _, column := range columns {
 		ids := eh.taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
-		log.Debug("ids", ids)
+		log.Debug("ids ", ids)
 		for _, taskID := range ids {
 			if taskFieldMap[taskID] == nil {
 				taskFieldMap[taskID] = make([]*model.ColumnValue, 0)

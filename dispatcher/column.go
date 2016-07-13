@@ -45,6 +45,9 @@ func NewColumnManager(config MysqlConf) *ColumnManager {
 	return &cm
 }
 
+/*
+	根据数据库名和表名，获取所有的字段
+*/
 func (this *ColumnManager) GetColumnNames(schema, table string) []string {
 	cols := this.columns
 	this.RLock()
@@ -57,6 +60,9 @@ func (this *ColumnManager) GetColumnNames(schema, table string) []string {
 	}
 }
 
+/*
+	根据数据库名和表民，获取相应的index的字段名
+*/
 func (this *ColumnManager) GetColumnName(schema, table string, index int) string {
 	colNames := this.GetColumnNames(schema, table)
 	colLength := len(colNames)
@@ -73,22 +79,27 @@ func (this *ColumnManager) GetColumnName(schema, table string, index int) string
 	}
 }
 
+/*
+	根据数据库名和表名，更新其字段信息
+*/
 func (this *ColumnManager) UpdateGetColumnNames(schema, table string) []string {
 	var err error
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/information_schema", this.username, this.password, this.host, this.port)
 	this.db, err = sql.Open("mysql", dsn)
-	log.Error(err.Error())
+	if err != nil {
+		log.Error("column manager: ", err.Error())
+	}
 	defer this.db.Close()
 	stmt, err := this.db.Prepare("SELECT COLUMN_NAME FROM columns WHERE table_schema = ? AND table_name = ?")
-	log.Error(err.Error())
 	columnNames := []string{}
 	if err != nil {
+		log.Error("column manager: ", err.Error())
 		return columnNames
 	}
 	defer stmt.Close()
 	rows, err := stmt.Query(schema, table)
-	log.Error(err.Error())
 	if err != nil {
+		log.Error("column manager: ", err.Error())
 		return columnNames
 	}
 	for rows.Next() {
@@ -105,6 +116,9 @@ func (this *ColumnManager) UpdateGetColumnNames(schema, table string) []string {
 	return columnNames
 }
 
+/*
+	重新加载所有的数据库名，表名和字段信息
+*/
 func (this *ColumnManager) ReloadColumnsMap() {
 	this.getColumnsMap()
 }
@@ -126,13 +140,13 @@ func (this *ColumnManager) getColumnsMap() {
 	}
 	stm, err := this.db.Prepare(sqlStr)
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("get columnsMap: ", err.Error())
 		return
 	}
 	var rows *sql.Rows
 	rows, err = stm.Query()
 	if err != nil {
-		log.Error(err.Error())
+		log.Error("get columnsMap: ", err.Error())
 		return
 	}
 	for rows.Next() {

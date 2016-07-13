@@ -1,6 +1,10 @@
 package main
 
-import "github.com/BurntSushi/toml"
+import (
+	"mysql_byroad/common"
+
+	"github.com/BurntSushi/toml"
+)
 
 type Config struct {
 	MysqlConf      MysqlConf      `toml:"mysql"`
@@ -23,7 +27,7 @@ type RPCServerConf struct {
 
 type DispatcherConf struct {
 	Host    string
-	RPCPort int
+	RPCPort int `toml:"rpc_port"`
 }
 
 type WebConfig struct {
@@ -37,7 +41,8 @@ type WebConfig struct {
 var Conf Config
 
 func init() {
-	_, err := toml.DecodeFile("config.toml", &Conf)
+	configFile := common.ParseConfig()
+	_, err := toml.DecodeFile(configFile, &Conf)
 	if err != nil {
 		panic(err)
 	}

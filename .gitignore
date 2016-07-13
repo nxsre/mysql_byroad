@@ -16,3 +16,6 @@ slave-web
 *.sh
 build
 vendor
+dispatcher/dispatcher
+monitor/monitor
+pusher/pusher

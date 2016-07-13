@@ -37,6 +37,7 @@ func (this *Monitor) start() {
 	if e != nil {
 		panic(e.Error())
 	}
+	log.Infof("start rpc server at %s", this.schema)
 	go http.Serve(l, nil)
 }
 

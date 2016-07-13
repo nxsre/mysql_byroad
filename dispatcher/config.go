@@ -1,6 +1,7 @@
 package main
 
 import "github.com/BurntSushi/toml"
+import "mysql_byroad/common"
 
 type Config struct {
 	MysqlConfs    []MysqlConf   `toml:"mysql"`
@@ -38,7 +39,8 @@ type NSQConf struct {
 var Conf Config
 
 func init() {
-	_, err := toml.DecodeFile("config.toml", &Conf)
+	configFile := common.ParseConfig()
+	_, err := toml.DecodeFile(configFile, &Conf)
 	if err != nil {
 		panic(err)
 	}

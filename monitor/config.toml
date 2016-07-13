@@ -8,8 +8,7 @@ dbname = "byroad"
 #做为rpcserver监听信息
 [rpcserver]
 host = "127.0.0.1"
-port = 1236
-dbname = "byroad"
+port = 1234
 
 [dispatcher]
 host = "127.0.0.1"

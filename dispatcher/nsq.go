@@ -50,7 +50,7 @@ func getNodesInfo(lookupAddrs []string) []string {
 		endpoint := fmt.Sprintf("http://%s/nodes", addr)
 		resp, err := http.Get(endpoint)
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("nsq get node info: ", err.Error())
 			continue
 		}
 		body, err := ioutil.ReadAll(resp.Body)
@@ -100,7 +100,7 @@ func (qm *QueueManager) getProducers() []*nsq.Producer {
 	for _, node := range qm.nsqdAddrs {
 		pro, err := nsq.NewProducer(node, qm.config)
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("nsq get producer: ", err.Error())
 			continue
 		}
 		err = pro.Ping()
@@ -142,16 +142,16 @@ func (qm *QueueManager) GetProducer() (*nsq.Producer, error) {
 }
 
 func (qm *QueueManager) Enqueue(name string, evt interface{}) {
-	log.Debug("nsq publish ", name)
+	log.Info("nsq publish ", name)
 	p, err := qm.GetProducer()
 	if err == nil {
 		evtMsg, err := json.Marshal(evt)
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("json marshal: ", err.Error())
 		}
 		err = p.Publish(name, evtMsg)
 		if err != nil {
-			log.Error(err.Error())
+			log.Error("nsq publish: ", err.Error())
 		}
 	} else {
 		log.Error("nsq enqueue error: ", err.Error())

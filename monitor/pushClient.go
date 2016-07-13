@@ -22,6 +22,7 @@ func NewPusherManager() *PusherManager {
 func (pm *PusherManager) AddPushClient(schema string) {
 	client := NewRPCClient("tcp", schema, "")
 	pm.rpcclients = append(pm.rpcclients, client)
+	log.Infof("add push client: %s, length: %d ", schema, len(pm.rpcclients))
 }
 
 func (pm *PusherManager) DeletePushClient(schema string) {
@@ -32,12 +33,19 @@ func (pm *PusherManager) DeletePushClient(schema string) {
 			break
 		}
 	}
-	pm.rpcclients = append(pm.rpcclients[0:index], pm.rpcclients[index+1:len(pm.rpcclients)]...)
+	if len(pm.rpcclients) <= 1 {
+		pm.rpcclients = make([]*RPCClient, 0, 10)
+	} else {
+		pm.rpcclients = append(pm.rpcclients[0:index], pm.rpcclients[index+1:len(pm.rpcclients)]...)
+	}
+	log.Infof("delete push client %s, length: %d", schema, len(pm.rpcclients))
 }
 
 func (pm *PusherManager) AddTask(task *model.Task) {
 	for _, client := range pm.rpcclients {
 		status, err := client.AddTask(task)
-		log.Errorf("pusher manager add task status: %s, error: %s", status, err.Error())
+		if err != nil {
+			log.Errorf("pusher manager add task status: %s, error: %s", status, err.Error())
+		}
 	}
 }

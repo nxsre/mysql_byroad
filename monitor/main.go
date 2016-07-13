@@ -12,12 +12,16 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var pusherManager *PusherManager = NewPusherManager()
-var rpcClient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.DispatcherConf.Host, Conf.DispatcherConf.RPCPort), "")
+var pusherManager *PusherManager
+var rpcClient *RPCClient
+var rpcServer *Monitor
 
 func main() {
-	server := NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
-	server.start()
+	log.Debugf("Conf: %+v", Conf)
+	pusherManager = NewPusherManager()
+	rpcClient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.DispatcherConf.Host, Conf.DispatcherConf.RPCPort), "")
+	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
+	rpcServer.start()
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
 		Conf.MysqlConf.Username, Conf.MysqlConf.Password, Conf.MysqlConf.Host, Conf.MysqlConf.Port,
 		Conf.MysqlConf.DBName)
@@ -26,6 +30,19 @@ func main() {
 		panic(err)
 	}
 	model.Init(confdb)
+	//for test
+	time.AfterFunc(time.Second*10, func() {
+		task := &model.Task{
+			ID:   4,
+			Name: "yangxin",
+		}
+		status, err := rpcClient.AddTask(task)
+		if err != nil {
+			log.Debug("rpcclient add task ", status, err)
+		}
+		pusherManager.AddTask(task)
+	})
+
 	StartServer()
 }
 

@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -31,6 +32,7 @@ func (this *RPCServer) startRpcServer() {
 	if e != nil {
 		panic(e.Error())
 	}
+	log.Infof("start rpc server at %s", this.schema)
 	go http.Serve(l, nil)
 }
 

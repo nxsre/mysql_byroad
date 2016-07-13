@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-func getTodayName(dir string) string {
+func GetTodayName(dir string) string {
 	t := time.Now()
 	year, month, day := t.Date()
 	res := fmt.Sprintf("%04d%02d%02d.log", year, month, day)
