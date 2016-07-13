@@ -26,13 +26,13 @@ init-build-dir:
 	mkdir -p build
 
 byroad-dispatcher:
-	cd ${WORKPATH}/dispatcher && go build -o ${WORKPATH}/build/byroad-dispatcher
+	cd ${WORKPATH}/dispatcher && godep go build -o ${WORKPATH}/build/byroad-dispatcher
 
 byroad-monitor:
-	cd ${WORKPATH}/monitor && go build -o ${WORKPATH}/build/byroad-monitor
+	cd ${WORKPATH}/monitor && godep go build -o ${WORKPATH}/build/byroad-monitor
 
 byroad-pusher:
-	cd ${WORKPATH}/pusher && go build -o ${WORKPATH}/build/byroad-pusher
+	cd ${WORKPATH}/pusher && godep go build -o ${WORKPATH}/build/byroad-pusher
 
 build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher
 
