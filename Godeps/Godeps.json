@@ -1,0 +1,124 @@
+{
+	"ImportPath": "mysql_byroad",
+	"GoVersion": "go1.6",
+	"Packages": [
+		"./..."
+	],
+	"Deps": [
+		{
+			"ImportPath": "github.com/BurntSushi/toml",
+			"Comment": "v0.2.0-14-gffaa107",
+			"Rev": "ffaa107fbd880f6d18cd6fec9b511668dcad8639"
+		},
+		{
+			"ImportPath": "github.com/Sirupsen/logrus",
+			"Comment": "v0.10.0-16-gcd7d1bb",
+			"Rev": "cd7d1bbe41066b6c1f19780f895901052150a575"
+		},
+		{
+			"ImportPath": "github.com/Unknwon/com",
+			"Rev": "28b053d5a2923b87ce8c5a08f3af779894a72758"
+		},
+		{
+			"ImportPath": "github.com/Unknwon/goconfig",
+			"Rev": "18bc852dc01720ee9f0e9e0a01a1bdbc8744095c"
+		},
+		{
+			"ImportPath": "github.com/go-macaron/binding",
+			"Rev": "2502aaf4bce3a4e6451b4610847bfb8dffdb6266"
+		},
+		{
+			"ImportPath": "github.com/go-macaron/inject",
+			"Rev": "c5ab7bf3a307593cd44cb272d1a5beea473dd072"
+		},
+		{
+			"ImportPath": "github.com/go-macaron/pongo2",
+			"Rev": "b9b1ee57954e1242dae72eb28ba078e04f6c9284"
+		},
+		{
+			"ImportPath": "github.com/go-macaron/session",
+			"Rev": "66031fcb37a0fff002a1f028eb0b3a815c78306b"
+		},
+		{
+			"ImportPath": "github.com/go-sql-driver/mysql",
+			"Comment": "v1.2-125-gd512f20",
+			"Rev": "d512f204a577a4ab037a1816604c48c9c13210be"
+		},
+		{
+			"ImportPath": "github.com/jmoiron/sqlx",
+			"Comment": "sqlx-v1.1-53-g54aec3f",
+			"Rev": "54aec3fd91a2b2129ffaca0d652b8a9223ee2d9e"
+		},
+		{
+			"ImportPath": "github.com/jmoiron/sqlx/reflectx",
+			"Comment": "sqlx-v1.1-53-g54aec3f",
+			"Rev": "54aec3fd91a2b2129ffaca0d652b8a9223ee2d9e"
+		},
+		{
+			"ImportPath": "github.com/juju/errors",
+			"Rev": "b2c7a7da5b2995941048f60146e67702a292e468"
+		},
+		{
+			"ImportPath": "github.com/mattn/go-sqlite3",
+			"Comment": "v1.1.0-62-g467f50b",
+			"Rev": "467f50b0c026317ad28fc2c0a08aab6f755cfc7a"
+		},
+		{
+			"ImportPath": "github.com/mreiferson/go-snappystream",
+			"Comment": "v0.2.3",
+			"Rev": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504"
+		},
+		{
+			"ImportPath": "github.com/mreiferson/go-snappystream/snappy-go",
+			"Comment": "v0.2.3",
+			"Rev": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504"
+		},
+		{
+			"ImportPath": "github.com/nsqio/go-nsq",
+			"Comment": "v1.0.6",
+			"Rev": "d71fb89c9e0263aaed89645b0b168e11ccf597b1"
+		},
+		{
+			"ImportPath": "github.com/satori/go.uuid",
+			"Rev": "e673fdd4dea8a7334adbbe7f57b7e4b00bdc5502"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/client",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/mysql",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/packet",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go-mysql/replication",
+			"Rev": "1a1e7fd11cb6e2d7034f903a2a8b62c8aa47a170"
+		},
+		{
+			"ImportPath": "github.com/siddontang/go/hack",
+			"Rev": "354e14e6c093c661abb29fd28403b3c19cff5514"
+		},
+		{
+			"ImportPath": "golang.org/x/sys/unix",
+			"Rev": "076b546753157f758b316e59bcb51e6807c04057"
+		},
+		{
+			"ImportPath": "gopkg.in/flosch/pongo2.v3",
+			"Comment": "v3.0",
+			"Rev": "5e81b817a0c48c1c57cdf1a9056cf76bdee02ca9"
+		},
+		{
+			"ImportPath": "gopkg.in/ini.v1",
+			"Comment": "v0-59-g641bc91",
+			"Rev": "641bc9176a619ec385aa1fd54cb2b102103fe86f"
+		},
+		{
+			"ImportPath": "gopkg.in/macaron.v1",
+			"Rev": "1c6dd87797ae9319b4658cbd48d1d0420b279fd5"
+		}
+	]
+}

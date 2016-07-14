@@ -24,27 +24,21 @@ front_env:
 	cd ${WORKPATH}/public && npm install
 init-build-dir:
 	mkdir -p build
-slaveserver:
-	cd slave/bin &&  go build -tags "main" -o ${WORKPATH}/build/slave-main
 
-webserver:
-	cd web/bin/ && go build -tags "web" -o ${WORKPATH}/build/slave-web
+byroad-dispatcher:
+	cd ${WORKPATH}/dispatcher && godep go build -o ${WORKPATH}/build/byroad-dispatcher
 
-build:init-build-dir slaveserver webserver
+byroad-monitor:
+	cd ${WORKPATH}/monitor && godep go build -o ${WORKPATH}/build/byroad-monitor
 
+byroad-pusher:
+	cd ${WORKPATH}/pusher && godep go build -o ${WORKPATH}/build/byroad-pusher
 
-run:
-	${WORKPATH}/build/slave-web > ${WORKPATH}/build/slave-web.log 2>&1&
-	${WORKPATH}/build/slave-main > ${WORKPATH}/build/slave-main.log 2>&1&
-
-runmain:
-	${WORKPATH}/build/slave-main > ${WORKPATH}/build/slave-main.log 2>&1&
-
-runweb:
-	${WORKPATH}/build/slave-web > ${WORKPATH}/build/slave-web.log 2>&1&
+build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher
 
 clean:
 	rm -rf *.log *.tar.gz build
+
 tag:
 	@gotags -R ${WORKPATH}/*.go > ${WORKPATH}/tags
 
@@ -52,10 +46,10 @@ todo:
 	@grep --color=auto -r -n TODO ./*.go
 
 tarsource:
-	tar -czf slave-src.tar.gz common gorpool goticker model public slave templates web Makefile
+	tar -czf byroad-src.tar.gz common dispatcher model monitor public pusher templates Makefile 
 
 tarbin:build
-	tar -czf slave-bin.tar.gz build/slave-main build/slave-web templates public
+	tar -czf byroad-bin.tar.gz build templates public
 
 
 savedep:

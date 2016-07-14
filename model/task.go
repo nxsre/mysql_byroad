@@ -30,12 +30,12 @@ type Task struct {
 
 func CreateTaskTable() {
 	s := "CREATE TABLE IF NOT EXISTS `task` (" +
-		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
 		"`name` VARCHAR(120) NOT NULL," +
 		"`apiurl` VARCHAR(120) NOT NULL," +
 		"`event` VARCHAR(120) NOT NULL," +
 		"`stat` VARCHAR(120) NOT NULL," +
-		"`create_time` DATE NOT NULL," +
+		"`create_time` DATETIME NOT NULL," +
 		"`create_user` VARCHAR(120) NOT NULL," +
 		"`routine_count` INTEGER NOT NULL," +
 		"`re_routine_count` INTEGER NOT NULL," +
@@ -104,7 +104,9 @@ func (task *Task) _delete() (int64, error) {
 	}
 	return res.RowsAffected()
 }
-
+func (task *Task) Get() (*Task, error) {
+	return task._getByID()
+}
 func (task *Task) SetStat() error {
 	_, err := task._update()
 	if err != nil {
@@ -158,4 +160,35 @@ func (task *Task) Add() (id int64, err error) {
 	}
 	task.ID = id
 	return
+}
+
+func GetAllTask() ([]*Task, error) {
+	ts := []*Task{}
+	err := confdb.Select(&ts, "SELECT * FROM `task`")
+	if err != nil {
+		return nil, err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range ts {
+		for _, field := range fields {
+			if task.ID == field.TaskID {
+				task.Fields = append(task.Fields, field)
+			}
+		}
+	}
+	return ts, nil
+}
+
+func (task *Task) Exists() (bool, error) {
+	t, err := task._getByID()
+	if t != nil {
+		return true, nil
+	} else {
+		return false, err
+	}
+
 }
