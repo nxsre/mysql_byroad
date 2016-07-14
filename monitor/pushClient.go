@@ -30,13 +30,9 @@ func (pm *PusherManager) DeletePushClient(schema string) {
 	for idx, client := range pm.rpcclients {
 		if client.Schema == schema {
 			index = idx
+			pm.rpcclients = append(pm.rpcclients[:index], pm.rpcclients[index+1:]...)
 			break
 		}
-	}
-	if len(pm.rpcclients) <= 1 {
-		pm.rpcclients = make([]*RPCClient, 0, 10)
-	} else {
-		pm.rpcclients = append(pm.rpcclients[0:index], pm.rpcclients[index+1:len(pm.rpcclients)]...)
 	}
 	log.Infof("delete push client %s, length: %d", schema, len(pm.rpcclients))
 }
