@@ -38,7 +38,7 @@ func (this *RPCServer) startRpcServer() {
 }
 
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
-	log.Debug("add task: ", task)
+	log.Debugf("add task: %+v", task)
 	*status = "sucess"
 	rs.tm.taskIdMap.Set(task.ID, task)
 	if task.Stat == common.TASK_STATE_START {

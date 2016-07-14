@@ -8,9 +8,11 @@ import (
 	"io/ioutil"
 	"mysql_byroad/model"
 	"net/http"
+	"sort"
 	"strings"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/pongo2"
 	"github.com/go-macaron/session"
@@ -45,8 +47,6 @@ type TaskForm struct {
 	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
 }
 
-
-
 func StartServer() {
 	m := macaron.New()
 	m.Use(macaron.Recovery())
@@ -55,7 +55,6 @@ func StartServer() {
 			SkipLogging: true,
 		},
 	))
-
 	m.Use(pongo2.Pongoer())
 	m.Use(session.Sessioner(session.Options{
 		CookiePath:  "/",
@@ -259,12 +258,7 @@ func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	/*rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient != nil {
-		colslist, _ := rpcclient.GetColumns()
-		ctx.Data["colslist"] = colslist
-	}*/
-	colslist, _ := rpcClient.GetColumns("byroad")
+	colslist, _ := rpcClient.GetAllColumns()
 	ctx.Data["colslist"] = colslist
 
 	ctx.HTML(200, "addtask")
@@ -275,24 +269,6 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	/*rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient != nil {
-		taskid := ctx.ParamsInt64("taskid")
-		task, _ := rpcclient.GetTask(taskid)
-		if task == nil {
-			ctx.HTML(404, "404")
-			return
-		}
-		if !checkTaskUser(task, sess) {
-			ctx.HTML(403, "403")
-			return
-		}
-		ctx.Data["task"] = task
-		taskColumnsMap, _ := rpcclient.GetTaskColumns(task)
-		ctx.Data["taskColumnsMap"] = taskColumnsMap
-		colslist, _ := rpcclient.GetColumns()
-		ctx.Data["colslist"] = colslist
-	}*/
 	taskid := ctx.ParamsInt64("taskid")
 	task := &model.Task{
 		ID: taskid,
@@ -303,7 +279,8 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	ctx.Data["task"] = task
-	colslist, _ := rpcClient.GetColumns("byroad")
+	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
+	colslist, _ := rpcClient.GetAllColumns()
 	ctx.Data["colslist"] = colslist
 
 	ctx.HTML(200, "modifytask")
@@ -322,19 +299,6 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
-	/*
-		rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-		if rpcclient == nil {
-			return "RPC client not exists!"
-		}
-
-		exists, _ := rpcclient.TaskNameExists(t.Name)
-		if exists {
-			resp.Error = true
-			resp.Message = "名字已存在"
-			body, _ := json.Marshal(resp)
-			return string(body)
-		}*/
 	task := new(model.Task)
 	copyTask(&t, task)
 	task.CreateUser = sess.Get("user").(string)
@@ -358,7 +322,6 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		}
 	}
 
-	//_, err := rpcclient.AddTask(task)
 	_, err := task.Add()
 	if err != nil {
 		resp.Error = true
@@ -366,6 +329,11 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "添加成功!"
 	}
+	_, err = rpcClient.AddTask(task)
+	if err != nil {
+		log.Error("add task error: ", err.Error())
+	}
+	pusherManager.AddTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
 
@@ -397,6 +365,11 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "删除成功"
 	}
+	_, err = rpcClient.DeleteTask(task)
+	if err != nil {
+		log.Error("delete task: ", err.Error())
+	}
+	pusherManager.DeleteTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(204)
 	return string(body)
@@ -451,27 +424,29 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "更新成功!"
 	}
+	_, err = rpcClient.UpdateTask(task)
+	if err != nil {
+		log.Error("update task: ", err.Error())
+	}
+	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
 	return string(body)
 }
 
 func tasklist(ctx *macaron.Context, sess session.Store) {
-	/*if !checkAuth(ctx, sess, "all") {
+	if !checkAuth(ctx, sess, "all") {
 		ctx.HTML(403, "403")
 		return
 	}
-	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient != nil {
-		var sortTasks []*model.Task
-		if checkAuth(ctx, sess, "admin") {
-			sortTasks, _ = rpcclient.GetAllTasks(sess.Get("user").(string))
-		} else {
-			sortTasks, _ = rpcclient.GetTasks(sess.Get("user").(string))
-		}
-		ctx.Data["tasks"] = sortTasks
-	}*/
-
+	var sortTasks []*model.Task
+	if checkAuth(ctx, sess, "admin") {
+		sortTasks, _ = model.GetAllTask()
+	} else {
+		sortTasks, _ = model.GetAllTask()
+	}
+	sort.Sort(TaskSlice(sortTasks))
+	ctx.Data["tasks"] = sortTasks
 	ctx.HTML(200, "tasklist")
 }
 
@@ -503,6 +478,11 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 		resp.Error = false
 		resp.Message = "操作成功"
 	}
+	_, err = rpcClient.UpdateTask(task)
+	if err != nil {
+		log.Error("change task stat: ", err.Error())
+	}
+	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
 	return string(body)
 }

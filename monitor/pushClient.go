@@ -45,3 +45,21 @@ func (pm *PusherManager) AddTask(task *model.Task) {
 		}
 	}
 }
+
+func (pm *PusherManager) DeleteTask(task *model.Task) {
+	for _, client := range pm.rpcclients {
+		status, err := client.DeleteTask(task)
+		if err != nil {
+			log.Errorf("pusher manager delete task status: %s, error: %s", status, err.Error())
+		}
+	}
+}
+
+func (pm *PusherManager) UpdateTask(task *model.Task) {
+	for _, client := range pm.rpcclients {
+		status, err := client.UpdateTask(task)
+		if err != nil {
+			log.Errorf("pusher manager update task status: %s, error: %s", status, err.Error())
+		}
+	}
+}

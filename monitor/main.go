@@ -43,7 +43,8 @@ func main() {
 		pusherManager.AddTask(task)
 	})
 
-	StartServer()
+	go StartServer()
+	HandleSignal()
 }
 
 // HandleSignal fetch signal from chan then do exit or reload.

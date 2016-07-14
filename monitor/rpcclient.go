@@ -36,6 +36,26 @@ func (this *RPCClient) AddTask(task *model.Task) (status string, err error) {
 	return
 }
 
+func (this *RPCClient) DeleteTask(task *model.Task) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.DeleteTask", task.ID, &status)
+	return
+}
+
+func (this *RPCClient) UpdateTask(task *model.Task) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.UpdateTask", task, &status)
+	return
+}
+
 func (this *RPCClient) GetColumns(dbname string) (dbmap model.OrderedSchemas, err error) {
 	client, err := this.GetClient()
 	if err != nil {
@@ -43,5 +63,15 @@ func (this *RPCClient) GetColumns(dbname string) (dbmap model.OrderedSchemas, er
 	}
 	defer client.Close()
 	err = client.Call("RPCServer.GetColumns", dbname, &dbmap)
+	return
+}
+
+func (this *RPCClient) GetAllColumns() (dbmap model.OrderedSchemas, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.GetAllColumns", "", &dbmap)
 	return
 }
