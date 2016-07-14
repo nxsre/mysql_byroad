@@ -15,3 +15,7 @@ slave-web
 *.tar.gz
 *.sh
 build
+vendor
+dispatcher/dispatcher
+monitor/monitor
+pusher/pusher
