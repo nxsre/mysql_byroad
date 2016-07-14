@@ -54,9 +54,20 @@ func (m *Monitor) GetAllTasks(username string, tasks *[]*model.Task) error {
 func (m *Monitor) HandlePushClientSignal(ss *ServiceSignal, status *string) error {
 	log.Debugf("push client signal %+v", ss)
 	if ss.Code == "1" {
-		pusherManager.AddPushClient(ss.Schema)
+		pusherManager.AddPushClient(ss.Schema, ss.Desc)
 	} else if ss.Code == "0" {
 		pusherManager.DeletePushClient(ss.Schema)
+	}
+	*status = "OK"
+	return nil
+}
+
+func (m *Monitor) HandleDispatchClientSignal(ss *ServiceSignal, status *string) error {
+	log.Debugf("dispatch client signal %+v", ss)
+	if ss.Code == "1" {
+		dispatcherManager.AddDispatchClient(ss.Schema, ss.Desc)
+	} else if ss.Code == "0" {
+		dispatcherManager.DeleteDispatchClient(ss.Schema)
 	}
 	*status = "OK"
 	return nil

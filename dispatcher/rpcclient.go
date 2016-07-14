@@ -13,6 +13,12 @@ type RPCClient struct {
 	Desc     string
 }
 
+type ServiceSignal struct {
+	Code   string
+	Schema string
+	Desc   string
+}
+
 func NewRPCClient(protocol, schema, desc string) *RPCClient {
 	client := RPCClient{
 		protocol: protocol,
@@ -36,5 +42,35 @@ func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err er
 	}
 	defer client.Close()
 	err = client.Call("Monitor.GetAllTasks", username, &tasks)
+	return
+}
+
+func (this *RPCClient) RegisterClient(schema, desc string) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	ss := ServiceSignal{
+		Code:   "1",
+		Schema: schema,
+		Desc:   desc,
+	}
+	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	return
+}
+
+func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	ss := ServiceSignal{
+		Code:   "0",
+		Schema: schema,
+		Desc:   desc,
+	}
+	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
 	return
 }

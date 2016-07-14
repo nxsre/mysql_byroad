@@ -10,9 +10,6 @@ import (
 )
 
 type RowsEventHandler struct {
-	columnManager *ColumnManager
-	taskManager   *TaskManager
-	eventEnqueuer *EventEnqueuer
 }
 
 /*
@@ -20,15 +17,6 @@ type RowsEventHandler struct {
 */
 func NewRowsEventHandler(conf MysqlConf) *RowsEventHandler {
 	reh := &RowsEventHandler{}
-	cm := NewColumnManager(conf)
-	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
-	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
-	tm := NewTaskManager(rpcClientSchema, rpcServerSchema)
-	ee := NewEventEnqueuer(Conf.NSQConf.LookupdHttpAddrs)
-	reh.columnManager = cm
-	reh.taskManager = tm
-	reh.eventEnqueuer = ee
-
 	return reh
 }
 
@@ -52,14 +40,14 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 	log.Info("handle write event")
 	event := common.INSERT_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	if !eh.taskManager.InNotifyTable(schema, table) {
+	if !taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
 		for j, r := range row {
-			column := eh.columnManager.GetColumnName(schema, table, j)
-			if eh.taskManager.InNotifyField(schema, table, column) {
+			column := columnManager.GetColumnName(schema, table, j)
+			if taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := r.(type) {
@@ -79,14 +67,14 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 	log.Info("handle delete event")
 	event := common.DELETE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	if !eh.taskManager.InNotifyTable(schema, table) {
+	if !taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
 		for j, r := range row {
-			column := eh.columnManager.GetColumnName(schema, table, j)
-			if eh.taskManager.InNotifyField(schema, table, column) {
+			column := columnManager.GetColumnName(schema, table, j)
+			if taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				//c.Value = r
@@ -107,7 +95,7 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 	log.Info("handle update event")
 	event := common.UPDATE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	if !eh.taskManager.InNotifyTable(schema, table) {
+	if !taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	oldRows, newRows := getUpdateRows(e)
@@ -116,8 +104,8 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		oldRow := oldRows[i]
 		newRow := newRows[i]
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
-			column := eh.columnManager.GetColumnName(schema, table, j)
-			if eh.taskManager.InNotifyField(schema, table, column) {
+			column := columnManager.GetColumnName(schema, table, j)
+			if taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := newRow[j].(type) {
@@ -155,7 +143,7 @@ func (eh *RowsEventHandler) genNotifyEvents(schema, table string, columns []*mod
 	//为相应的任务添加订阅了的字段
 	taskFieldMap := make(map[int64][]*model.ColumnValue)
 	for _, column := range columns {
-		ids := eh.taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
+		ids := taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
 		log.Debug("ids ", ids)
 		for _, taskID := range ids {
 			if taskFieldMap[taskID] == nil {

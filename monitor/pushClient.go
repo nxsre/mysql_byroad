@@ -19,18 +19,22 @@ func NewPusherManager() *PusherManager {
 	return pm
 }
 
-func (pm *PusherManager) AddPushClient(schema string) {
-	client := NewRPCClient("tcp", schema, "")
+func (pm *PusherManager) AddPushClient(schema, desc string) {
+	client := NewRPCClient("tcp", schema, desc)
 	pm.rpcclients = append(pm.rpcclients, client)
 	log.Infof("add push client: %s, length: %d ", schema, len(pm.rpcclients))
 }
 
 func (pm *PusherManager) DeletePushClient(schema string) {
-	var index int
+	for idx, s := range pm.schemas {
+		if s == schema {
+			pm.schemas = append(pm.schemas[:idx], pm.schemas[idx+1:]...)
+			break
+		}
+	}
 	for idx, client := range pm.rpcclients {
 		if client.Schema == schema {
-			index = idx
-			pm.rpcclients = append(pm.rpcclients[:index], pm.rpcclients[index+1:]...)
+			pm.rpcclients = append(pm.rpcclients[:idx], pm.rpcclients[idx+1:]...)
 			break
 		}
 	}

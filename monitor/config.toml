@@ -1,3 +1,4 @@
+debug = true
 [mysql]
 host = "127.0.0.1"
 port = 3306
@@ -9,10 +10,6 @@ dbname = "byroad"
 [rpcserver]
 host = "127.0.0.1"
 port = 1234
-
-[dispatcher]
-host = "127.0.0.1"
-rpc_port = 1235
 
 [web]
 host = "127.0.0.1"

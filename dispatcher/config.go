@@ -4,7 +4,7 @@ import "github.com/BurntSushi/toml"
 import "mysql_byroad/common"
 
 type Config struct {
-	MysqlConfs    []MysqlConf   `toml:"mysql"`
+	MysqlConf     MysqlConf     `toml:"mysql"`
 	MonitorConf   MonitorConf   `toml:"monitor"`
 	RPCServerConf RPCServerConf `toml:"rpc_server"`
 	NSQConf       NSQConf       `toml:"nsq"`
@@ -29,6 +29,7 @@ type MonitorConf struct {
 type RPCServerConf struct {
 	Host string
 	Port int
+	Desc string
 }
 
 type NSQConf struct {

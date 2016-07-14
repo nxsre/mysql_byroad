@@ -7,10 +7,10 @@ import (
 )
 
 type Config struct {
-	MysqlConf      MysqlConf      `toml:"mysql"`
-	RPCServerConf  RPCServerConf  `toml:"rpcserver"`
-	DispatcherConf DispatcherConf `toml:"dispatcher"`
-	WebConfig      WebConfig      `toml:"web"`
+	Debug         bool
+	MysqlConf     MysqlConf     `toml:"mysql"`
+	RPCServerConf RPCServerConf `toml:"rpcserver"`
+	WebConfig     WebConfig     `toml:"web"`
 }
 type MysqlConf struct {
 	Host     string
@@ -23,11 +23,6 @@ type MysqlConf struct {
 type RPCServerConf struct {
 	Host string
 	Port int
-}
-
-type DispatcherConf struct {
-	Host    string
-	RPCPort int `toml:"rpc_port"`
 }
 
 type WebConfig struct {

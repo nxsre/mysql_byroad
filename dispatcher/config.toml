@@ -1,5 +1,5 @@
 #mysql slave 信息
-[[mysql]]
+[mysql]
 server_id = 2002
 host = "127.0.0.1"
 port = 3306
@@ -17,7 +17,8 @@ rpc_port = 1234
 # 本机的rpcserver信息，用于接收monitor的rpc调用，对任务进行操作等
 [rpc_server]
 host = "127.0.0.1"
-port = 1235
+port = 1237
+desc = "localhost:1237"
 
 [nsq]
 lookupd_http_address = ["127.0.0.1:4161"]

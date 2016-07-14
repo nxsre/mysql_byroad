@@ -41,7 +41,7 @@ func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err er
 	return
 }
 
-func (this *RPCClient) RegisterClient(schema string) (status string, err error) {
+func (this *RPCClient) RegisterClient(schema, desc string) (status string, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -50,13 +50,13 @@ func (this *RPCClient) RegisterClient(schema string) (status string, err error) 
 	ss := ServiceSignal{
 		Code:   "1",
 		Schema: schema,
-		Desc:   "",
+		Desc:   desc,
 	}
 	err = client.Call("Monitor.HandlePushClientSignal", ss, &status)
 	return
 }
 
-func (this *RPCClient) DeregisterClient(schema string) (status string, err error) {
+func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err error) {
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -65,7 +65,7 @@ func (this *RPCClient) DeregisterClient(schema string) (status string, err error
 	ss := ServiceSignal{
 		Code:   "0",
 		Schema: schema,
-		Desc:   "",
+		Desc:   desc,
 	}
 	err = client.Call("Monitor.HandlePushClientSignal", ss, &status)
 	return

@@ -9,3 +9,4 @@ rpc_port = 1234
 [rpc_server]
 host = "127.0.0.1"
 port = 1236
+desc = "localhost:1236"

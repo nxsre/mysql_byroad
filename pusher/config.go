@@ -20,6 +20,7 @@ type MonitorConf struct {
 type RPCServerConf struct {
 	Host string
 	Port int
+	Desc string
 }
 
 type NSQConf struct {

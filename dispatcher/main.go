@@ -9,27 +9,36 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-var replicationClients []*ReplicationClient
+var (
+	replicationClient *ReplicationClient
+	columnManager     *ColumnManager
+	taskManager       *TaskManager
+	eventEnqueuer     *EventEnqueuer
+)
+
+func initGolbal(conf Config) {
+	columnManager = NewColumnManager(conf.MysqlConf)
+	taskManager = NewTaskManager()
+	eventEnqueuer = NewEventEnqueuer(Conf.NSQConf.LookupdHttpAddrs)
+}
 
 func main() {
-	replicationClients = make([]*ReplicationClient, 0, 5)
 	log.Debugf("Conf: %+v", Conf)
-	for _, conf := range Conf.MysqlConfs {
-		handler := NewRowsEventHandler(conf)
-		client := &ReplicationClient{
-			ServerId:       conf.ServerId,
-			Host:           conf.Host,
-			Port:           conf.Port,
-			Username:       conf.Username,
-			Password:       conf.Password,
-			BinlogFilename: conf.BinlogFilename,
-			BinlogPosition: conf.BinlogPosition,
-			StopChan:       make(chan bool, 1),
-		}
-		client.AddHandler(handler)
-		client.Start()
-		replicationClients = append(replicationClients, client)
+	initGolbal(Conf)
+	conf := Conf.MysqlConf
+	handler := NewRowsEventHandler(conf)
+	replicationClient = &ReplicationClient{
+		ServerId:       conf.ServerId,
+		Host:           conf.Host,
+		Port:           conf.Port,
+		Username:       conf.Username,
+		Password:       conf.Password,
+		BinlogFilename: conf.BinlogFilename,
+		BinlogPosition: conf.BinlogPosition,
+		StopChan:       make(chan bool, 1),
 	}
+	replicationClient.AddHandler(handler)
+	replicationClient.Start()
 	HandleSignal()
 }
 
@@ -43,10 +52,9 @@ func HandleSignal() {
 		log.Infof("get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
-			for _, client := range replicationClients {
-				client.Stop()
-				<-client.StopChan
-			}
+			replicationClient.Stop()
+			taskManager.rpcClient.DeregisterClient(taskManager.rpcServer.schema, taskManager.rpcServer.desc)
+			<-replicationClient.StopChan
 			time.Sleep(1 * time.Second)
 			return
 		case syscall.SIGHUP:

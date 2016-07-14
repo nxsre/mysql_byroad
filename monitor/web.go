@@ -68,13 +68,21 @@ func StartServer() {
 			return
 		}
 		username := sess.Get("user")
-		if username == nil {
-			ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AuthURL, Conf.WebConfig.AppName))
-		} else {
-			if checkAuth(ctx, sess, "admin") {
-				ctx.Data["isAdmin"] = true
+		if !Conf.Debug {
+			if username == nil {
+				ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AuthURL, Conf.WebConfig.AppName))
+			} else {
+				if checkAuth(ctx, sess, "admin") {
+					ctx.Data["isAdmin"] = true
+				}
+				ctx.Data["username"] = username.(string)
+				ctx.Data["clients"] = dispatcherManager.rpcclients
 			}
-			ctx.Data["username"] = username.(string)
+		} else {
+			sess.Set("user", "test")
+			ctx.Data["isAdmin"] = true
+			ctx.Data["username"] = "test"
+			ctx.Data["clients"] = dispatcherManager.rpcclients
 		}
 	})
 
@@ -110,6 +118,9 @@ func getUsername(sess session.Store) string {
 
 //判断用户是否拥有flag的权限
 func checkAuth(ctx *macaron.Context, sess session.Store, flag string) bool {
+	if Conf.Debug {
+		return true
+	}
 	groups := sess.Get("groups").(string)
 	isAdmin := strings.Index(groups, "admin")
 	if isAdmin != -1 {
@@ -124,6 +135,9 @@ func checkAuth(ctx *macaron.Context, sess session.Store, flag string) bool {
 
 //判断任务是否属于该用户
 func checkTaskUser(t *model.Task, sess session.Store) bool {
+	if Conf.Debug {
+		return true
+	}
 	groups := sess.Get("groups").(string)
 	isAdmin := strings.Index(groups, "admin")
 	if isAdmin != -1 {
@@ -258,7 +272,8 @@ func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	colslist, _ := rpcClient.GetAllColumns()
+	client := ctx.GetCookie("client")
+	colslist, _ := dispatcherManager.GetColumns(client)
 	ctx.Data["colslist"] = colslist
 
 	ctx.HTML(200, "addtask")
@@ -280,7 +295,8 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	}
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
-	colslist, _ := rpcClient.GetAllColumns()
+	client := ctx.GetCookie("client")
+	colslist, _ := dispatcherManager.GetColumns(client)
 	ctx.Data["colslist"] = colslist
 
 	ctx.HTML(200, "modifytask")
@@ -321,6 +337,12 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 			task.Fields = append(task.Fields, f)
 		}
 	}
+	if ex, _ := task.Exists(); ex {
+		resp.Error = true
+		resp.Message = "任务已经存在!"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
 
 	_, err := task.Add()
 	if err != nil {
@@ -329,7 +351,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "添加成功!"
 	}
-	_, err = rpcClient.AddTask(task)
+	dispatcherManager.AddTask(task)
 	if err != nil {
 		log.Error("add task error: ", err.Error())
 	}
@@ -365,10 +387,7 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "删除成功"
 	}
-	_, err = rpcClient.DeleteTask(task)
-	if err != nil {
-		log.Error("delete task: ", err.Error())
-	}
+	dispatcherManager.DeleteTask(task)
 	pusherManager.DeleteTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(204)
@@ -424,10 +443,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "更新成功!"
 	}
-	_, err = rpcClient.UpdateTask(task)
-	if err != nil {
-		log.Error("update task: ", err.Error())
-	}
+	dispatcherManager.UpdateTask(task)
 	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
@@ -478,10 +494,7 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 		resp.Error = false
 		resp.Message = "操作成功"
 	}
-	_, err = rpcClient.UpdateTask(task)
-	if err != nil {
-		log.Error("change task stat: ", err.Error())
-	}
+	dispatcherManager.UpdateTask(task)
 	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
 	return string(body)

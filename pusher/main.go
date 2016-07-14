@@ -19,7 +19,7 @@ func main() {
 	rpcserver = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcserver.startRpcServer()
 	rpcclient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort), "")
-	rpcclient.RegisterClient(rpcserver.schema)
+	rpcclient.RegisterClient(rpcserver.schema, rpcserver.desc)
 	tasks, err := rpcclient.GetAllTasks("")
 	if err != nil {
 		log.Error(err.Error())
@@ -41,8 +41,8 @@ func HandleSignal() {
 		log.Infof("get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
+			rpcclient.DeregisterClient(rpcserver.schema, rpcserver.desc)
 			time.Sleep(1 * time.Second)
-			rpcclient.DeregisterClient(rpcserver.schema)
 			return
 		case syscall.SIGHUP:
 			// TODO reload

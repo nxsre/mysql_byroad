@@ -14,8 +14,6 @@ import (
 
 type columnMap map[string]map[string][]string
 
-var DBMap columnMap = make(map[string]map[string][]string, 10)
-
 type ColumnManager struct {
 	username string
 	password string
@@ -39,9 +37,6 @@ func NewColumnManager(config MysqlConf) *ColumnManager {
 		exclude:  config.Exclude,
 	}
 	cm.getColumnsMap()
-	for key, value := range cm.columns {
-		DBMap[key] = value
-	}
 	return &cm
 }
 
@@ -189,6 +184,7 @@ func getOrderedColumnsList(columns columnMap) model.OrderedSchemas {
 }
 
 func (this *ColumnManager) GetOrderedColumns() model.OrderedSchemas {
+	this.getColumnsMap()
 	columns := this.columns
 	this.RLock()
 	defer this.RUnlock()

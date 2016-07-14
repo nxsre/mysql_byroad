@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
@@ -13,12 +14,14 @@ type TaskManager struct {
 	taskIdMap     *TaskIdMap
 }
 
-func NewTaskManager(rpcClientSchema, rpcServerSchema string) *TaskManager {
+func NewTaskManager() *TaskManager {
 	tm := &TaskManager{}
-	tm.rpcClient = NewRPCClient("tcp", rpcClientSchema, "")
-	tm.rpcServer = NewRPCServer("tcp", rpcServerSchema, "")
-	tm.rpcServer.tm = tm
+	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
+	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
+	tm.rpcServer = NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
 	tm.rpcServer.startRpcServer()
+	tm.rpcClient = NewRPCClient("tcp", rpcClientSchema, "")
+	tm.rpcClient.RegisterClient(tm.rpcServer.schema, tm.rpcServer.desc)
 	tm.initTasks()
 	return tm
 }

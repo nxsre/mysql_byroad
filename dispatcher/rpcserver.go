@@ -14,7 +14,6 @@ type RPCServer struct {
 	protocol string
 	schema   string
 	desc     string
-	tm       *TaskManager
 }
 
 func NewRPCServer(protocol, schema, desc string) *RPCServer {
@@ -40,9 +39,9 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Debugf("add task: %+v", task)
 	*status = "sucess"
-	rs.tm.taskIdMap.Set(task.ID, task)
+	taskManager.taskIdMap.Set(task.ID, task)
 	if task.Stat == common.TASK_STATE_START {
-		rs.tm.notifyTaskMap.AddTask(task)
+		taskManager.notifyTaskMap.AddTask(task)
 	}
 	return nil
 }
@@ -50,29 +49,27 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 	log.Debug("delete task: ", id)
 	*status = "success"
-	rs.tm.taskIdMap.Delete(id)
-	rs.tm.notifyTaskMap.UpdateNotifyTaskMap(rs.tm.taskIdMap)
+	taskManager.taskIdMap.Delete(id)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Debug("update task:", task)
 	*status = "success"
-	rs.tm.taskIdMap.Set(task.ID, task)
-	rs.tm.notifyTaskMap.UpdateNotifyTaskMap(rs.tm.taskIdMap)
+	taskManager.taskIdMap.Set(task.ID, task)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Debug("get columns:", dbname)
-	var cm columnMap = make(map[string]map[string][]string, 1)
-	cm[dbname] = DBMap[dbname]
-	*os = getOrderedColumnsList(cm)
+	log.Debug("get db columns")
+	*os = columnManager.GetOrderedColumns()
 	return nil
 }
 
 func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Debug("get all columns")
-	*os = getOrderedColumnsList(DBMap)
+	*os = columnManager.GetOrderedColumns()
 	return nil
 }
