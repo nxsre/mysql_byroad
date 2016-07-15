@@ -1,13 +1,18 @@
 package main
 
-import "github.com/BurntSushi/toml"
+import (
+	"time"
+
+	"github.com/BurntSushi/toml"
+)
 import "mysql_byroad/common"
 
 type Config struct {
-	MysqlConf     MysqlConf     `toml:"mysql"`
-	MonitorConf   MonitorConf   `toml:"monitor"`
-	RPCServerConf RPCServerConf `toml:"rpc_server"`
-	NSQConf       NSQConf       `toml:"nsq"`
+	RPCPingInterval time.Duration `toml:rpc_ping_interval`
+	MysqlConf       MysqlConf     `toml:"mysql"`
+	MonitorConf     MonitorConf   `toml:"monitor"`
+	RPCServerConf   RPCServerConf `toml:"rpc_server"`
+	NSQConf         NSQConf       `toml:"nsq"`
 }
 
 type MysqlConf struct {

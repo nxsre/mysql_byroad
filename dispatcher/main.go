@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/signal"
 	"syscall"
@@ -14,17 +15,25 @@ var (
 	columnManager     *ColumnManager
 	taskManager       *TaskManager
 	eventEnqueuer     *EventEnqueuer
+	rpcClient         *RPCClient
+	rpcServer         *RPCServer
 )
 
-func initGolbal(conf Config) {
-	columnManager = NewColumnManager(conf.MysqlConf)
+func initGlobal() {
+	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
+	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
+	rpcServer = NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
+	rpcServer.startRpcServer()
+	rpcClient = NewRPCClient("tcp", rpcClientSchema, "")
+	rpcClient.RegisterClient(rpcServer.schema, rpcServer.desc)
+	columnManager = NewColumnManager(Conf.MysqlConf)
 	taskManager = NewTaskManager()
 	eventEnqueuer = NewEventEnqueuer(Conf.NSQConf.LookupdHttpAddrs)
 }
 
 func main() {
 	log.Debugf("Conf: %+v", Conf)
-	initGolbal(Conf)
+	initGlobal()
 	conf := Conf.MysqlConf
 	handler := NewRowsEventHandler(conf)
 	replicationClient = &ReplicationClient{
@@ -53,7 +62,7 @@ func HandleSignal() {
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
 			replicationClient.Stop()
-			taskManager.rpcClient.DeregisterClient(taskManager.rpcServer.schema, taskManager.rpcServer.desc)
+			rpcClient.DeregisterClient(rpcServer.schema, rpcServer.desc)
 			<-replicationClient.StopChan
 			time.Sleep(1 * time.Second)
 			return

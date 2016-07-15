@@ -1,33 +1,24 @@
 package main
 
 import (
-	"fmt"
 	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 type TaskManager struct {
-	rpcClient     *RPCClient
-	rpcServer     *RPCServer
 	notifyTaskMap *NotifyTaskMap
 	taskIdMap     *TaskIdMap
 }
 
 func NewTaskManager() *TaskManager {
 	tm := &TaskManager{}
-	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
-	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
-	tm.rpcServer = NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
-	tm.rpcServer.startRpcServer()
-	tm.rpcClient = NewRPCClient("tcp", rpcClientSchema, "")
-	tm.rpcClient.RegisterClient(tm.rpcServer.schema, tm.rpcServer.desc)
 	tm.initTasks()
 	return tm
 }
 
 func (tm *TaskManager) initTasks() {
-	tasks, err := tm.rpcClient.GetAllTasks("")
+	tasks, err := rpcClient.GetAllTasks("")
 	if err != nil {
 		log.Error("get all tasks: ", err.Error())
 	}

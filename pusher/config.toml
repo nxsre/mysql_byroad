@@ -1,3 +1,4 @@
+rpc_ping_interval = "60s"
 [nsq]
 lookupd_http_address = ["127.0.0.1:4161"]
 nsqd_tcp_address = []

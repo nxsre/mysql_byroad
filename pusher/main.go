@@ -10,16 +10,21 @@ import (
 	log "github.com/Sirupsen/logrus"
 )
 
-var taskManager *TaskManager
-var rpcserver *RPCServer
-var rpcclient *RPCClient
+var (
+	taskManager *TaskManager
+	rpcserver   *RPCServer
+	rpcclient   *RPCClient
+)
 
-func main() {
-	log.Debugf("Conf: %+v", Conf)
+func initGlobal() {
 	rpcserver = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcserver.startRpcServer()
 	rpcclient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort), "")
 	rpcclient.RegisterClient(rpcserver.schema, rpcserver.desc)
+}
+func main() {
+	log.Debugf("Conf: %+v", Conf)
+	initGlobal()
 	tasks, err := rpcclient.GetAllTasks("")
 	if err != nil {
 		log.Error(err.Error())

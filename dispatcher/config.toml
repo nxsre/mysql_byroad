@@ -1,3 +1,4 @@
+rpc_ping_interval = "60s"
 #mysql slave 信息
 [mysql]
 server_id = 2002
@@ -23,3 +24,5 @@ desc = "localhost:1237"
 [nsq]
 lookupd_http_address = ["127.0.0.1:4161"]
 nsqd_tcp_address = []
+
+

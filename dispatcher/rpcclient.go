@@ -74,3 +74,18 @@ func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err
 	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
 	return
 }
+
+func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	ss := ServiceSignal{
+		Code:   "2",
+		Schema: schema,
+		Desc:   desc,
+	}
+	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	return
+}
