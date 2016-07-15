@@ -35,7 +35,7 @@ func (this *RPCClient) GetClient() (client *rpc.Client, err error) {
 }
 
 func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err error) {
-	log.Debug("rpc client get all tasks")
+	log.Info("rpc client get all tasks")
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -46,6 +46,7 @@ func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err er
 }
 
 func (this *RPCClient) RegisterClient(schema, desc string) (status string, err error) {
+	log.Info("rpc register client")
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -61,6 +62,7 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 }
 
 func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err error) {
+	log.Info("rpc deregister client")
 	client, err := this.GetClient()
 	if err != nil {
 		return
@@ -76,6 +78,7 @@ func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err
 }
 
 func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
+	log.Info("rpc ping")
 	client, err := this.GetClient()
 	if err != nil {
 		return

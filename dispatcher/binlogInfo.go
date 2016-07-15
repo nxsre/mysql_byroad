@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
+	"time"
 
 	"strconv"
 
@@ -32,16 +33,37 @@ func GetMasterStatus() (*model.BinlogInfo, error) {
 	return binfo, nil
 }
 
-func SaveBinlogInfo() (int64, error) {
-	SaveConfig("last_file_name", binlogInfo.Filename, "")
-	SaveConfig("last_position", fmt.Sprintf("%d", binlogInfo.Position), "")
+func (confdb *ConfigDB) SaveBinlogInfo() (int64, error) {
+	confdb.SaveConfig("last_file_name", binlogInfo.Filename, "")
+	confdb.SaveConfig("last_position", fmt.Sprintf("%d", binlogInfo.Position), "")
 	return 0, nil
 }
 
-func GetBinlogInfo() (*model.BinlogInfo, error) {
+func (confdb *ConfigDB) GetBinlogInfo() (*model.BinlogInfo, error) {
+	var err error
 	binfo := &model.BinlogInfo{}
-	binfo.Filename = GetConfig("last_file_name")
-	pos, _ := strconv.Atoi(GetConfig("last_position"))
-	binfo.Position = uint32(pos)
+	binfo.Filename, err = confdb.GetConfig("last_file_name")
+	if err != nil {
+		return nil, err
+	}
+	pos, err := confdb.GetConfig("last_position")
+	if err != nil {
+		return nil, err
+	}
+	pos32, err := strconv.Atoi(pos)
+	if err != nil {
+		return nil, err
+	}
+	binfo.Position = uint32(pos32)
 	return binfo, nil
+}
+
+func binlogTicker() {
+	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
+	for {
+		select {
+		case <-ticker.C:
+			confdb.SaveBinlogInfo()
+		}
+	}
 }

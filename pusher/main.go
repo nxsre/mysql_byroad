@@ -17,10 +17,14 @@ var (
 )
 
 func initGlobal() {
+	var err error
 	rpcserver = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcserver.startRpcServer()
 	rpcclient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort), "")
-	rpcclient.RegisterClient(rpcserver.schema, rpcserver.desc)
+	_, err = rpcclient.RegisterClient(rpcserver.schema, rpcserver.desc)
+	if err != nil {
+		log.Panic(err)
+	}
 }
 func main() {
 	log.Debugf("Conf: %+v", Conf)
@@ -29,7 +33,6 @@ func main() {
 	if err != nil {
 		log.Error(err.Error())
 	}
-	log.Debug(tasks)
 	taskManager = NewTaskManager()
 	taskManager.InitTaskMap(tasks)
 	taskManager.InitTasKRoutine()
@@ -46,7 +49,10 @@ func HandleSignal() {
 		log.Infof("get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
-			rpcclient.DeregisterClient(rpcserver.schema, rpcserver.desc)
+			_, err := rpcclient.DeregisterClient(rpcserver.schema, rpcserver.desc)
+			if err != nil {
+				log.Error("rpc deregister error: ", err.Error())
+			}
 			time.Sleep(1 * time.Second)
 			return
 		case syscall.SIGHUP:

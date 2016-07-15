@@ -39,7 +39,7 @@ func (this *RPCServer) startRpcServer() {
 }
 
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
-	log.Debugf("add task: %+v", task)
+	log.Infof("rpc add task: %+v", task)
 	*status = "sucess"
 	taskManager.taskIdMap.Set(task.ID, task)
 	if task.Stat == common.TASK_STATE_START {
@@ -49,7 +49,7 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 }
 
 func (rs *RPCServer) DeleteTask(id int64, status *string) error {
-	log.Debug("delete task: ", id)
+	log.Info("rpc delete task: ", id)
 	*status = "success"
 	taskManager.taskIdMap.Delete(id)
 	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
@@ -57,7 +57,7 @@ func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
-	log.Debug("update task:", task)
+	log.Infof("rpc update task: %+v", task)
 	*status = "success"
 	taskManager.taskIdMap.Set(task.ID, task)
 	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
@@ -65,23 +65,25 @@ func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 }
 
 func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Debug("get db columns")
+	log.Info("rpc get db columns")
 	*os = columnManager.GetOrderedColumns()
 	return nil
 }
 
 func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Debug("get all columns")
+	log.Info("rpc get all columns")
 	*os = columnManager.GetOrderedColumns()
 	return nil
 }
 
 func (rs *RPCServer) GetBinlogStatistics(username string, statics *[]*model.BinlogStatistic) error {
+	log.Info("rpc get binlog statistics")
 	*statics = binlogStatistics.Statistics
 	return nil
 }
 
 func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) error {
+	log.Info("rpc get status")
 	start := startTime
 	duration := time.Now().Sub(start)
 	statusMap := make(map[string]interface{})
@@ -93,12 +95,14 @@ func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) erro
 }
 
 func (rs *RPCServer) GetMasterStatus(username string, binfo *model.BinlogInfo) error {
+	log.Info("rpc get master status")
 	info, err := GetMasterStatus()
 	*binfo = *info
 	return err
 }
 
 func (rs *RPCServer) GetCurrentBinlogInfo(username string, binfo *model.BinlogInfo) error {
+	log.Info("rpc get current binlog info")
 	*binfo = *binlogInfo
 	return nil
 }

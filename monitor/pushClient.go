@@ -19,6 +19,15 @@ func NewPusherManager() *PusherManager {
 	return pm
 }
 
+func (pm *PusherManager) GetPushClient(schema string) (*RPCClient, bool) {
+	for _, client := range pm.rpcclients {
+		if client.Schema == schema {
+			return client, true
+		}
+	}
+	return nil, false
+}
+
 func (pm *PusherManager) AddPushClient(schema, desc string) {
 	client := NewRPCClient("tcp", schema, desc)
 	pm.rpcclients = append(pm.rpcclients, client)

@@ -103,7 +103,6 @@ func StartServer() {
 
 	m.Delete("/task/:taskid", doDeleteTask)
 
-	m.Get("/column/update", updateColumnMap)
 	m.Get("/taskdetail/:taskid", getTaskStatistic)
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
@@ -248,33 +247,19 @@ func status(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	/*	if rpcclient != nil {
-		st, _ := rpcclient.GetStatus()
-		ctx.Data["sendEventCount"] = st["sendEventCount"]
-		ctx.Data["resendEventCount"] = st["resendEventCount"]
-		ctx.Data["sendSuccessEventCount"] = st["sendSuccessEventCount"]
-		ctx.Data["sendFailedEventCount"] = st["sendFailedEventCount"]
+	client := ctx.GetCookie("client")
+	if rpcclient, ok := dispatcherManager.GetRPCClient(client); ok {
+		status, _ := rpcclient.GetBinlogStatistics()
+		masterStatus, _ := rpcclient.GetMasterStatus()
+		currentBinlogInfo, _ := rpcclient.GetCurrentBinlogInfo()
+		st, _ := rpcclient.GetSysStatus()
+		ctx.Data["Status"] = status
+		ctx.Data["MasterStatus"] = masterStatus
+		ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
 		ctx.Data["Start"] = st["Start"]
 		ctx.Data["Duration"] = st["Duration"]
 		ctx.Data["routineNumber"] = st["routineNumber"]
-		status, _ := rpcclient.GetBinlogStatistics()
-		ctx.Data["Status"] = status
-		masterStatus, _ := rpcclient.GetMasterStatus()
-		currentBinlogInfo, _ := rpcclient.GetCurrentBinlogInfo()
-		ctx.Data["MasterStatus"] = masterStatus
-		ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
-	}*/
-	client := ctx.GetCookie("client")
-	status, _ := dispatcherManager.GetBinlogStatistics(client)
-	masterStatus, _ := dispatcherManager.GetMasterStatus(client)
-	currentBinlogInfo, _ := dispatcherManager.GetCurrentBinlogInfo(client)
-	st, _ := dispatcherManager.GetSysStatus(client)
-	ctx.Data["Status"] = status
-	ctx.Data["MasterStatus"] = masterStatus
-	ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
-	ctx.Data["Start"] = st["Start"]
-	ctx.Data["Duration"] = st["Duration"]
-	ctx.Data["routineNumber"] = st["routineNumber"]
+	}
 	ctx.HTML(200, "status")
 }
 
@@ -550,18 +535,6 @@ func downloadlog(ctx *macaron.Context, sess session.Store) {
 		}
 		ctx.ServeContent(filename, bytes.NewReader(b))
 	}*/
-}
-
-func updateColumnMap(ctx *macaron.Context, sess session.Store) {
-	/*if !checkAuth(ctx, sess, "all") {
-		return
-	}
-	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient != nil {
-		colslist, _ := rpcclient.UpdateColumns()
-		ctx.Data["colslist"] = colslist
-	}*/
-	ctx.HTML(200, "columnlist")
 }
 
 func copyTask(src *TaskForm, dst *model.Task) {

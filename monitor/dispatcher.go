@@ -19,13 +19,13 @@ func NewDispatcherManager() *DispatcherManager {
 	return dm
 }
 
-func (dm *DispatcherManager) GetRPCClient(schema string) *RPCClient {
+func (dm *DispatcherManager) GetRPCClient(schema string) (*RPCClient, bool) {
 	for _, client := range dm.rpcclients {
 		if client.Schema == schema {
-			return client
+			return client, true
 		}
 	}
-	return nil
+	return nil, false
 }
 
 func (dm *DispatcherManager) AddDispatchClient(schema, desc string) {

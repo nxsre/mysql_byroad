@@ -51,7 +51,7 @@ func startReplication(rep *ReplicationClient) {
 	pos := rep.BinlogPosition
 	log.Debugf("config filename %s, pos %d", filename, pos)
 	if filename == "" || pos == 0 {
-		binfo, _ := GetBinlogInfo()
+		binfo, _ := confdb.GetBinlogInfo()
 		filename = binfo.Filename
 		pos = binfo.Position
 		log.Debugf("config db filename %s, pos %d", filename, pos)

@@ -10,7 +10,6 @@ import (
 	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
-	"github.com/jmoiron/sqlx"
 	_ "github.com/mattn/go-sqlite3"
 )
 
@@ -25,10 +24,11 @@ var (
 	binlogStatistics  *model.BinlogStatistics
 	binlogInfo        *model.BinlogInfo
 
-	confdb *sqlx.DB
+	confdb *ConfigDB
 )
 
 func initGlobal() {
+	var err error
 	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
 	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
 	rpcServer = NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
@@ -43,7 +43,10 @@ func initGlobal() {
 	}
 	binlogInfo = &model.BinlogInfo{}
 
-	InitConfigDB()
+	confdb, err = NewConfigDB()
+	if err != nil{
+		log.Panic(err)
+	}
 }
 
 func main() {
@@ -80,7 +83,7 @@ func HandleSignal() {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
 			replicationClient.Stop()
 			rpcClient.DeregisterClient(rpcServer.schema, rpcServer.desc)
-			SaveBinlogInfo()
+			confdb.SaveBinlogInfo()
 			<-replicationClient.StopChan
 			time.Sleep(1 * time.Second)
 			return
@@ -89,16 +92,6 @@ func HandleSignal() {
 			//return
 		default:
 			return
-		}
-	}
-}
-
-func binlogTicker() {
-	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
-	for {
-		select {
-		case <-ticker.C:
-			SaveBinlogInfo()
 		}
 	}
 }

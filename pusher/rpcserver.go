@@ -37,7 +37,7 @@ func (this *RPCServer) startRpcServer() {
 }
 
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
-	log.Debug("add task: ", task)
+	log.Infof("add task: %+v", task)
 	*status = "sucess"
 	if task.Stat == common.TASK_STATE_START {
 		taskManager.StartTask(task)
@@ -48,7 +48,7 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 }
 
 func (rs *RPCServer) DeleteTask(id int64, status *string) error {
-	log.Debug("delete task: ", id)
+	log.Infof("delete task: %d", id)
 	*status = "success"
 	task := new(model.Task)
 	task.ID = id
@@ -57,7 +57,7 @@ func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
-	log.Debug("update task:", task)
+	log.Infof("update task: %+v", task)
 	*status = "success"
 	if task.Stat == common.TASK_STATE_START {
 		taskManager.StartTask(task)

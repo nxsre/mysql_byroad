@@ -21,6 +21,8 @@ func (d *duration) UnmarshalText(text []byte) error {
 	return err
 }
 
+var Conf Config
+
 type Config struct {
 	ConfigDB        string        `toml:"config_db"`
 	BinlogInterval  duration      `toml:"binlog_flush_interval"`
@@ -58,8 +60,6 @@ type NSQConf struct {
 	NsqdAddrs        []string `toml:"nsqd_tcp_address"`
 }
 
-var Conf Config
-
 func init() {
 	configFile := common.ParseConfig()
 	_, err := toml.DecodeFile(configFile, &Conf)
@@ -68,39 +68,37 @@ func init() {
 	}
 }
 
-func InitConfigDB() error {
-	var err error
-	confdb, err = sqlx.Open("sqlite3", Conf.ConfigDB)
-	if err != nil {
-		panic(err)
-	}
-	s := "CREATE TABLE IF NOT EXISTS `config` ( " +
-		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
-		"`key` varchar(120) NOT NULL," +
-		"`value` varchar(120) NOT NULL," +
-		"`description` varchar(120)" +
-		")"
-	_, err = confdb.Exec(s)
-	return err
+type ConfigDB struct {
+	db       *sqlx.DB
+	filename string
 }
 
-func SaveConfig(key, value, desc string) (int64, error) {
-	var cnt int64
-	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM config WHERE key=?", key)
+func NewConfigDB() (*ConfigDB, error) {
+	confdb := &ConfigDB{}
+	db, err := sqlx.Open("sqlite3", Conf.ConfigDB)
 	if err != nil {
-		log.Error("save config error:", err.Error())
+		return nil, err
+	}
+	confdb.db = db
+	confdb.filename = Conf.ConfigDB
+	return confdb, nil
+}
+
+func (confdb *ConfigDB) SaveConfig(key, value, desc string) (int64, error) {
+	var cnt int64
+	err := confdb.db.Get(&cnt, "SELECT COUNT(*) FROM config WHERE key=?", key)
+	if err != nil {
 		return 0, err
 	}
 	var res sql.Result
 	if cnt == 0 {
-		res, err = confdb.Exec("INSERT INTO config(key, value, description) VALUES(?, ?, ?)", key, value, desc)
+		res, err = confdb.db.Exec("INSERT INTO config(key, value, description) VALUES(?, ?, ?)", key, value, desc)
 		if err != nil {
-			log.Error("save config error:", err.Error())
 			return 0, err
 		}
 		return res.LastInsertId()
 	} else {
-		res, err = confdb.Exec("UPDATE config SET value=?, description=? WHERE key=?", value, desc, key)
+		res, err = confdb.db.Exec("UPDATE config SET value=?, description=? WHERE key=?", value, desc, key)
 		if err != nil {
 			log.Error("save config error:", err.Error())
 			return 0, err
@@ -109,9 +107,8 @@ func SaveConfig(key, value, desc string) (int64, error) {
 	}
 }
 
-func GetConfig(key string) string {
+func (confdb *ConfigDB) GetConfig(key string) (string, error) {
 	var value string
-	confdb.Get(&value, "SELECT value FROM config WHERE key=?", key)
-	log.Debugf("get config %s: %s", key, value)
-	return value
+	err := confdb.db.Get(&value, "SELECT value FROM config WHERE key=?", key)
+	return value, err
 }
