@@ -19,6 +19,15 @@ func NewDispatcherManager() *DispatcherManager {
 	return dm
 }
 
+func (dm *DispatcherManager) GetRPCClient(schema string) *RPCClient {
+	for _, client := range dm.rpcclients {
+		if client.Schema == schema {
+			return client
+		}
+	}
+	return nil
+}
+
 func (dm *DispatcherManager) AddDispatchClient(schema, desc string) {
 	client := NewRPCClient("tcp", schema, desc)
 	dm.rpcclients = append(dm.rpcclients, client)
@@ -72,6 +81,42 @@ func (dm *DispatcherManager) GetColumns(schema string) (dbmap model.OrderedSchem
 	for _, client := range dm.rpcclients {
 		if client.Schema == schema {
 			return client.GetAllColumns()
+		}
+	}
+	return nil, nil
+}
+
+func (dm *DispatcherManager) GetBinlogStatistics(schema string) (statics []*model.BinlogStatistic, err error) {
+	for _, client := range dm.rpcclients {
+		if client.Schema == schema {
+			return client.GetBinlogStatistics()
+		}
+	}
+	return nil, nil
+}
+
+func (dm *DispatcherManager) GetMasterStatus(schema string) (binfo *model.BinlogInfo, err error) {
+	for _, client := range dm.rpcclients {
+		if client.Schema == schema {
+			return client.GetMasterStatus()
+		}
+	}
+	return nil, nil
+}
+
+func (dm *DispatcherManager) GetCurrentBinlogInfo(schema string) (binfo *model.BinlogInfo, err error) {
+	for _, client := range dm.rpcclients {
+		if client.Schema == schema {
+			return client.GetCurrentBinlogInfo()
+		}
+	}
+	return nil, nil
+}
+
+func (dm *DispatcherManager) GetSysStatus(schema string) (status map[string]interface{}, err error) {
+	for _, client := range dm.rpcclients {
+		if client.Schema == schema {
+			return client.GetSysStatus()
 		}
 	}
 	return nil, nil

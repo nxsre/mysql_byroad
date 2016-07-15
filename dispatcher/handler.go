@@ -23,6 +23,7 @@ func NewRowsEventHandler(conf MysqlConf) *RowsEventHandler {
 func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 	switch e := ev.Event.(type) {
 	case *replication.RowsEvent:
+		binlogInfo.Position = ev.Header.LogPos
 		switch ev.Header.EventType {
 		case replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
 			reh.HandleWriteEvent(e)
@@ -33,6 +34,9 @@ func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 		default:
 			log.Info("Event type %s not supported", ev.Header.EventType)
 		}
+	case *replication.RotateEvent:
+		binlogInfo.Filename = string(e.NextLogName)
+		binlogInfo.Position = uint32(e.Position)
 	}
 }
 
@@ -45,6 +49,7 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
+		binlogStatistics.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := columnManager.GetColumnName(schema, table, j)
 			if taskManager.InNotifyField(schema, table, column) {
@@ -72,6 +77,7 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
+		binlogStatistics.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := columnManager.GetColumnName(schema, table, j)
 			if taskManager.InNotifyField(schema, table, column) {
@@ -103,6 +109,7 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		oldRow := oldRows[i]
 		newRow := newRows[i]
+		binlogStatistics.IncStatistic(schema, table, event)
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
 			column := columnManager.GetColumnName(schema, table, j)
 			if taskManager.InNotifyField(schema, table, column) {

@@ -37,8 +37,8 @@ type UserGroup struct {
 type TaskForm struct {
 	Name           string                 `form:"name" binding:"AlphaDash;MaxSize(50);Required"`
 	Apiurl         string                 `form:"apiurl" binding:"Required"`
-	RoutineCount   int                    `form:"routineCount" binding:"Range(1,100)"`
-	ReRoutineCount int                    `form:"reRoutineCount" binding:"Range(1,100)"`
+	RoutineCount   int                    `form:"routineCount" binding:"Range(1,10)"`
+	ReRoutineCount int                    `form:"reRoutineCount" binding:"Range(1,10)"`
 	ReSendTime     int                    `form:"reSendTime" binding:"Range(0,30000)"`
 	RetryCount     int                    `form:"retryCount" binding:"Range(0,10)"`
 	Timeout        int                    `form:"timeout" binding:"Range(1,30000)"`
@@ -264,6 +264,17 @@ func status(ctx *macaron.Context, sess session.Store) {
 		ctx.Data["MasterStatus"] = masterStatus
 		ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
 	}*/
+	client := ctx.GetCookie("client")
+	status, _ := dispatcherManager.GetBinlogStatistics(client)
+	masterStatus, _ := dispatcherManager.GetMasterStatus(client)
+	currentBinlogInfo, _ := dispatcherManager.GetCurrentBinlogInfo(client)
+	st, _ := dispatcherManager.GetSysStatus(client)
+	ctx.Data["Status"] = status
+	ctx.Data["MasterStatus"] = masterStatus
+	ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
+	ctx.Data["Start"] = st["Start"]
+	ctx.Data["Duration"] = st["Duration"]
+	ctx.Data["routineNumber"] = st["routineNumber"]
 	ctx.HTML(200, "status")
 }
 

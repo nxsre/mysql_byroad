@@ -6,6 +6,8 @@ import (
 	"net"
 	"net/http"
 	"net/rpc"
+	"runtime"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -71,5 +73,32 @@ func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
 func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Debug("get all columns")
 	*os = columnManager.GetOrderedColumns()
+	return nil
+}
+
+func (rs *RPCServer) GetBinlogStatistics(username string, statics *[]*model.BinlogStatistic) error {
+	*statics = binlogStatistics.Statistics
+	return nil
+}
+
+func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) error {
+	start := startTime
+	duration := time.Now().Sub(start)
+	statusMap := make(map[string]interface{})
+	statusMap["Start"] = start.String()
+	statusMap["Duration"] = duration.String()
+	statusMap["routineNumber"] = runtime.NumGoroutine()
+	*st = statusMap
+	return nil
+}
+
+func (rs *RPCServer) GetMasterStatus(username string, binfo *model.BinlogInfo) error {
+	info, err := GetMasterStatus()
+	*binfo = *info
+	return err
+}
+
+func (rs *RPCServer) GetCurrentBinlogInfo(username string, binfo *model.BinlogInfo) error {
+	*binfo = *binlogInfo
 	return nil
 }

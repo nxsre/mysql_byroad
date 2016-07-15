@@ -75,3 +75,43 @@ func (this *RPCClient) GetAllColumns() (dbmap model.OrderedSchemas, err error) {
 	err = client.Call("RPCServer.GetAllColumns", "", &dbmap)
 	return
 }
+
+func (this *RPCClient) GetBinlogStatistics() (statics []*model.BinlogStatistic, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.GetBinlogStatistics", "", &statics)
+	return
+}
+
+func (this *RPCClient) GetMasterStatus() (binfo *model.BinlogInfo, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.GetMasterStatus", "", &binfo)
+	return
+}
+
+func (this *RPCClient) GetCurrentBinlogInfo() (binfo *model.BinlogInfo, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.GetCurrentBinlogInfo", "", &binfo)
+	return
+}
+
+func (this RPCClient) GetSysStatus() (status map[string]interface{}, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return nil, err
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.GetStatus", "", &status)
+	return
+}

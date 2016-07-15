@@ -7,16 +7,25 @@ import (
 	"syscall"
 	"time"
 
+	"mysql_byroad/model"
+
 	log "github.com/Sirupsen/logrus"
+	"github.com/jmoiron/sqlx"
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var (
+	startTime         time.Time
 	replicationClient *ReplicationClient
 	columnManager     *ColumnManager
 	taskManager       *TaskManager
 	eventEnqueuer     *EventEnqueuer
 	rpcClient         *RPCClient
 	rpcServer         *RPCServer
+	binlogStatistics  *model.BinlogStatistics
+	binlogInfo        *model.BinlogInfo
+
+	confdb *sqlx.DB
 )
 
 func initGlobal() {
@@ -29,9 +38,16 @@ func initGlobal() {
 	columnManager = NewColumnManager(Conf.MysqlConf)
 	taskManager = NewTaskManager()
 	eventEnqueuer = NewEventEnqueuer(Conf.NSQConf.LookupdHttpAddrs)
+	binlogStatistics = &model.BinlogStatistics{
+		Statistics: make([]*model.BinlogStatistic, 0, 100),
+	}
+	binlogInfo = &model.BinlogInfo{}
+
+	InitConfigDB()
 }
 
 func main() {
+	startTime = time.Now()
 	log.Debugf("Conf: %+v", Conf)
 	initGlobal()
 	conf := Conf.MysqlConf
@@ -48,6 +64,7 @@ func main() {
 	}
 	replicationClient.AddHandler(handler)
 	replicationClient.Start()
+	go binlogTicker()
 	HandleSignal()
 }
 
@@ -63,6 +80,7 @@ func HandleSignal() {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
 			replicationClient.Stop()
 			rpcClient.DeregisterClient(rpcServer.schema, rpcServer.desc)
+			SaveBinlogInfo()
 			<-replicationClient.StopChan
 			time.Sleep(1 * time.Second)
 			return
@@ -71,6 +89,16 @@ func HandleSignal() {
 			//return
 		default:
 			return
+		}
+	}
+}
+
+func binlogTicker() {
+	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
+	for {
+		select {
+		case <-ticker.C:
+			SaveBinlogInfo()
 		}
 	}
 }

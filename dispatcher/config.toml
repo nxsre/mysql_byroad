@@ -1,4 +1,6 @@
 rpc_ping_interval = "60s"
+binlog_flush_interval = "5s"
+config_db = "config.db"
 #mysql slave 信息
 [mysql]
 server_id = 2002
