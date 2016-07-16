@@ -289,6 +289,10 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(404, "404")
 		return
 	}
+	if !checkTaskUser(task, sess) {
+		ctx.HTML(403, "403")
+		return
+	}
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
 	client := ctx.GetCookie("client")
@@ -360,21 +364,19 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 
 func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	id := ctx.ParamsInt64("taskid")
-	/*rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient == nil {
-		return "RPC client not exists!"
-	}
-	task, _ := rpcclient.GetTask(id)
-	if task == nil {
-		return return404(ctx)
-	}
-	if !checkAuth(ctx, sess, "all") || !checkTaskUser(task, sess) {
+	if !checkAuth(ctx, sess, "all") {
 		return return403(ctx)
-	}*/
+	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
 		ID: id,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
 	}
 	err := task.Delete()
 	if err != nil {
@@ -392,19 +394,27 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 
 func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.QueryInt64("taskid")
-	fields := ctx.QueryStrings("fields")
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
+	fields := ctx.QueryStrings("fields")
 	if len(fields) == 0 {
 		resp.Error = true
 		resp.Message = "请添加字段信息"
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
-	task := &model.Task{
-		ID: taskid,
-	}
-	task.Get()
 	if task.Name != t.Name {
 		resp.Error = true
 		resp.Message = "名字不能修改"
@@ -455,7 +465,7 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 	if checkAuth(ctx, sess, "admin") {
 		sortTasks, _ = model.GetAllTask()
 	} else {
-		sortTasks, _ = model.GetAllTask()
+		sortTasks, _ = model.GetTasks(sess.Get("user").(string))
 	}
 	sort.Sort(TaskSlice(sortTasks))
 	ctx.Data["tasks"] = sortTasks
@@ -464,25 +474,23 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 
 func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.ParamsInt64("taskid")
-	/*rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient == nil {
-		return "RPC client not exists!"
-	}
-	task, _ := rpcclient.GetTask(taskid)
-	if task == nil {
-		return return404(ctx)
-	}
-	if !checkAuth(ctx, sess, "all") || !checkTaskUser(task, sess) {
+	if !checkAuth(ctx, sess, "all") {
 		return return403(ctx)
-	}*/
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
 	task := &model.Task{
 		ID: taskid,
 	}
-	task.Get()
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
 	stat := ctx.Query("stat")
 	task.Stat = stat
 	err := task.SetStat()
-	resp := new(httpJsonResponse)
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()

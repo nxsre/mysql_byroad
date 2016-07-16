@@ -192,3 +192,37 @@ func (task *Task) Exists() (bool, error) {
 	}
 
 }
+
+func (task *Task) NameExists() (bool, error) {
+	var cnt int
+	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM task WHERE name=?", task.Name)
+	if err != nil {
+		return false, err
+	}
+	if cnt == 1 {
+		return true, nil
+	} else {
+		return false, nil
+	}
+}
+
+func GetTasks(createUser string) ([]*Task, error) {
+	ts := []*Task{}
+	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=?", createUser)
+	if err != nil {
+		return nil, err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range ts {
+		for _, field := range fields {
+			if task.ID == field.TaskID {
+				task.Fields = append(task.Fields, field)
+			}
+		}
+	}
+	return ts, nil
+}
