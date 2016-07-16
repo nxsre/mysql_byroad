@@ -94,7 +94,7 @@
             {% for schema, tables in taskColumnsMap %} 
             {% for table, fields in tables %}
             <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
-            <h3><input class="" onchange="changeFieldValue(this)" value="{{schema}}.{{table}}"></input>
+            <h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="{{schema}}.{{table}}"></input>
                 <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
                     <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
                 </a>
@@ -147,7 +147,7 @@
     }
     function addRightDiv(schema, table) {
       var field = schema + '-' + table;
-      var data = '<div class="col-md-12 right-field-div" id="' + field + '"><h3><input class="" onchange="changeFieldValue(this)" value="' + schema + '.' + table + '"></input><a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></h3><div class="row rowCont"></div></div>';
+      var data = '<div class="col-md-12 right-field-div" id="' + field + '"><h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="' + schema + '.' + table + '"></input><a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></h3><div class="row rowCont"></div></div>';
       var d = document.getElementById(field);
       if(!d){
         $('#rightdiv').append(data);
