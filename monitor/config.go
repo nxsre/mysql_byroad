@@ -7,10 +7,12 @@ import (
 )
 
 type Config struct {
-	Debug         bool
-	MysqlConf     MysqlConf     `toml:"mysql"`
-	RPCServerConf RPCServerConf `toml:"rpcserver"`
-	WebConfig     WebConfig     `toml:"web"`
+	Debug               bool
+	NSQAdminHttpAddress string        `toml:"nsqadmin_http_address"`
+	NSQLookupdAddress   string        `toml:"nsqlookupd_http_address"`
+	MysqlConf           MysqlConf     `toml:"mysql"`
+	RPCServerConf       RPCServerConf `toml:"rpcserver"`
+	WebConfig           WebConfig     `toml:"web"`
 }
 type MysqlConf struct {
 	Host     string

@@ -9,26 +9,36 @@ import (
 	"net/url"
 	"strconv"
 	"time"
+
+	log "github.com/Sirupsen/logrus"
 )
 
-var httpClient *http.Client
+type SendClient struct {
+	http.Client
+}
 
-func NewHttpClient() *http.Client {
-	return &http.Client{
+var sendClient *SendClient
+
+func NewSendClient() *SendClient {
+	httpClient := http.Client{
 		Transport: &http.Transport{
 			MaxIdleConnsPerHost: 1000,
 		},
 	}
+	sendClient := &SendClient{
+		Client: httpClient,
+	}
+	return sendClient
 }
 
 func init() {
-	httpClient = NewHttpClient()
+	sendClient = NewSendClient()
 }
 
 /*
 发送消息
 */
-func sendMessage(evt *model.NotifyEvent) (string, error) {
+func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 	task := taskManager.GetTask(evt.TaskID)
 	if task == nil {
 		return "success", nil
@@ -41,7 +51,7 @@ func sendMessage(evt *model.NotifyEvent) (string, error) {
 		retryCountStr := strconv.Itoa(evt.RetryCount)
 		pushurl := task.Apiurl + "?" + url.Values{"jobid": {idStr}, "retry_times": {retryCountStr}}.Encode()
 		body := url.Values{"message": {string(msg)}}
-		resp, err := httpClient.PostForm(pushurl, body)
+		resp, err := sendClient.PostForm(pushurl, body)
 		if err != nil {
 			return "fail", err
 		}
@@ -50,8 +60,8 @@ func sendMessage(evt *model.NotifyEvent) (string, error) {
 		return string(retStat), err
 	} else {
 		body := bytes.NewBuffer(msg)
-		httpClient.Timeout = timeout
-		resp, err := httpClient.Post(task.Apiurl, "application/json", body)
+		sendClient.Timeout = timeout
+		resp, err := sendClient.Post(task.Apiurl, "application/json", body)
 		if err != nil {
 			return "fail", err
 		}
@@ -60,4 +70,46 @@ func sendMessage(evt *model.NotifyEvent) (string, error) {
 		return string(retStat), err
 	}
 	return "success", nil
+}
+
+func isSuccessSend(msg string) bool {
+	if msg == "success" {
+		return true
+	} else {
+		type SendResp struct {
+			Status int `json:"status"`
+		}
+		var sendResp SendResp
+		if json.Unmarshal([]byte(msg), &sendResp) == nil {
+			if sendResp.Status == 1 {
+				return true
+			}
+		}
+		return false
+	}
+}
+
+func (sc *SendClient) ResendMessage(evt *model.NotifyEvent) {
+	task := taskManager.GetTask(evt.TaskID)
+	ticker := time.NewTicker(time.Duration(task.ReSendTime) * time.Millisecond)
+	var err error
+	var ret string
+	for i := 0; i < task.RetryCount; i++ {
+		<-ticker.C
+		evt.RetryCount++
+		ret, err = sc.SendMessage(evt)
+		log.Debugf("resend message ret: %s, err: %v", ret, err)
+		if isSuccessSend(ret) {
+			return
+		}
+	}
+	if err != nil {
+		sc.LogSendError(evt, err.Error())
+	} else {
+		sc.LogSendError(evt, ret)
+	}
+}
+
+func (sc *SendClient) LogSendError(evt *model.NotifyEvent, reason string) {
+	log.Debugf("log send error: %+v, reason: %s", evt, reason)
 }

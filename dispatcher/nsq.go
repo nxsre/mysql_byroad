@@ -18,7 +18,7 @@ import (
 type QueueManager struct {
 	lookupdAddrs []string
 	nsqdAddrs    []string
-	producers    []*nsq.Producer
+	producers    map[string]*nsq.Producer
 	config       *nsq.Config
 }
 
@@ -83,7 +83,7 @@ func getNodesInfo(lookupAddrs []string) []string {
 			continue
 		}
 		for _, pro := range v.Producers {
-			log.Debugf("producers %+v", pro)
+			log.Debugf("get producers %+v", pro)
 			nodesInfo = append(nodesInfo, fmt.Sprintf("%s:%d", pro.Hostname, pro.TCPPort))
 		}
 	}
@@ -95,8 +95,8 @@ func (qm *QueueManager) initProducers() {
 	qm.producers = producers
 }
 
-func (qm *QueueManager) getProducers() []*nsq.Producer {
-	producers := make([]*nsq.Producer, 0, 10)
+func (qm *QueueManager) getProducers() map[string]*nsq.Producer {
+	producers := make(map[string]*nsq.Producer, 10)
 	for _, node := range qm.nsqdAddrs {
 		pro, err := nsq.NewProducer(node, qm.config)
 		if err != nil {
@@ -104,39 +104,53 @@ func (qm *QueueManager) getProducers() []*nsq.Producer {
 			continue
 		}
 		err = pro.Ping()
-		if err == nil {
-			producers = append(producers, pro)
+		if err != nil {
+			log.Error("nsq ping error: ", err.Error())
+			continue
 		}
+		producers[node] = pro
 	}
 	return producers
 }
 
 func (qm *QueueManager) updateProducer() {
-	ticker := time.NewTicker(time.Second * 5)
+	ticker := time.NewTicker(Conf.NSQConf.LookupInterval.Duration)
 	for {
 		select {
 		case <-ticker.C:
-			/*
-				idx := make([]int,0,10)
-				for index, pro := range qm.producers{
+			nsqaddrs := getNodesInfo(qm.lookupdAddrs)
+			for _, nsqaddr := range nsqaddrs {
+				if pro, ok := qm.producers[nsqaddr]; ok {
 					if err := pro.Ping(); err != nil {
-						log.Warn("nsqd update error ", err.Error())
-						idx = append(idx, index)
+						log.Error("nsqd ping error: ", err.Error())
+						delete(qm.producers, nsqaddr)
+					}
+				} else {
+					pro, err := nsq.NewProducer(nsqaddr, qm.config)
+					if err != nil {
+						log.Error("nsq new producer error: ", err.Error())
+					} else {
+						if err := pro.Ping(); err != nil {
+							log.Error("nsq ping error: ", err.Error())
+						} else {
+							qm.producers[nsqaddr] = pro
+						}
 					}
 				}
-				for _, id := range idx{
-
-
-			}*/
-			//log.Debugf("update producers: %d", len(qm.producers))
+			}
+			qm.nsqdAddrs = nsqaddrs
 		}
 	}
 }
 
 func (qm *QueueManager) GetProducer() (*nsq.Producer, error) {
 	if len(qm.producers) != 0 {
-		i := rand.Intn(len(qm.producers))
-		return qm.producers[i], nil
+		i := rand.Intn(len(qm.nsqdAddrs))
+		if pro, ok := qm.producers[qm.nsqdAddrs[i]]; ok {
+			return pro, nil
+		} else {
+			return qm.GetProducer()
+		}
 	}
 	return nil, fmt.Errorf("no nsqd server avaiable")
 }

@@ -40,3 +40,12 @@ func isMatch(s1, s2 string) bool {
 func genTaskQueueName(task *model.Task) string {
 	return task.Name
 }
+
+func inStrs(strings []string, s string) bool {
+	for _, str := range strings {
+		if str == s {
+			return true
+		}
+	}
+	return false
+}
