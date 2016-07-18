@@ -19,3 +19,4 @@ vendor
 dispatcher/dispatcher
 monitor/monitor
 pusher/pusher
+monitor/public/node_modules/*

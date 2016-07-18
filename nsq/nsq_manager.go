@@ -1,21 +1,18 @@
-package main
+package nsqm
 
 import (
 	"encoding/json"
 	"fmt"
-	"net/http"
-
 	"io/ioutil"
-
-	"time"
-
 	"math/rand"
+	"net/http"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/nsqio/go-nsq"
 )
 
-type QueueManager struct {
+type NSQManager struct {
 	lookupdAddrs []string
 	nsqdAddrs    []string
 	producers    map[string]*nsq.Producer
@@ -33,8 +30,8 @@ type node struct {
 	Topics           []string `json:"topics"`
 }
 
-func NewQueueManager(lookupAddrs []string) (*QueueManager, error) {
-	qm := &QueueManager{
+func NewNSQManager(lookupAddrs []string) (*NSQManager, error) {
+	qm := &NSQManager{
 		lookupdAddrs: lookupAddrs,
 		config:       nsq.NewConfig(),
 	}
@@ -90,12 +87,12 @@ func getNodesInfo(lookupAddrs []string) []string {
 	return nodesInfo
 }
 
-func (qm *QueueManager) initProducers() {
+func (qm *NSQManager) initProducers() {
 	producers := qm.getProducers()
 	qm.producers = producers
 }
 
-func (qm *QueueManager) getProducers() map[string]*nsq.Producer {
+func (qm *NSQManager) getProducers() map[string]*nsq.Producer {
 	producers := make(map[string]*nsq.Producer, 10)
 	for _, node := range qm.nsqdAddrs {
 		pro, err := nsq.NewProducer(node, qm.config)
@@ -113,8 +110,8 @@ func (qm *QueueManager) getProducers() map[string]*nsq.Producer {
 	return producers
 }
 
-func (qm *QueueManager) updateProducer() {
-	ticker := time.NewTicker(Conf.NSQConf.LookupInterval.Duration)
+func (qm *NSQManager) updateProducer() {
+	ticker := time.NewTicker(time.Second * 60)
 	for {
 		select {
 		case <-ticker.C:
@@ -143,7 +140,7 @@ func (qm *QueueManager) updateProducer() {
 	}
 }
 
-func (qm *QueueManager) GetProducer() (*nsq.Producer, error) {
+func (qm *NSQManager) GetProducer() (*nsq.Producer, error) {
 	if len(qm.producers) != 0 {
 		i := rand.Intn(len(qm.nsqdAddrs))
 		if pro, ok := qm.producers[qm.nsqdAddrs[i]]; ok {
@@ -155,7 +152,7 @@ func (qm *QueueManager) GetProducer() (*nsq.Producer, error) {
 	return nil, fmt.Errorf("no nsqd server avaiable")
 }
 
-func (qm *QueueManager) Enqueue(name string, evt interface{}) {
+func (qm *NSQManager) Enqueue(name string, evt interface{}) {
 	log.Info("nsq publish ", name)
 	p, err := qm.GetProducer()
 	if err == nil {
@@ -170,4 +167,48 @@ func (qm *QueueManager) Enqueue(name string, evt interface{}) {
 	} else {
 		log.Error("nsq enqueue error: ", err.Error())
 	}
+}
+
+func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*nsq.Consumer, error) {
+	log.Infof("new consumer %s/%s", topic, channel)
+	config := nsq.NewConfig()
+	c, err := nsq.NewConsumer(topic, channel, config)
+	if err != nil {
+		log.Error("nsq new comsumer: ", err.Error())
+		return c, err
+	}
+	err = c.ConnectToNSQLookupds(qm.lookupdAddrs)
+	if err != nil {
+		return c, err
+		log.Error("nsq connect to nsq lookupds: ", err.Error())
+	}
+	return c, nil
+}
+
+func (qm *NSQManager) GetStats() []*Stats {
+	stats := make([]*Stats, 0, 10)
+	for _, addr := range qm.nsqdAddrs {
+		s, err := getNodeStats(addr)
+		if err != nil {
+			log.Error("get node stats error: ", err.Error())
+			continue
+		} else {
+			stats = append(stats, s)
+		}
+	}
+	return stats
+}
+
+func getNodeStats(addr string) (*Stats, error) {
+	url := fmt.Sprintf("http://%s/stats?format=json", addr)
+
+	req, err := http.Get(url)
+	if err != nil {
+		return nil, err
+	}
+	defer req.Body.Close()
+
+	var s *stats
+	err = json.NewDecoder(req.Body).Decode(&s)
+	return s.Data, err
 }
