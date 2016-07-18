@@ -5,9 +5,9 @@
       <th>ID</th>
       <th>名字</th>
       <th>描述</th>
-      <th>成功/失败消息数</th>
+      <!--<th>成功/失败消息数</th>-->
       <th>推送/重推并发数</th>
-      <th>推送/重推队列</th>
+      <th>推送队列大小</th>
       <th>状态</th>
       <th>订阅</th>
       <th>操作</th>
@@ -20,14 +20,14 @@
       <td>{{task.ID}}</td>
       <td>{{task.Name}}</td>
       <td>{{task.Desc}}</td>
-      <td>
+     <!-- <td>
         <div data-toggle="tooltip" data-placement="top" title="发送:{{task.Statistic.SendMessageCount}} 重发:{{task.Statistic.ReSendMessageCount}} 成功:{{task.Statistic.SendSuccessCount}} 失败:{{task.Statistic.SendFailedCount}}">
             <span class="label label-success">{{task.Statistic.SendSuccessCount}}</span>
             <span class="label label-danger">{{task.Statistic.SendFailedCount}}</span>
         <div>
-      </td>
+      </td>-->
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
-      <td>{{task.QueueLength}}/{{task.ReQueueLength}}</td>
+      <td>{{task.QueueLength}}</td>
       <td>
         {%if (task.Stat=="正常")%}
         <span class="label label-success">{{task.Stat}}</span> 

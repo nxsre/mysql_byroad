@@ -12,9 +12,12 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-var pusherManager *PusherManager
-var dispatcherManager *DispatcherManager
-var rpcServer *Monitor
+var (
+	pusherManager     *PusherManager
+	dispatcherManager *DispatcherManager
+	rpcServer         *Monitor
+	nsqadmin          *NSQAdmin
+)
 
 func main() {
 	log.Debugf("Conf: %+v", Conf)
@@ -22,6 +25,7 @@ func main() {
 	dispatcherManager = NewDispatcherManager()
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcServer.start()
+	nsqadmin = NewNSQAdmin(Conf.NSQAdminHttpAddress)
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
 		Conf.MysqlConf.Username, Conf.MysqlConf.Password, Conf.MysqlConf.Host, Conf.MysqlConf.Port,
 		Conf.MysqlConf.DBName)

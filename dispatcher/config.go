@@ -2,12 +2,11 @@ package main
 
 import (
 	"database/sql"
-	"epg/log"
+	"mysql_byroad/common"
 	"time"
 
-	"mysql_byroad/common"
-
 	"github.com/BurntSushi/toml"
+	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -58,6 +57,7 @@ type RPCServerConf struct {
 type NSQConf struct {
 	LookupdHttpAddrs []string `toml:"lookupd_http_address"`
 	NsqdAddrs        []string `toml:"nsqd_tcp_address"`
+	LookupInterval   duration `toml:"lookup_interval"`
 }
 
 func init() {

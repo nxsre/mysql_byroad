@@ -3,19 +3,24 @@ package main
 import (
 	"mysql_byroad/common"
 	"mysql_byroad/model"
+	"mysql_byroad/nsq"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
 )
 
+type Enqueuer interface {
+	Enqueue(name string, evt interface{})
+}
 type EventEnqueuer struct {
-	queueManager *QueueManager
+	queueManager Enqueuer
 	sync.WaitGroup
 }
 
 func NewEventEnqueuer(lookupAddrs []string) *EventEnqueuer {
 	ee := &EventEnqueuer{}
-	qm, err := NewQueueManager(lookupAddrs)
+	nsqm.NewNSQManager(lookupAddrs)
+	qm, err := nsqm.NewNSQManager(lookupAddrs)
 	if err != nil {
 		log.Error(err.Error())
 	}

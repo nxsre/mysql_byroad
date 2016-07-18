@@ -15,8 +15,11 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 	log.Debug(string(msg.Body))
 	evt := new(model.NotifyEvent)
 	err := json.Unmarshal(msg.Body, evt)
-	ret, err := sendMessage(evt)
-	log.Debugf("send message ret %s, error: %s", ret, err)
+	ret, err := sendClient.SendMessage(evt)
+	log.Debugf("send message ret %s, error: %v", ret, err)
+	if !isSuccessSend(ret) {
+		sendClient.ResendMessage(evt)
+	}
 	return nil
 }
 

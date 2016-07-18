@@ -468,6 +468,10 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 		sortTasks, _ = model.GetTasks(sess.Get("user").(string))
 	}
 	sort.Sort(TaskSlice(sortTasks))
+	for _, task := range sortTasks {
+		length, _ := nsqadmin.GetTaskQueueLength(task)
+		task.QueueLength = length
+	}
 	ctx.Data["tasks"] = sortTasks
 	ctx.HTML(200, "tasklist")
 }
