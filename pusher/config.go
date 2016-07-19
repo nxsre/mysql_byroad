@@ -7,8 +7,18 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+type duration struct {
+	time.Duration
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(text))
+	return err
+}
+
 type Config struct {
-	RPCPingInterval time.Duration `toml:rpc_ping_interval`
+	RPCPingInterval duration      `toml:"rpc_ping_interval"`
 	MonitorConf     MonitorConf   `toml:"monitor"`
 	RPCServerConf   RPCServerConf `toml:"rpc_server"`
 	NSQConf         NSQConf       `toml:"nsq"`

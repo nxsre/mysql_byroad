@@ -72,3 +72,21 @@ func (m *Monitor) HandleDispatchClientSignal(ss *ServiceSignal, status *string) 
 	*status = "OK"
 	return nil
 }
+
+func (m *Monitor) HandleDispatchCientPing(ss *ServiceSignal, status *string) error {
+	log.Debugf("dispatch client signal %+v", ss)
+	if ss.Code == "2" {
+		dispatcherManager.UpdateDispatchClient(ss.Schema, ss.Desc)
+	}
+	*status = "OK"
+	return nil
+}
+
+func (m *Monitor) HandlePushCientPing(ss *ServiceSignal, status *string) error {
+	log.Debugf("dispatch client signal %+v", ss)
+	if ss.Code == "2" {
+		pusherManager.UpdatePushClient(ss.Schema, ss.Desc)
+	}
+	*status = "OK"
+	return nil
+}

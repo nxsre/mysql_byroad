@@ -2,54 +2,63 @@ package main
 
 import (
 	"mysql_byroad/model"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 type PusherManager struct {
-	rpcclients []*RPCClient
-	schemas    []string
+	rpcclients map[string]*RPCClient
+	timers     map[string]*time.Timer
 }
 
 func NewPusherManager() *PusherManager {
 	pm := &PusherManager{
-		rpcclients: make([]*RPCClient, 0, 10),
-		schemas:    make([]string, 0, 10),
+		rpcclients: make(map[string]*RPCClient, 10),
+		timers:     make(map[string]*time.Timer, 10),
 	}
 	return pm
 }
 
 func (pm *PusherManager) GetPushClient(schema string) (*RPCClient, bool) {
-	for _, client := range pm.rpcclients {
-		if client.Schema == schema {
-			return client, true
-		}
-	}
-	return nil, false
+	client, ok := pm.rpcclients[schema]
+	return client, ok
 }
 
 func (pm *PusherManager) AddPushClient(schema, desc string) {
-	client := NewRPCClient("tcp", schema, desc)
-	pm.rpcclients = append(pm.rpcclients, client)
+	if _, ok := pm.rpcclients[schema]; !ok {
+		client := NewRPCClient("tcp", schema, desc)
+		pm.rpcclients[schema] = client
+		timer := time.NewTimer(Conf.RPCClientLookupInterval.Duration)
+		pm.timers[schema] = timer
+		go func() {
+			for {
+				<-timer.C
+				pm.DeletePushClient(schema)
+			}
+		}()
+	}
+
 	log.Infof("add push client: %s, length: %d ", schema, len(pm.rpcclients))
 }
 
 func (pm *PusherManager) DeletePushClient(schema string) {
-	for idx, s := range pm.schemas {
-		if s == schema {
-			pm.schemas = append(pm.schemas[:idx], pm.schemas[idx+1:]...)
-			break
-		}
+	delete(pm.rpcclients, schema)
+	if timer, ok := pm.timers[schema]; ok {
+		timer.Stop()
 	}
-	for idx, client := range pm.rpcclients {
-		if client.Schema == schema {
-			pm.rpcclients = append(pm.rpcclients[:idx], pm.rpcclients[idx+1:]...)
-			break
-		}
-	}
+	delete(pm.timers, schema)
 	log.Infof("delete push client %s, length: %d", schema, len(pm.rpcclients))
 }
 
+func (pm *PusherManager) UpdatePushClient(schema, desc string) {
+	if timer, ok := pm.timers[schema]; ok {
+		timer.Reset(Conf.RPCClientLookupInterval.Duration)
+	}
+	if _, ok := pm.rpcclients[schema]; ok {
+		pm.AddPushClient(schema, desc)
+	}
+}
 func (pm *PusherManager) AddTask(task *model.Task) {
 	for _, client := range pm.rpcclients {
 		status, err := client.AddTask(task)

@@ -76,13 +76,13 @@ func StartServer() {
 					ctx.Data["isAdmin"] = true
 				}
 				ctx.Data["username"] = username.(string)
-				ctx.Data["clients"] = dispatcherManager.rpcclients
+				ctx.Data["clients"] = dispatcherManager.GetRPCClients()
 			}
 		} else {
 			sess.Set("user", "test")
 			ctx.Data["isAdmin"] = true
 			ctx.Data["username"] = "test"
-			ctx.Data["clients"] = dispatcherManager.rpcclients
+			ctx.Data["clients"] = dispatcherManager.GetRPCClients()
 		}
 	})
 

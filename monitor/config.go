@@ -2,17 +2,29 @@ package main
 
 import (
 	"mysql_byroad/common"
+	"time"
 
 	"github.com/BurntSushi/toml"
 )
 
+type duration struct {
+	time.Duration
+}
+
+func (d *duration) UnmarshalText(text []byte) error {
+	var err error
+	d.Duration, err = time.ParseDuration(string(text))
+	return err
+}
+
 type Config struct {
-	Debug               bool
-	NSQAdminHttpAddress string        `toml:"nsqadmin_http_address"`
-	NSQLookupdAddress   []string      `toml:"nsqlookupd_http_address"`
-	MysqlConf           MysqlConf     `toml:"mysql"`
-	RPCServerConf       RPCServerConf `toml:"rpcserver"`
-	WebConfig           WebConfig     `toml:"web"`
+	Debug                   bool
+	RPCClientLookupInterval duration      `toml:"rpcclient_lookup_interval"`
+	NSQAdminHttpAddress     string        `toml:"nsqadmin_http_address"`
+	NSQLookupdAddress       []string      `toml:"nsqlookupd_http_address"`
+	MysqlConf               MysqlConf     `toml:"mysql"`
+	RPCServerConf           RPCServerConf `toml:"rpcserver"`
+	WebConfig               WebConfig     `toml:"web"`
 }
 type MysqlConf struct {
 	Host     string

@@ -1,4 +1,4 @@
-rpc_ping_interval = "60s"
+rpc_ping_interval = "10s" #心跳时间
 binlog_flush_interval = "5s"
 config_db = "config.db"
 #mysql slave 信息

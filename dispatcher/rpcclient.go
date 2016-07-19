@@ -3,6 +3,7 @@ package main
 import (
 	"mysql_byroad/model"
 	"net/rpc"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -49,6 +50,8 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 	log.Info("rpc register client")
 	client, err := this.GetClient()
 	if err != nil {
+		log.Error("register rpc client error: ", err.Error())
+		this.pingLookup(schema, desc)
 		return
 	}
 	defer client.Close()
@@ -58,7 +61,20 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 		Desc:   desc,
 	}
 	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	this.pingLookup(schema, desc)
 	return
+}
+
+func (this *RPCClient) pingLookup(schema, desc string) {
+	go func() {
+		for {
+			_, err := this.Ping(schema, desc)
+			if err != nil {
+				log.Error("rpc ping error: ", err.Error())
+			}
+			time.Sleep(Conf.RPCPingInterval.Duration)
+		}
+	}()
 }
 
 func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err error) {
@@ -89,6 +105,6 @@ func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
 		Schema: schema,
 		Desc:   desc,
 	}
-	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	err = client.Call("Monitor.HandleDispatchCientPing", ss, &status)
 	return
 }

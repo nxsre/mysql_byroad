@@ -2,52 +2,70 @@ package main
 
 import (
 	"mysql_byroad/model"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
 
 type DispatcherManager struct {
-	rpcclients []*RPCClient
-	schemas    []string
+	rpcclients map[string]*RPCClient
+	timers     map[string]*time.Timer
 }
 
 func NewDispatcherManager() *DispatcherManager {
 	dm := &DispatcherManager{
-		rpcclients: make([]*RPCClient, 0, 10),
-		schemas:    make([]string, 0, 10),
+		rpcclients: make(map[string]*RPCClient, 10),
+		timers:     make(map[string]*time.Timer, 10),
 	}
 	return dm
 }
 
-func (dm *DispatcherManager) GetRPCClient(schema string) (*RPCClient, bool) {
-	for _, client := range dm.rpcclients {
-		if client.Schema == schema {
-			return client, true
-		}
+func (dm *DispatcherManager) GetRPCClients() []*RPCClient {
+	clients := make([]*RPCClient, 0, 10)
+	for _, c := range dm.rpcclients {
+		clients = append(clients, c)
 	}
-	return nil, false
+	return clients
+}
+
+func (dm *DispatcherManager) GetRPCClient(schema string) (*RPCClient, bool) {
+	client, ok := dm.rpcclients[schema]
+	return client, ok
 }
 
 func (dm *DispatcherManager) AddDispatchClient(schema, desc string) {
-	client := NewRPCClient("tcp", schema, desc)
-	dm.rpcclients = append(dm.rpcclients, client)
-	log.Infof("add dispatch client %s, length: %d", schema, len(dm.rpcclients))
+	if _, ok := dm.rpcclients[schema]; !ok {
+		client := NewRPCClient("tcp", schema, desc)
+		dm.rpcclients[schema] = client
+		timer := time.NewTimer(Conf.RPCClientLookupInterval.Duration)
+		dm.timers[schema] = timer
+		go func() {
+			for {
+				<-timer.C
+				dm.DeleteDispatchClient(schema)
+			}
+		}()
+		log.Infof("add dispatch client %s, length: %d", schema, len(dm.rpcclients))
+	}
 }
 
 func (dm *DispatcherManager) DeleteDispatchClient(schema string) {
-	for idx, s := range dm.schemas {
-		if s == schema {
-			dm.schemas = append(dm.schemas[:idx], dm.schemas[idx+1:]...)
-			break
-		}
+	delete(dm.rpcclients, schema)
+	if timer, ok := dm.timers[schema]; ok {
+		timer.Stop()
 	}
-	for idx, client := range dm.rpcclients {
-		if client.Schema == schema {
-			dm.rpcclients = append(dm.rpcclients[:idx], dm.rpcclients[idx+1:]...)
-			break
-		}
-	}
+	delete(dm.timers, schema)
 	log.Infof("delete dispatch client %s, length: %d", schema, len(dm.rpcclients))
+}
+
+func (dm *DispatcherManager) UpdateDispatchClient(schema, desc string) {
+	if timer, ok := dm.timers[schema]; ok {
+		timer.Reset(Conf.RPCClientLookupInterval.Duration)
+	}
+	if _, ok := dm.rpcclients[schema]; !ok {
+		dm.AddDispatchClient(schema, desc)
+	}
+	log.Debugf("dispatcher manager update client %s: %s", schema, desc)
 }
 
 func (dm *DispatcherManager) AddTask(task *model.Task) {

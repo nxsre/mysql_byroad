@@ -23,7 +23,7 @@ func initGlobal() {
 	rpcclient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort), "")
 	_, err = rpcclient.RegisterClient(rpcserver.schema, rpcserver.desc)
 	if err != nil {
-		log.Panic(err)
+		log.Error("register rpc client error: ", err.Error())
 	}
 }
 func main() {

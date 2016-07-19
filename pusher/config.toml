@@ -1,4 +1,4 @@
-rpc_ping_interval = "60s"
+rpc_ping_interval = "10s"
 [nsq]
 lookupd_http_address = ["172.17.0.1:4161"]
 nsqd_tcp_address = []
