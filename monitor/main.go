@@ -29,6 +29,7 @@ func main() {
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcServer.start()
 	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress)
+	nsqManager.NodeInfoLookup()
 	if err != nil {
 		log.Error("new nsq manager error: ", err.Error())
 	}

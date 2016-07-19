@@ -18,7 +18,7 @@ var (
 
 func initGlobal() {
 	var err error
-	rpcserver = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
+	rpcserver = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), Conf.RPCServerConf.Desc)
 	rpcserver.startRpcServer()
 	rpcclient = NewRPCClient("tcp", fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort), "")
 	_, err = rpcclient.RegisterClient(rpcserver.schema, rpcserver.desc)

@@ -44,6 +44,24 @@ func (qm *NSQManager) ProducerLookup() {
 	go qm.updateProducer()
 }
 
+func (qm *NSQManager) NodeInfoLookup() {
+	go func() {
+		ticker := time.NewTicker(time.Second * 60)
+		for {
+			select {
+			case <-ticker.C:
+				qm.nsqdNodes = getNodesInfo(qm.lookupdAddrs)
+			}
+		}
+	}()
+}
+
+func (qm *NSQManager) GetNodesInfo() []*node {
+	nodes := getNodesInfo(qm.lookupdAddrs)
+	qm.nsqdNodes = nodes
+	return nodes
+}
+
 func getNodesInfo(lookupAddrs []string) []*node {
 	nodesInfo := make([]*node, 0, 10)
 	for _, addr := range lookupAddrs {
@@ -86,10 +104,6 @@ func getNodesInfo(lookupAddrs []string) []*node {
 		for _, pro := range nodesInfo {
 			log.Debugf("get node info %+v", pro)
 		}
-		/*	for _, pro := range v.Producers {
-			log.Debugf("get producers %+v", pro)
-			nodesInfo = append(nodesInfo, fmt.Sprintf("%s:%d", pro.Hostname, pro.TCPPort))
-		}*/
 	}
 	return nodesInfo
 }
@@ -123,8 +137,7 @@ func (qm *NSQManager) updateProducer() {
 	for {
 		select {
 		case <-ticker.C:
-			nsqnodes := getNodesInfo(qm.lookupdAddrs)
-			for _, n := range nsqnodes {
+			for _, n := range qm.nsqdNodes {
 				nsqaddr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
 				if pro, ok := qm.producers[nsqaddr]; ok {
 					if err := pro.Ping(); err != nil {
@@ -144,7 +157,6 @@ func (qm *NSQManager) updateProducer() {
 					}
 				}
 			}
-			qm.nsqdNodes = nsqnodes
 		}
 	}
 }
@@ -200,7 +212,7 @@ func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*n
 
 func (qm *NSQManager) GetStats() []*NodeStats {
 	stats := make([]*NodeStats, 0, 10)
-	for _, n := range qm.nsqdNodes {
+	for _, n := range qm.GetNodesInfo() {
 		addr := fmt.Sprintf("%s:%d", n.Hostname, n.HTTPPort)
 		s, err := getNodeStats(addr)
 		if err != nil {
