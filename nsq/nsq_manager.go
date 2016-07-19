@@ -14,7 +14,7 @@ import (
 
 type NSQManager struct {
 	lookupdAddrs []string
-	nsqdAddrs    []string
+	nsqdNodes    []*node
 	producers    map[string]*nsq.Producer
 	config       *nsq.Config
 }
@@ -35,14 +35,17 @@ func NewNSQManager(lookupAddrs []string) (*NSQManager, error) {
 		lookupdAddrs: lookupAddrs,
 		config:       nsq.NewConfig(),
 	}
-	qm.nsqdAddrs = getNodesInfo(lookupAddrs)
-	qm.initProducers()
-	go qm.updateProducer()
+	qm.nsqdNodes = getNodesInfo(lookupAddrs)
 	return qm, nil
 }
 
-func getNodesInfo(lookupAddrs []string) []string {
-	nodesInfo := make([]string, 0, 10)
+func (qm *NSQManager) ProducerLookup() {
+	qm.initProducers()
+	go qm.updateProducer()
+}
+
+func getNodesInfo(lookupAddrs []string) []*node {
+	nodesInfo := make([]*node, 0, 10)
 	for _, addr := range lookupAddrs {
 		endpoint := fmt.Sprintf("http://%s/nodes", addr)
 		resp, err := http.Get(endpoint)
@@ -79,10 +82,14 @@ func getNodesInfo(lookupAddrs []string) []string {
 			log.Errorf("json unmarshal error2: %s", err.Error())
 			continue
 		}
-		for _, pro := range v.Producers {
+		nodesInfo = append(nodesInfo, v.Producers...)
+		for _, pro := range nodesInfo {
+			log.Debugf("get node info %+v", pro)
+		}
+		/*	for _, pro := range v.Producers {
 			log.Debugf("get producers %+v", pro)
 			nodesInfo = append(nodesInfo, fmt.Sprintf("%s:%d", pro.Hostname, pro.TCPPort))
-		}
+		}*/
 	}
 	return nodesInfo
 }
@@ -94,8 +101,9 @@ func (qm *NSQManager) initProducers() {
 
 func (qm *NSQManager) getProducers() map[string]*nsq.Producer {
 	producers := make(map[string]*nsq.Producer, 10)
-	for _, node := range qm.nsqdAddrs {
-		pro, err := nsq.NewProducer(node, qm.config)
+	for _, node := range qm.nsqdNodes {
+		nodeaddr := fmt.Sprintf("%s:%d", node.Hostname, node.TCPPort)
+		pro, err := nsq.NewProducer(nodeaddr, qm.config)
 		if err != nil {
 			log.Error("nsq get producer: ", err.Error())
 			continue
@@ -105,7 +113,7 @@ func (qm *NSQManager) getProducers() map[string]*nsq.Producer {
 			log.Error("nsq ping error: ", err.Error())
 			continue
 		}
-		producers[node] = pro
+		producers[nodeaddr] = pro
 	}
 	return producers
 }
@@ -115,8 +123,9 @@ func (qm *NSQManager) updateProducer() {
 	for {
 		select {
 		case <-ticker.C:
-			nsqaddrs := getNodesInfo(qm.lookupdAddrs)
-			for _, nsqaddr := range nsqaddrs {
+			nsqnodes := getNodesInfo(qm.lookupdAddrs)
+			for _, n := range nsqnodes {
+				nsqaddr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
 				if pro, ok := qm.producers[nsqaddr]; ok {
 					if err := pro.Ping(); err != nil {
 						log.Error("nsqd ping error: ", err.Error())
@@ -135,15 +144,19 @@ func (qm *NSQManager) updateProducer() {
 					}
 				}
 			}
-			qm.nsqdAddrs = nsqaddrs
+			qm.nsqdNodes = nsqnodes
 		}
 	}
 }
 
 func (qm *NSQManager) GetProducer() (*nsq.Producer, error) {
 	if len(qm.producers) != 0 {
-		i := rand.Intn(len(qm.nsqdAddrs))
-		if pro, ok := qm.producers[qm.nsqdAddrs[i]]; ok {
+		i := rand.Intn(len(qm.nsqdNodes))
+		log.Debugf("nsq nodes lenght: %d, rand: %d", len(qm.nsqdNodes), i)
+		n := qm.nsqdNodes[i]
+		addr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
+		if pro, ok := qm.producers[addr]; ok {
+			log.Debug("get producer ", addr)
 			return pro, nil
 		} else {
 			return qm.GetProducer()
@@ -185,15 +198,20 @@ func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*n
 	return c, nil
 }
 
-func (qm *NSQManager) GetStats() []*Stats {
-	stats := make([]*Stats, 0, 10)
-	for _, addr := range qm.nsqdAddrs {
+func (qm *NSQManager) GetStats() []*NodeStats {
+	stats := make([]*NodeStats, 0, 10)
+	for _, n := range qm.nsqdNodes {
+		addr := fmt.Sprintf("%s:%d", n.Hostname, n.HTTPPort)
 		s, err := getNodeStats(addr)
 		if err != nil {
 			log.Error("get node stats error: ", err.Error())
 			continue
 		} else {
-			stats = append(stats, s)
+			ns := &NodeStats{
+				Node:  n,
+				Stats: s,
+			}
+			stats = append(stats, ns)
 		}
 	}
 	return stats
@@ -211,4 +229,21 @@ func getNodeStats(addr string) (*Stats, error) {
 	var s *stats
 	err = json.NewDecoder(req.Body).Decode(&s)
 	return s.Data, err
+}
+
+func (qm *NSQManager) GetTopicStats(topicname string) []*TopicStats {
+	allStats := qm.GetStats()
+	topicStats := make([]*TopicStats, 0, 10)
+	for _, ns := range allStats {
+		for _, topic := range ns.Stats.Topics {
+			if topic.Name == topicname {
+				ts := &TopicStats{
+					Node:  ns.Node,
+					Topic: topic,
+				}
+				topicStats = append(topicStats, ts)
+			}
+		}
+	}
+	return topicStats
 }

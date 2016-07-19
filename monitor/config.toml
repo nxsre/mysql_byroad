@@ -1,6 +1,6 @@
 debug = true
 nsqadmin_http_address = "localhost:4171"
-nsqlookupd_http_address = "127.0..0.1:4161"
+nsqlookupd_http_address = ["127.0.0.1:4161"]
 [mysql]
 host = "127.0.0.1"
 port = 3306

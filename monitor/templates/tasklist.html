@@ -7,7 +7,7 @@
       <th>描述</th>
       <!--<th>成功/失败消息数</th>-->
       <th>推送/重推并发数</th>
-      <th>推送队列大小</th>
+      <th>推送详情</th>
       <th>状态</th>
       <th>订阅</th>
       <th>操作</th>
@@ -27,7 +27,7 @@
         <div>
       </td>-->
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
-      <td>{{task.QueueLength}}</td>
+      <td><a href="/task/detail/{{task.ID}}">详情</a></td>
       <td>
         {%if (task.Stat=="正常")%}
         <span class="label label-success">{{task.Stat}}</span> 

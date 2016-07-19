@@ -103,7 +103,7 @@ func StartServer() {
 
 	m.Delete("/task/:taskid", doDeleteTask)
 
-	m.Get("/taskdetail/:taskid", getTaskStatistic)
+	m.Get("/task/detail/:taskid", getTaskStatistic)
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
 
@@ -468,9 +468,9 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 		sortTasks, _ = model.GetTasks(sess.Get("user").(string))
 	}
 	sort.Sort(TaskSlice(sortTasks))
-	for _, task := range sortTasks {
-		length, _ := nsqadmin.GetTaskQueueLength(task)
-		task.QueueLength = length
+	sts := nsqManager.GetTopicStats(sortTasks[0].Name)
+	for _, st := range sts {
+		log.Debugf("node : %+v, topic: %+v", st.Node, st.Topic)
 	}
 	ctx.Data["tasks"] = sortTasks
 	ctx.HTML(200, "tasklist")
@@ -589,17 +589,23 @@ func getLogList(client string) ([]string, error) {
 }
 
 func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
-	/*taskid := ctx.ParamsInt64("taskid")
+	taskid := ctx.ParamsInt64("taskid")
 	if !checkAuth(ctx, sess, "all") {
 		ctx.HTML(403, "403")
 		return
 	}
-	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient == nil {
-		ctx.HTML(404, "404")
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		ctx.HTML(403, "403")
 		return
 	}
-	statistic, _ := rpcclient.GetTaskStatistic(taskid)
-	ctx.Data["statistic"] = statistic*/
+	if !checkTaskUser(task, sess) {
+		ctx.HTML(403, "403")
+		return
+	}
+	stats := nsqManager.GetTopicStats(task.Name)
+	ctx.Data["statistics"] = stats
 	ctx.HTML(200, "taskdetail")
 }

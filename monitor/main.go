@@ -8,6 +8,8 @@ import (
 	"syscall"
 	"time"
 
+	"mysql_byroad/nsq"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
 )
@@ -16,16 +18,20 @@ var (
 	pusherManager     *PusherManager
 	dispatcherManager *DispatcherManager
 	rpcServer         *Monitor
-	nsqadmin          *NSQAdmin
+	nsqManager        *nsqm.NSQManager
 )
 
 func main() {
+	var err error
 	log.Debugf("Conf: %+v", Conf)
 	pusherManager = NewPusherManager()
 	dispatcherManager = NewDispatcherManager()
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcServer.start()
-	nsqadmin = NewNSQAdmin(Conf.NSQAdminHttpAddress)
+	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress)
+	if err != nil {
+		log.Error("new nsq manager error: ", err.Error())
+	}
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
 		Conf.MysqlConf.Username, Conf.MysqlConf.Password, Conf.MysqlConf.Host, Conf.MysqlConf.Port,
 		Conf.MysqlConf.DBName)

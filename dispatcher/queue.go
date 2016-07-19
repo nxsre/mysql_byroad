@@ -19,11 +19,11 @@ type EventEnqueuer struct {
 
 func NewEventEnqueuer(lookupAddrs []string) *EventEnqueuer {
 	ee := &EventEnqueuer{}
-	nsqm.NewNSQManager(lookupAddrs)
 	qm, err := nsqm.NewNSQManager(lookupAddrs)
 	if err != nil {
 		log.Error(err.Error())
 	}
+	qm.ProducerLookup()
 	ee.queueManager = qm
 	return ee
 }

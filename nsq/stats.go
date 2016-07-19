@@ -12,6 +12,16 @@ type Stats struct {
 	Topics  []*Topic `json:"topics"`
 }
 
+type NodeStats struct {
+	Node  *node
+	Stats *Stats
+}
+
+type TopicStats struct {
+	Node  *node
+	Topic *Topic
+}
+
 // Topic stats.
 type Topic struct {
 	Name          string     `json:"topic_name"`

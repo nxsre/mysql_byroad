@@ -1,20 +1,55 @@
 <div class="container">
-    <table class="table table-condensed table-striped">
+<!--    {% for statistic in statistics %}
+  	<h4>Topic</h4>
+    <table class="table table-striped">
         <tr>
-            <td>已发消息数量</td>
-            <td>{{statistic.SendMessageCount}}</td>
+            <th>Tpoic</th>
+            <th>Hostname</th>
+            <th>Depth</th>
+            <th>BackendDepth</th>
+            <th>Messages</th>
         </tr>
         <tr>
-            <td>重发消息数量</td>
-            <td>{{statistic.ReSendMessageCount}}</td>
-        </tr>
-        <tr>
-            <td>发送成功消息数</td>
-            <td>{{statistic.SendSuccessCount}}</td>
-        </tr>
-        <tr>
-            <td>发送失败消息数</td>
-            <td>{{statistic.SendFailedCount}}</td>
+       	    <td>{{statistic.Topic.Name}}</td>
+            <td>{{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}</td>
+            <td>{{statistic.Topic.Depth}}</td>
+            <td>{{statistic.Topic.BackendDepth}}</td>
+            <td>{{statistic.Topic.MessageCount}}</td>
         </tr>
     </table>
+    <table class="table table-condensed">
+        <tr>
+            <th>Channel</th>
+            <th>Depth</th>
+            <th>BackendDepth</th>
+            <th>Messages</th>
+        </tr>
+        {% for channel in statistic.Topic.Channels %}
+            <tr>
+                <td>{{channel.Name}}</td>
+                <td>{{channel.Depth}}</td>
+                <td>{{channel.BackendDepth}}</td>
+                <td>{{channel.MessageCount}}</td>
+            </tr>
+        {% endfor %}
+    </table>
+    {% endfor%}-->
+
+    {% for statistic in statistics %}
+    <ul class="nav">
+        <li><span>Hostname:</span> {{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}
+            <span>Topic:</span> {{statistic.Topic.Name}}
+            <ul>
+                {% for channel in statistic.Topic.Channels %}
+                <li>
+                    <span>channel name: </span>{{channel.Name}}
+                    <span>depth: </span>{{channel.Depth}}
+                    <span>backend depth: </span>{{channel.BackendDepth}}
+                    <span>messages: </span>{{channel.MessageCount}}
+                </li>
+                {% endfor %}
+            </ul>
+        </li>
+    </ul>
+    {% endfor %}
 </div>
