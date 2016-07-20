@@ -39,12 +39,12 @@ func NewNSQManager(lookupAddrs []string) (*NSQManager, error) {
 	return qm, nil
 }
 
-func (qm *NSQManager) ProducerLookup() {
+func (qm *NSQManager) ProducerLoop() {
 	qm.initProducers()
 	go qm.updateProducer()
 }
 
-func (qm *NSQManager) NodeInfoLookup() {
+func (qm *NSQManager) NodeInfoLoop() {
 	go func() {
 		ticker := time.NewTicker(time.Second * 60)
 		for {
@@ -196,8 +196,7 @@ func (qm *NSQManager) Enqueue(name string, evt interface{}) {
 
 func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*nsq.Consumer, error) {
 	log.Infof("new consumer %s/%s", topic, channel)
-	config := nsq.NewConfig()
-	c, err := nsq.NewConsumer(topic, channel, config)
+	c, err := nsq.NewConsumer(topic, channel, qm.config)
 	if err != nil {
 		log.Error("nsq new comsumer: ", err.Error())
 		return c, err

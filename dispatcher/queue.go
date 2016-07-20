@@ -23,7 +23,7 @@ func NewEventEnqueuer(lookupAddrs []string) *EventEnqueuer {
 	if err != nil {
 		log.Error(err.Error())
 	}
-	qm.ProducerLookup()
+	qm.ProducerLoop()
 	ee.queueManager = qm
 	return ee
 }
