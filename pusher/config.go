@@ -18,10 +18,20 @@ func (d *duration) UnmarshalText(text []byte) error {
 }
 
 type Config struct {
-	RPCPingInterval duration      `toml:"rpc_ping_interval"`
-	MonitorConf     MonitorConf   `toml:"monitor"`
-	RPCServerConf   RPCServerConf `toml:"rpc_server"`
-	NSQConf         NSQConf       `toml:"nsq"`
+	RPCPingInterval     duration      `toml:"rpc_ping_interval"`
+	MonitorConf         MonitorConf   `toml:"monitor"`
+	RPCServerConf       RPCServerConf `toml:"rpc_server"`
+	NSQConf             NSQConf       `toml:"nsq"`
+	MysqlConf           MysqlConf     `toml:"mysql"`
+	MaxIdleConnsPerHost int           `toml:"max_idle_conns_per_host"`
+}
+
+type MysqlConf struct {
+	Host     string
+	Port     uint16
+	Username string
+	Password string
+	DBName   string `toml:"dbname"`
 }
 
 type MonitorConf struct {

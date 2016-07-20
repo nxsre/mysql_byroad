@@ -2,18 +2,22 @@ package main
 
 import (
 	"fmt"
+	"mysql_byroad/model"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 var (
 	taskManager *TaskManager
 	rpcserver   *RPCServer
 	rpcclient   *RPCClient
+	sendClient  *SendClient
 )
 
 func initGlobal() {
@@ -25,10 +29,20 @@ func initGlobal() {
 	if err != nil {
 		log.Error("register rpc client error: ", err.Error())
 	}
+	sendClient = NewSendClient()
 }
+
 func main() {
 	log.Debugf("Conf: %+v", Conf)
 	initGlobal()
+	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
+		Conf.MysqlConf.Username, Conf.MysqlConf.Password, Conf.MysqlConf.Host, Conf.MysqlConf.Port,
+		Conf.MysqlConf.DBName)
+	confdb, err := sqlx.Open("mysql", dsn)
+	if err != nil {
+		panic(err)
+	}
+	model.Init(confdb)
 	tasks, err := rpcclient.GetAllTasks("")
 	if err != nil {
 		log.Error(err.Error())

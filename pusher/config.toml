@@ -1,4 +1,5 @@
 rpc_ping_interval = "10s"
+max_idle_conns_per_host = 1000
 [nsq]
 lookupd_http_address = ["172.17.0.1:4161"]
 nsqd_tcp_address = []
@@ -11,3 +12,10 @@ rpc_port = 1234
 host = "127.0.0.1"
 port = 1239
 desc = "localhost:1239"
+
+[mysql]
+host = "127.0.0.1"
+port = 3306
+username = "root"
+password = "root"
+dbname = "byroad"

@@ -1,6 +1,6 @@
 WORKPATH = $(PWD)
 GOGET = go get -v
-default: run
+default: build
 backend_env:
 	${GOGET} github.com/mattn/go-sqlite3
 	${GOGET} github.com/go-sql-driver/mysql
@@ -35,6 +35,11 @@ byroad-pusher:
 	cd ${WORKPATH}/pusher && godep go build -o ${WORKPATH}/build/byroad-pusher
 
 build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher
+
+dev:
+	cd ${WORKPATH}/dispatcher && godep go build
+	cd ${WORKPATH}/monitor && godep go build
+	cd ${WORKPATH}/pusher && godep go build
 
 clean:
 	rm -rf *.log *.tar.gz build

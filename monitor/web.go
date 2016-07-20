@@ -93,7 +93,7 @@ func StartServer() {
 	m.Get("/addtask", addTaskHTML)
 	m.Get("/task", tasklist)
 	m.Get("/taskmodify/:taskid", modifytask)
-	m.Get("/log", loglist)
+	m.Get("/task/log/:taskid", loglist)
 	m.Get("/log/download/:filename", downloadlog)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
@@ -468,10 +468,6 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 		sortTasks, _ = model.GetTasks(sess.Get("user").(string))
 	}
 	sort.Sort(TaskSlice(sortTasks))
-	sts := nsqManager.GetTopicStats(sortTasks[0].Name)
-	for _, st := range sts {
-		log.Debugf("node : %+v, topic: %+v", st.Node, st.Topic)
-	}
 	ctx.Data["tasks"] = sortTasks
 	ctx.HTML(200, "tasklist")
 }
@@ -509,17 +505,29 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 }
 
 func loglist(ctx *macaron.Context, sess session.Store) {
-	/*if !checkAuth(ctx, sess, "admin") {
+	if !checkAuth(ctx, sess, "all") {
 		ctx.HTML(403, "403")
 		return
 	}
-	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient != nil {
-		logList, _ := rpcclient.GetLogList()
-		sort.Sort(sort.Reverse(sort.StringSlice(logList.Logs)))
-		ctx.Data["loglist"] = logList.Logs
-		ctx.Data["Host"] = logList.Host
-	}*/
+	taskid := ctx.ParamsInt64("taskid")
+	task := &model.Task{
+		ID: taskid,
+	}
+	ex, _ := task.Exists()
+	if !ex {
+		ctx.HTML(404, "404")
+		return
+	}
+	if !checkTaskUser(task, sess) {
+		ctx.HTML(403, "403")
+		return
+	}
+	tls, _ := model.GetTaskLogByTaskId(taskid, 0, 20)
+	for _, tl := range tls {
+		tl.CreateTime = tl.CreateTime.Local()
+	}
+	ctx.Data["task"] = task
+	ctx.Data["logs"] = tls
 	ctx.HTML(200, "loglist")
 }
 

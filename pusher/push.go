@@ -17,22 +17,16 @@ type SendClient struct {
 	http.Client
 }
 
-var sendClient *SendClient
-
 func NewSendClient() *SendClient {
 	httpClient := http.Client{
 		Transport: &http.Transport{
-			MaxIdleConnsPerHost: 1000,
+			MaxIdleConnsPerHost: Conf.MaxIdleConnsPerHost,
 		},
 	}
 	sendClient := &SendClient{
 		Client: httpClient,
 	}
 	return sendClient
-}
-
-func init() {
-	sendClient = NewSendClient()
 }
 
 /*
@@ -94,22 +88,32 @@ func (sc *SendClient) ResendMessage(evt *model.NotifyEvent) {
 	ticker := time.NewTicker(time.Duration(task.ReSendTime) * time.Millisecond)
 	var err error
 	var ret string
-	for i := 0; i < task.RetryCount; i++ {
-		<-ticker.C
-		evt.RetryCount++
-		ret, err = sc.SendMessage(evt)
-		log.Debugf("resend message ret: %s, err: %v", ret, err)
-		if isSuccessSend(ret) {
-			return
+	go func() {
+		for i := 0; i < task.RetryCount; i++ {
+			<-ticker.C
+			evt.RetryCount++
+			ret, err = sc.SendMessage(evt)
+			log.Debugf("resend message ret: %s, err: %v", ret, err)
+			if isSuccessSend(ret) {
+				return
+			}
 		}
-	}
-	if err != nil {
-		sc.LogSendError(evt, err.Error())
-	} else {
-		sc.LogSendError(evt, ret)
-	}
+		if err != nil {
+			sc.LogSendError(evt, err.Error())
+		} else {
+			sc.LogSendError(evt, ret)
+		}
+	}()
 }
 
 func (sc *SendClient) LogSendError(evt *model.NotifyEvent, reason string) {
-	log.Debugf("log send error: %+v, reason: %s", evt, reason)
+	log.Errorf("log send error: %+v, reason: %s", evt, reason)
+	msg, _ := json.Marshal(evt)
+	tl := model.TaskLog{
+		TaskId:     evt.TaskID,
+		Message:    string(msg),
+		Reason:     reason,
+		CreateTime: time.Now(),
+	}
+	tl.Insert()
 }

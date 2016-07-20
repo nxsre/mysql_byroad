@@ -1,22 +1,9 @@
 <div class="container">
-<!--    {% for statistic in statistics %}
-  	<h4>Topic</h4>
-    <table class="table table-striped">
-        <tr>
-            <th>Tpoic</th>
-            <th>Hostname</th>
-            <th>Depth</th>
-            <th>BackendDepth</th>
-            <th>Messages</th>
-        </tr>
-        <tr>
-       	    <td>{{statistic.Topic.Name}}</td>
-            <td>{{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}</td>
-            <td>{{statistic.Topic.Depth}}</td>
-            <td>{{statistic.Topic.BackendDepth}}</td>
-            <td>{{statistic.Topic.MessageCount}}</td>
-        </tr>
-    </table>
+    {% for statistic in statistics %}
+    <h4><span>
+        <span>Hostname:</span> <span class="label label-info">{{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}</span>
+        <span>Topic:</span> <span class="label label-info">{{statistic.Topic.Name}}</span>
+    </span></h4>
     <table class="table table-condensed">
         <tr>
             <th>Channel</th>
@@ -33,8 +20,8 @@
             </tr>
         {% endfor %}
     </table>
-    {% endfor%}-->
-
+    {% endfor%}
+<!--
     {% for statistic in statistics %}
     <ul class="nav">
         <li><span>Hostname:</span> {{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}
@@ -51,5 +38,5 @@
             </ul>
         </li>
     </ul>
-    {% endfor %}
+    {% endfor %}-->
 </div>

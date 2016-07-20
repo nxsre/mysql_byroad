@@ -57,6 +57,8 @@ func (m *Monitor) HandlePushClientSignal(ss *ServiceSignal, status *string) erro
 		pusherManager.AddPushClient(ss.Schema, ss.Desc)
 	} else if ss.Code == "0" {
 		pusherManager.DeletePushClient(ss.Schema)
+	} else if ss.Code == "2" {
+		pusherManager.UpdatePushClient(ss.Schema, ss.Desc)
 	}
 	*status = "OK"
 	return nil
@@ -68,12 +70,14 @@ func (m *Monitor) HandleDispatchClientSignal(ss *ServiceSignal, status *string) 
 		dispatcherManager.AddDispatchClient(ss.Schema, ss.Desc)
 	} else if ss.Code == "0" {
 		dispatcherManager.DeleteDispatchClient(ss.Schema)
+	} else if ss.Code == "2" {
+		dispatcherManager.UpdateDispatchClient(ss.Schema, ss.Desc)
 	}
 	*status = "OK"
 	return nil
 }
 
-func (m *Monitor) HandleDispatchCientPing(ss *ServiceSignal, status *string) error {
+/*func (m *Monitor) HandleDispatchCientPing(ss *ServiceSignal, status *string) error {
 	log.Debugf("dispatch client signal %+v", ss)
 	if ss.Code == "2" {
 		dispatcherManager.UpdateDispatchClient(ss.Schema, ss.Desc)
@@ -83,10 +87,10 @@ func (m *Monitor) HandleDispatchCientPing(ss *ServiceSignal, status *string) err
 }
 
 func (m *Monitor) HandlePushCientPing(ss *ServiceSignal, status *string) error {
-	log.Debugf("dispatch client signal %+v", ss)
+	log.Debugf("push client signal %+v", ss)
 	if ss.Code == "2" {
 		pusherManager.UpdatePushClient(ss.Schema, ss.Desc)
 	}
 	*status = "OK"
 	return nil
-}
+}*/

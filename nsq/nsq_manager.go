@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"sync"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -17,6 +18,7 @@ type NSQManager struct {
 	nsqdNodes    []*node
 	producers    map[string]*nsq.Producer
 	config       *nsq.Config
+	sync.RWMutex
 }
 
 type node struct {
@@ -50,7 +52,10 @@ func (qm *NSQManager) NodeInfoLoop() {
 		for {
 			select {
 			case <-ticker.C:
-				qm.nsqdNodes = getNodesInfo(qm.lookupdAddrs)
+				nodes := getNodesInfo(qm.lookupdAddrs)
+				qm.Lock()
+				qm.nsqdNodes = nodes
+				qm.Unlock()
 			}
 		}
 	}()
@@ -58,7 +63,9 @@ func (qm *NSQManager) NodeInfoLoop() {
 
 func (qm *NSQManager) GetNodesInfo() []*node {
 	nodes := getNodesInfo(qm.lookupdAddrs)
+	qm.Lock()
 	qm.nsqdNodes = nodes
+	qm.Unlock()
 	return nodes
 }
 
@@ -110,7 +117,9 @@ func getNodesInfo(lookupAddrs []string) []*node {
 
 func (qm *NSQManager) initProducers() {
 	producers := qm.getProducers()
+	qm.Lock()
 	qm.producers = producers
+	qm.Unlock()
 }
 
 func (qm *NSQManager) getProducers() map[string]*nsq.Producer {
@@ -142,7 +151,9 @@ func (qm *NSQManager) updateProducer() {
 				if pro, ok := qm.producers[nsqaddr]; ok {
 					if err := pro.Ping(); err != nil {
 						log.Error("nsqd ping error: ", err.Error())
+						qm.Lock()
 						delete(qm.producers, nsqaddr)
+						qm.Unlock()
 					}
 				} else {
 					pro, err := nsq.NewProducer(nsqaddr, qm.config)
@@ -152,7 +163,9 @@ func (qm *NSQManager) updateProducer() {
 						if err := pro.Ping(); err != nil {
 							log.Error("nsq ping error: ", err.Error())
 						} else {
+							qm.Lock()
 							qm.producers[nsqaddr] = pro
+							qm.Unlock()
 						}
 					}
 				}
@@ -165,10 +178,12 @@ func (qm *NSQManager) GetProducer() (*nsq.Producer, error) {
 	if len(qm.producers) != 0 {
 		i := rand.Intn(len(qm.nsqdNodes))
 		log.Debugf("nsq nodes lenght: %d, rand: %d", len(qm.nsqdNodes), i)
+		qm.RLock()
 		n := qm.nsqdNodes[i]
 		addr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
 		if pro, ok := qm.producers[addr]; ok {
 			log.Debug("get producer ", addr)
+			qm.RUnlock()
 			return pro, nil
 		} else {
 			return qm.GetProducer()

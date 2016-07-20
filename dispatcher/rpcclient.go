@@ -105,6 +105,6 @@ func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
 		Schema: schema,
 		Desc:   desc,
 	}
-	err = client.Call("Monitor.HandleDispatchCientPing", ss, &status)
+	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
 	return
 }

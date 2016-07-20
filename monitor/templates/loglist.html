@@ -2,15 +2,27 @@
 <div class="container">
   <table class="table table-bordered table-striped">
     <tr>
-      <th>文件</th>
-      <th>操作</th>
+      <th width="5%">任务ID</th>
+      <th width="25%">时间</th>
+      <th width="40%">错误信息</th>
+      <th width="30%">消息</th>
     </tr>
-    {% for logfile in loglist %}
+    {% for log in logs %}
       <tr>
-        <td>{{logfile}}</td>
-        <td><a href="/log/download/{{logfile}}" target="_blank">查看</a></td>
+        <td><div class="click-show">{{task.ID}}</div></td>
+        <td><div class="click-show">{{log.CreateTime}}</div></td>
+        <td><div class="click-show"> {{log.Reason}}</div></td>
+        <td><div class="click-show"> {{log.Message}}</div></td>
       </tr>
     {% endfor %}
   </table>
 </div>
+<script>
+  $(function() {
+    $('.click-show').click(function(){
+      $(this).toggleClass('click-show');
+      $(this).parent().siblings().children().toggleClass('click-show');
+    });
+  });
+</script>
 {% include "footer.html" %}

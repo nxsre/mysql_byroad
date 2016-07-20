@@ -64,3 +64,8 @@ ul li {
 .help-btn {
   cursor: pointer;
 }
+
+.click-show {
+  height:40px; 
+  overflow:hidden;
+}
