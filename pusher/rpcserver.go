@@ -1,7 +1,6 @@
 package main
 
 import (
-	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"net"
 	"net/http"
@@ -39,7 +38,7 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("add task: %+v", task)
 	*status = "sucess"
-	if task.Stat == common.TASK_STATE_START {
+	if task.Stat == model.TASK_STATE_START {
 		taskManager.StartTask(task)
 	} else {
 		taskManager.AddTask(task)
@@ -59,7 +58,7 @@ func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("update task: %+v", task)
 	*status = "success"
-	if task.Stat == common.TASK_STATE_START {
+	if task.Stat == model.TASK_STATE_START {
 		taskManager.StartTask(task)
 	} else {
 		taskManager.StopTask(task)

@@ -36,7 +36,7 @@ byroad-pusher:
 
 build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher
 
-dev:
+build-dev:
 	cd ${WORKPATH}/dispatcher && godep go build
 	cd ${WORKPATH}/monitor && godep go build
 	cd ${WORKPATH}/pusher && godep go build
@@ -51,7 +51,7 @@ todo:
 	@grep --color=auto -r -n TODO ./*.go
 
 tarsource:
-	tar -czf byroad-src.tar.gz common dispatcher model monitor public pusher templates Makefile 
+	tar -czf byroad-src.tar.gz dispatcher model monitor public pusher templates Makefile 
 
 tarbin:build
 	tar -czf byroad-bin.tar.gz build templates public

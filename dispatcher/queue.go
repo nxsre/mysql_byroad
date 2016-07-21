@@ -1,7 +1,6 @@
 package main
 
 import (
-	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"mysql_byroad/nsq"
 	"sync"
@@ -56,7 +55,7 @@ func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64,
 		if tf == nil {
 			continue
 		}
-		if event != common.UPDATE_EVENT {
+		if event != model.UPDATE_EVENT {
 			if tf.Send == 1 {
 				ntyevt.Fields = append(ntyevt.Fields, f)
 			} else {
@@ -77,7 +76,7 @@ func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64,
 	if len(ntyevt.Fields) == 0 && len(ntyevt.Keys) == 0 {
 		eventEnqueuer.Done()
 		return
-	} else if event == common.UPDATE_EVENT && !updateChanged {
+	} else if event == model.UPDATE_EVENT && !updateChanged {
 		eventEnqueuer.Done()
 		return
 	}

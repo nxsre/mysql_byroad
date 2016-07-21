@@ -1,7 +1,7 @@
 <div class="container">
     {% for statistic in statistics %}
     <h4><span>
-        <span>Hostname:</span> <span class="label label-info">{{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}</span>
+        <span>Hostname:</span> <span class="label label-info">{{statistic.Producer.Hostname}}:{{statistic.Producer.HTTPPort}}</span>
         <span>Topic:</span> <span class="label label-info">{{statistic.Topic.Name}}</span>
     </span></h4>
     <table class="table table-condensed">

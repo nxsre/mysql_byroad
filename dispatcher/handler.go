@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"mysql_byroad/common"
 	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
@@ -42,7 +41,7 @@ func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 
 func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 	log.Info("handle write event")
-	event := common.INSERT_EVENT
+	event := model.INSERT_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
 	if !taskManager.InNotifyTable(schema, table) {
 		return
@@ -70,7 +69,7 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 
 func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 	log.Info("handle delete event")
-	event := common.DELETE_EVENT
+	event := model.DELETE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
 	if !taskManager.InNotifyTable(schema, table) {
 		return
@@ -99,7 +98,7 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 
 func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 	log.Info("handle update event")
-	event := common.UPDATE_EVENT
+	event := model.UPDATE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
 	if !taskManager.InNotifyTable(schema, table) {
 		return

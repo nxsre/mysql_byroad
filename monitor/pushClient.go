@@ -55,10 +55,11 @@ func (pm *PusherManager) UpdatePushClient(schema, desc string) {
 	if timer, ok := pm.timers[schema]; ok {
 		timer.Reset(Conf.RPCClientLookupInterval.Duration)
 	}
-	if _, ok := pm.rpcclients[schema]; ok {
+	if _, ok := pm.rpcclients[schema]; !ok {
 		pm.AddPushClient(schema, desc)
 	}
 }
+
 func (pm *PusherManager) AddTask(task *model.Task) {
 	for _, client := range pm.rpcclients {
 		status, err := client.AddTask(task)

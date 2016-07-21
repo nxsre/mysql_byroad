@@ -13,13 +13,13 @@ type Stats struct {
 }
 
 type NodeStats struct {
-	Node  *node
-	Stats *Stats
+	Producer *Producer
+	Stats    *Stats
 }
 
 type TopicStats struct {
-	Node  *node
-	Topic *Topic
+	Producer *Producer
+	Topic    *Topic
 }
 
 // Topic stats.

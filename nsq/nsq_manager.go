@@ -6,6 +6,7 @@ import (
 	"io/ioutil"
 	"math/rand"
 	"net/http"
+	"strings"
 	"sync"
 	"time"
 
@@ -13,23 +14,41 @@ import (
 	"github.com/nsqio/go-nsq"
 )
 
+type ErrList []error
+
+func (l ErrList) Error() string {
+	var es []string
+	for _, e := range l {
+		es = append(es, e.Error())
+	}
+	return strings.Join(es, "\n")
+}
+
+func (l ErrList) Errors() []error {
+	return l
+}
+
 type NSQManager struct {
 	lookupdAddrs []string
-	nsqdNodes    []*node
+	nsqdNodes    []*Node
 	producers    map[string]*nsq.Producer
 	config       *nsq.Config
 	sync.RWMutex
 }
 
-type node struct {
-	RemoteAddress    string   `json:"remote_address"`
-	Hostname         string   `json:"hostname"`
-	BroadcastAddress string   `json:"broadcast_address"`
-	TCPPort          int      `json:"tcp_port"`
-	HTTPPort         int      `json:"http_port"`
-	Version          string   `json:"version"`
-	Tombstones       []bool   `json:"tombstones"`
-	Topics           []string `json:"topics"`
+type Node struct {
+	Producer
+	Tombstones []bool   `json:"tombstones"`
+	Topics     []string `json:"topics"`
+}
+
+type Producer struct {
+	RemoteAddress    string `json:"remote_address"`
+	Hostname         string `json:"hostname"`
+	BroadcastAddress string `json:"broadcast_address"`
+	TCPPort          int    `json:"tcp_port"`
+	HTTPPort         int    `json:"http_port"`
+	Version          string `json:"version"`
 }
 
 func NewNSQManager(lookupAddrs []string) (*NSQManager, error) {
@@ -37,8 +56,9 @@ func NewNSQManager(lookupAddrs []string) (*NSQManager, error) {
 		lookupdAddrs: lookupAddrs,
 		config:       nsq.NewConfig(),
 	}
-	qm.nsqdNodes = getNodesInfo(lookupAddrs)
-	return qm, nil
+	var err error
+	qm.nsqdNodes, err = getNodesInfo(lookupAddrs)
+	return qm, err
 }
 
 func (qm *NSQManager) ProducerLoop() {
@@ -52,7 +72,7 @@ func (qm *NSQManager) NodeInfoLoop() {
 		for {
 			select {
 			case <-ticker.C:
-				nodes := getNodesInfo(qm.lookupdAddrs)
+				nodes, _ := getNodesInfo(qm.lookupdAddrs)
 				qm.Lock()
 				qm.nsqdNodes = nodes
 				qm.Unlock()
@@ -61,25 +81,28 @@ func (qm *NSQManager) NodeInfoLoop() {
 	}()
 }
 
-func (qm *NSQManager) GetNodesInfo() []*node {
-	nodes := getNodesInfo(qm.lookupdAddrs)
+func (qm *NSQManager) GetNodesInfo() ([]*Node, error) {
+	nodes, err := getNodesInfo(qm.lookupdAddrs)
 	qm.Lock()
 	qm.nsqdNodes = nodes
 	qm.Unlock()
-	return nodes
+	return nodes, err
 }
 
-func getNodesInfo(lookupAddrs []string) []*node {
-	nodesInfo := make([]*node, 0, 10)
+func getNodesInfo(lookupAddrs []string) ([]*Node, error) {
+	var errs []error
+	nodesInfo := make([]*Node, 0, 10)
 	for _, addr := range lookupAddrs {
 		endpoint := fmt.Sprintf("http://%s/nodes", addr)
 		resp, err := http.Get(endpoint)
 		if err != nil {
 			log.Error("nsq get node info: ", err.Error())
+			errs = append(errs, err)
 			continue
 		}
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
+			errs = append(errs, err)
 			log.Errorf("nsqlookupd read error: %s", err.Error())
 			continue
 		}
@@ -92,53 +115,62 @@ func getNodesInfo(lookupAddrs []string) []*node {
 
 		err = json.Unmarshal(body, &u)
 		if err != nil {
+			errs = append(errs, err)
 			log.Errorf("json unmarshal error1: %s", err.Error())
 			continue
 		}
 		if u.StatusCode != 200 {
+			errs = append(errs, err)
 			log.Errorf("api status code: %d, %s", u.StatusCode, u.StatusText)
 			continue
 		}
 		var v struct {
-			Producers []*node
+			Producers []*Node
 		}
 		err = json.Unmarshal(u.Data, &v)
 		if err != nil {
+			errs = append(errs, err)
 			log.Errorf("json unmarshal error2: %s", err.Error())
 			continue
 		}
 		nodesInfo = append(nodesInfo, v.Producers...)
-		for _, pro := range nodesInfo {
-			log.Debugf("get node info %+v", pro)
-		}
 	}
-	return nodesInfo
+	if len(errs) > 0 {
+		return nodesInfo, ErrList(errs)
+	}
+	return nodesInfo, nil
 }
 
 func (qm *NSQManager) initProducers() {
-	producers := qm.getProducers()
+	producers, _ := qm.getProducers()
 	qm.Lock()
 	qm.producers = producers
 	qm.Unlock()
 }
 
-func (qm *NSQManager) getProducers() map[string]*nsq.Producer {
+func (qm *NSQManager) getProducers() (map[string]*nsq.Producer, error) {
+	var errs []error
 	producers := make(map[string]*nsq.Producer, 10)
 	for _, node := range qm.nsqdNodes {
 		nodeaddr := fmt.Sprintf("%s:%d", node.Hostname, node.TCPPort)
 		pro, err := nsq.NewProducer(nodeaddr, qm.config)
 		if err != nil {
+			errs = append(errs, err)
 			log.Error("nsq get producer: ", err.Error())
 			continue
 		}
 		err = pro.Ping()
 		if err != nil {
+			errs = append(errs, err)
 			log.Error("nsq ping error: ", err.Error())
 			continue
 		}
 		producers[nodeaddr] = pro
 	}
-	return producers
+	if len(errs) > 0 {
+		return producers, ErrList(errs)
+	}
+	return producers, nil
 }
 
 func (qm *NSQManager) updateProducer() {
@@ -146,7 +178,8 @@ func (qm *NSQManager) updateProducer() {
 	for {
 		select {
 		case <-ticker.C:
-			for _, n := range qm.nsqdNodes {
+			nodesInfo, _ := qm.GetNodesInfo()
+			for _, n := range nodesInfo {
 				nsqaddr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
 				if pro, ok := qm.producers[nsqaddr]; ok {
 					if err := pro.Ping(); err != nil {
@@ -198,10 +231,12 @@ func (qm *NSQManager) Enqueue(name string, evt interface{}) {
 	if err == nil {
 		evtMsg, err := json.Marshal(evt)
 		if err != nil {
+			return
 			log.Error("json marshal: ", err.Error())
 		}
 		err = p.Publish(name, evtMsg)
 		if err != nil {
+			return
 			log.Error("nsq publish: ", err.Error())
 		}
 	} else {
@@ -218,29 +253,38 @@ func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*n
 	}
 	err = c.ConnectToNSQLookupds(qm.lookupdAddrs)
 	if err != nil {
-		return c, err
 		log.Error("nsq connect to nsq lookupds: ", err.Error())
+		return c, err
 	}
 	return c, nil
 }
 
-func (qm *NSQManager) GetStats() []*NodeStats {
+func (qm *NSQManager) GetStats(topicname string) ([]*NodeStats, error) {
+	var errs []error
 	stats := make([]*NodeStats, 0, 10)
-	for _, n := range qm.GetNodesInfo() {
+	proNodes, err := qm.GetProducerNodes(topicname)
+	if err != nil {
+		return stats, err
+	}
+	for _, n := range proNodes {
 		addr := fmt.Sprintf("%s:%d", n.Hostname, n.HTTPPort)
 		s, err := getNodeStats(addr)
 		if err != nil {
+			errs = append(errs, err)
 			log.Error("get node stats error: ", err.Error())
 			continue
 		} else {
 			ns := &NodeStats{
-				Node:  n,
-				Stats: s,
+				Producer: n,
+				Stats:    s,
 			}
 			stats = append(stats, ns)
 		}
 	}
-	return stats
+	if len(errs) > 0 {
+		return stats, ErrList(errs)
+	}
+	return stats, nil
 }
 
 func getNodeStats(addr string) (*Stats, error) {
@@ -258,18 +302,106 @@ func getNodeStats(addr string) (*Stats, error) {
 }
 
 func (qm *NSQManager) GetTopicStats(topicname string) []*TopicStats {
-	allStats := qm.GetStats()
+	allStats, _ := qm.GetStats(topicname)
 	topicStats := make([]*TopicStats, 0, 10)
 	for _, ns := range allStats {
 		for _, topic := range ns.Stats.Topics {
 			if topic.Name == topicname {
 				ts := &TopicStats{
-					Node:  ns.Node,
-					Topic: topic,
+					Producer: ns.Producer,
+					Topic:    topic,
 				}
 				topicStats = append(topicStats, ts)
 			}
 		}
 	}
 	return topicStats
+}
+
+func (qm *NSQManager) PauseTopic(topicname string) error {
+	qs := fmt.Sprintf("topic=%s", topicname)
+	return qm.actionHelper(topicname, "topic", "pause", qs)
+}
+
+func (qm *NSQManager) UnPauseTopic(topicname string) error {
+	qs := fmt.Sprintf("topic=%s", topicname)
+	return qm.actionHelper(topicname, "topic", "unpause", qs)
+}
+
+func (qm *NSQManager) actionHelper(topicname, url, action, qs string) error {
+	pros, err := qm.GetProducerNodes(topicname)
+	if err != nil {
+		return err
+	}
+	for _, pro := range pros {
+		endpoint := fmt.Sprintf("http://%s:%d/%s/%s?%s", pro.Hostname, pro.HTTPPort, url, action, qs)
+		resp, err := http.PostForm(endpoint, nil)
+		if err != nil {
+			log.Error("http post form error: ", err.Error())
+			continue
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		resp.Body.Close()
+		if err != nil {
+			log.Error("pause topic error: ", err.Error())
+			continue
+		}
+		if resp.StatusCode != 200 {
+			log.Error("pause topic error: %q", body)
+			continue
+		}
+	}
+	return nil
+}
+
+func (qm *NSQManager) GetProducerNodes(topicname string) ([]*Producer, error) {
+	var errs []error
+	proNodes := make([]*Producer, 0, 10)
+	for _, lookup := range qm.lookupdAddrs {
+		endpoint := fmt.Sprintf("http://%s/lookup?topic=%s", lookup, topicname)
+		resp, err := http.Get(endpoint)
+		if err != nil {
+			errs = append(errs, err)
+			log.Error("nsq get producer node info: ", err.Error())
+			continue
+		}
+		body, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			errs = append(errs, err)
+			log.Errorf("nsqlookupd read error: %s", err.Error())
+			continue
+		}
+		resp.Body.Close()
+		var u struct {
+			StatusCode int64           `json:"status_code"`
+			StatusText string          `json:"status_txt"`
+			Data       json.RawMessage `json:"data"`
+		}
+
+		err = json.Unmarshal(body, &u)
+		if err != nil {
+			errs = append(errs, err)
+			log.Errorf("json unmarshal error1: %s", err.Error())
+			continue
+		}
+		if u.StatusCode != 200 {
+			errs = append(errs, err)
+			log.Errorf("api status code: %d, %s", u.StatusCode, u.StatusText)
+			continue
+		}
+		var v struct {
+			Producers []*Producer
+		}
+		err = json.Unmarshal(u.Data, &v)
+		if err != nil {
+			errs = append(errs, err)
+			log.Errorf("json unmarshal error2: %s", err.Error())
+			continue
+		}
+		proNodes = append(proNodes, v.Producers...)
+	}
+	if len(errs) > 0 {
+		return proNodes, ErrList(errs)
+	}
+	return proNodes, nil
 }

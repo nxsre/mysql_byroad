@@ -80,3 +80,12 @@ func (o OrderedTables) Less(i, j int) bool {
 func (o OrderedTables) Swap(i, j int) {
 	o[i], o[j] = o[j], o[i]
 }
+
+const (
+	TASK_STATE_START = "正常"
+	TASK_STATE_STOP  = "停止"
+
+	UPDATE_EVENT = "Update"
+	INSERT_EVENT = "Insert"
+	DELETE_EVENT = "Delete"
+)

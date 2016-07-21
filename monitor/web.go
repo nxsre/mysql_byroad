@@ -337,9 +337,9 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 			task.Fields = append(task.Fields, f)
 		}
 	}
-	if ex, _ := task.Exists(); ex {
+	if ex, _ := task.NameExists(); ex {
 		resp.Error = true
-		resp.Message = "任务已经存在!"
+		resp.Message = "任务名已经存在!"
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
@@ -497,6 +497,11 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Error = false
 		resp.Message = "操作成功"
+	}
+	if stat == model.TASK_STATE_START {
+		nsqManager.UnPauseTopic(task.Name)
+	} else if stat == model.TASK_STATE_STOP {
+		nsqManager.PauseTopic(task.Name)
 	}
 	dispatcherManager.UpdateTask(task)
 	pusherManager.UpdateTask(task)

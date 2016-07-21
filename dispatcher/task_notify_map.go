@@ -1,7 +1,6 @@
 package main
 
 import (
-	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"sync"
 )
@@ -28,7 +27,7 @@ func NewNotifyTaskMap(tasks *TaskIdMap) *NotifyTaskMap {
 func createTaskMap(tasks *TaskIdMap) TaskMatchMap {
 	tmm := make(TaskMatchMap)
 	for _, task := range tasks.cmap {
-		if task.Stat == common.TASK_STATE_START {
+		if task.Stat == model.TASK_STATE_START {
 			addToTaskNoitfyMap(tmm, task)
 		}
 	}

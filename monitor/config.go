@@ -1,7 +1,7 @@
 package main
 
 import (
-	"mysql_byroad/common"
+	"flag"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -50,9 +50,15 @@ type WebConfig struct {
 var Conf Config
 
 func init() {
-	configFile := common.ParseConfig()
+	configFile := ParseConfig()
 	_, err := toml.DecodeFile(configFile, &Conf)
 	if err != nil {
 		panic(err)
 	}
+}
+
+func ParseConfig() string {
+	filename := flag.String("c", "monitor.toml", "config file path")
+	flag.Parse()
+	return *filename
 }

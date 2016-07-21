@@ -1,7 +1,6 @@
 package main
 
 import (
-	"mysql_byroad/common"
 	"mysql_byroad/model"
 	"net"
 	"net/http"
@@ -42,7 +41,7 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("rpc add task: %+v", task)
 	*status = "sucess"
 	taskManager.taskIdMap.Set(task.ID, task)
-	if task.Stat == common.TASK_STATE_START {
+	if task.Stat == model.TASK_STATE_START {
 		taskManager.notifyTaskMap.AddTask(task)
 	}
 	return nil
