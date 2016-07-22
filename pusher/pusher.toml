@@ -1,8 +1,8 @@
 rpc_ping_interval = "10s"
 max_idle_conns_per_host = 1000
+
 [nsq]
 lookupd_http_address = ["172.17.0.1:4161"]
-nsqd_tcp_address = []
 
 [monitor]
 host = "127.0.0.1"
@@ -13,6 +13,7 @@ host = "127.0.0.1"
 port = 1239
 desc = "localhost:1239"
 
+# 任务发送失败日志信息记录到数据库
 [mysql]
 host = "127.0.0.1"
 port = 3306

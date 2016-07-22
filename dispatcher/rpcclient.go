@@ -32,6 +32,9 @@ func NewRPCClient(protocol, schema, desc string) *RPCClient {
 
 func (this *RPCClient) GetClient() (client *rpc.Client, err error) {
 	client, err = rpc.DialHTTP(this.protocol, this.Schema)
+	if err != nil {
+		log.Errorf("rpc get client error: %s", err.Error())
+	}
 	return
 }
 
@@ -43,6 +46,9 @@ func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err er
 	}
 	defer client.Close()
 	err = client.Call("Monitor.GetAllTasks", username, &tasks)
+	if err != nil {
+		log.Errorf("rpc get all tasks error: %s", err.Error())
+	}
 	return
 }
 
@@ -50,7 +56,6 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 	log.Info("rpc register client")
 	client, err := this.GetClient()
 	if err != nil {
-		log.Error("register rpc client error: ", err.Error())
 		this.pingLookup(schema, desc)
 		return
 	}
@@ -61,6 +66,9 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 		Desc:   desc,
 	}
 	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	if err != nil {
+		log.Errorf("register rpc client error: %s", err.Error())
+	}
 	this.pingLookup(schema, desc)
 	return
 }
@@ -68,10 +76,7 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 func (this *RPCClient) pingLookup(schema, desc string) {
 	go func() {
 		for {
-			_, err := this.Ping(schema, desc)
-			if err != nil {
-				log.Error("rpc ping error: ", err.Error())
-			}
+			this.Ping(schema, desc)
 			time.Sleep(Conf.RPCPingInterval.Duration)
 		}
 	}()
@@ -90,6 +95,9 @@ func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err
 		Desc:   desc,
 	}
 	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	if err != nil {
+		log.Errorf("rpc deregister error: %s", err.Error())
+	}
 	return
 }
 
@@ -106,5 +114,8 @@ func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
 		Desc:   desc,
 	}
 	err = client.Call("Monitor.HandleDispatchClientSignal", ss, &status)
+	if err != nil {
+		log.Errorf("rpc ping error: %s", err.Error())
+	}
 	return
 }

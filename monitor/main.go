@@ -28,11 +28,11 @@ func main() {
 	dispatcherManager = NewDispatcherManager()
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcServer.start()
-	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress)
+	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress, nil)
 	if err != nil {
 		log.Error("new nsq manager error: ", err.Error())
 	}
-	nsqManager.NodeInfoLoop()
+	nsqManager.NodeInfoUpdateLoop()
 
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
 		Conf.MysqlConf.Username, Conf.MysqlConf.Password, Conf.MysqlConf.Host, Conf.MysqlConf.Port,

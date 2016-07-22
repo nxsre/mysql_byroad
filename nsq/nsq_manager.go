@@ -36,37 +36,31 @@ type NSQManager struct {
 	sync.RWMutex
 }
 
-type Node struct {
-	Producer
-	Tombstones []bool   `json:"tombstones"`
-	Topics     []string `json:"topics"`
-}
-
-type Producer struct {
-	RemoteAddress    string `json:"remote_address"`
-	Hostname         string `json:"hostname"`
-	BroadcastAddress string `json:"broadcast_address"`
-	TCPPort          int    `json:"tcp_port"`
-	HTTPPort         int    `json:"http_port"`
-	Version          string `json:"version"`
-}
-
-func NewNSQManager(lookupAddrs []string) (*NSQManager, error) {
+func NewNSQManager(lookupAddrs []string, config *nsq.Config) (*NSQManager, error) {
+	if config == nil {
+		config = nsq.NewConfig()
+	}
 	qm := &NSQManager{
 		lookupdAddrs: lookupAddrs,
-		config:       nsq.NewConfig(),
+		config:       config,
 	}
 	var err error
 	qm.nsqdNodes, err = getNodesInfo(lookupAddrs)
 	return qm, err
 }
 
-func (qm *NSQManager) ProducerLoop() {
-	qm.initProducers()
+func (qm *NSQManager) InitProducers() {
+	producers, _ := qm.getProducers()
+	qm.Lock()
+	qm.producers = producers
+	qm.Unlock()
+}
+
+func (qm *NSQManager) ProducerUpdateLoop() {
 	go qm.updateProducer()
 }
 
-func (qm *NSQManager) NodeInfoLoop() {
+func (qm *NSQManager) NodeInfoUpdateLoop() {
 	go func() {
 		ticker := time.NewTicker(time.Second * 60)
 		for {
@@ -89,6 +83,7 @@ func (qm *NSQManager) GetNodesInfo() ([]*Node, error) {
 	return nodes, err
 }
 
+// 通过nsqlookupd的nodes接口获取所有nsqd节点信息
 func getNodesInfo(lookupAddrs []string) ([]*Node, error) {
 	var errs []error
 	nodesInfo := make([]*Node, 0, 10)
@@ -141,128 +136,64 @@ func getNodesInfo(lookupAddrs []string) ([]*Node, error) {
 	return nodesInfo, nil
 }
 
-func (qm *NSQManager) initProducers() {
-	producers, _ := qm.getProducers()
-	qm.Lock()
-	qm.producers = producers
-	qm.Unlock()
-}
-
-func (qm *NSQManager) getProducers() (map[string]*nsq.Producer, error) {
+// 通过nsqlookupd的lookup接口，获取某一topic的所有nsqd节点信息
+func (qm *NSQManager) GetProducer(topicname string) ([]*Producer, error) {
 	var errs []error
-	producers := make(map[string]*nsq.Producer, 10)
-	for _, node := range qm.nsqdNodes {
-		nodeaddr := fmt.Sprintf("%s:%d", node.Hostname, node.TCPPort)
-		pro, err := nsq.NewProducer(nodeaddr, qm.config)
+	proNodes := make([]*Producer, 0, 10)
+	for _, lookup := range qm.lookupdAddrs {
+		endpoint := fmt.Sprintf("http://%s/lookup?topic=%s", lookup, topicname)
+		resp, err := http.Get(endpoint)
 		if err != nil {
 			errs = append(errs, err)
-			log.Error("nsq get producer: ", err.Error())
+			log.Error("nsq get producer node info: ", err.Error())
 			continue
 		}
-		err = pro.Ping()
+		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			errs = append(errs, err)
-			log.Error("nsq ping error: ", err.Error())
+			log.Errorf("nsqlookupd read error: %s", err.Error())
 			continue
 		}
-		producers[nodeaddr] = pro
+		resp.Body.Close()
+		var u struct {
+			StatusCode int64           `json:"status_code"`
+			StatusText string          `json:"status_txt"`
+			Data       json.RawMessage `json:"data"`
+		}
+
+		err = json.Unmarshal(body, &u)
+		if err != nil {
+			errs = append(errs, err)
+			log.Errorf("json unmarshal error1: %s", err.Error())
+			continue
+		}
+		if u.StatusCode != 200 {
+			errs = append(errs, err)
+			log.Errorf("api status code: %d, %s", u.StatusCode, u.StatusText)
+			continue
+		}
+		var v struct {
+			Producers []*Producer
+		}
+		err = json.Unmarshal(u.Data, &v)
+		if err != nil {
+			errs = append(errs, err)
+			log.Errorf("json unmarshal error2: %s", err.Error())
+			continue
+		}
+		proNodes = append(proNodes, v.Producers...)
 	}
 	if len(errs) > 0 {
-		return producers, ErrList(errs)
+		return proNodes, ErrList(errs)
 	}
-	return producers, nil
+	return proNodes, nil
 }
 
-func (qm *NSQManager) updateProducer() {
-	ticker := time.NewTicker(time.Second * 60)
-	for {
-		select {
-		case <-ticker.C:
-			nodesInfo, _ := qm.GetNodesInfo()
-			for _, n := range nodesInfo {
-				nsqaddr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
-				if pro, ok := qm.producers[nsqaddr]; ok {
-					if err := pro.Ping(); err != nil {
-						log.Error("nsqd ping error: ", err.Error())
-						qm.Lock()
-						delete(qm.producers, nsqaddr)
-						qm.Unlock()
-					}
-				} else {
-					pro, err := nsq.NewProducer(nsqaddr, qm.config)
-					if err != nil {
-						log.Error("nsq new producer error: ", err.Error())
-					} else {
-						if err := pro.Ping(); err != nil {
-							log.Error("nsq ping error: ", err.Error())
-						} else {
-							qm.Lock()
-							qm.producers[nsqaddr] = pro
-							qm.Unlock()
-						}
-					}
-				}
-			}
-		}
-	}
-}
-
-func (qm *NSQManager) GetProducer() (*nsq.Producer, error) {
-	if len(qm.producers) != 0 {
-		i := rand.Intn(len(qm.nsqdNodes))
-		log.Debugf("nsq nodes lenght: %d, rand: %d", len(qm.nsqdNodes), i)
-		qm.RLock()
-		n := qm.nsqdNodes[i]
-		addr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
-		if pro, ok := qm.producers[addr]; ok {
-			log.Debug("get producer ", addr)
-			qm.RUnlock()
-			return pro, nil
-		} else {
-			return qm.GetProducer()
-		}
-	}
-	return nil, fmt.Errorf("no nsqd server avaiable")
-}
-
-func (qm *NSQManager) Enqueue(name string, evt interface{}) {
-	log.Info("nsq publish ", name)
-	p, err := qm.GetProducer()
-	if err == nil {
-		evtMsg, err := json.Marshal(evt)
-		if err != nil {
-			return
-			log.Error("json marshal: ", err.Error())
-		}
-		err = p.Publish(name, evtMsg)
-		if err != nil {
-			return
-			log.Error("nsq publish: ", err.Error())
-		}
-	} else {
-		log.Error("nsq enqueue error: ", err.Error())
-	}
-}
-
-func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*nsq.Consumer, error) {
-	log.Infof("new consumer %s/%s", topic, channel)
-	c, err := nsq.NewConsumer(topic, channel, qm.config)
-	if err != nil {
-		log.Error("nsq new comsumer: ", err.Error())
-		return c, err
-	}
-	err = c.ConnectToNSQLookupds(qm.lookupdAddrs)
-	if err != nil {
-		log.Error("nsq connect to nsq lookupds: ", err.Error())
-		return c, err
-	}
-	return c, nil
-}
-
+// 通过nsqd的stats接口获取节点的统计信息
 func (qm *NSQManager) GetStats(topicname string) ([]*NodeStats, error) {
 	var errs []error
 	stats := make([]*NodeStats, 0, 10)
-	proNodes, err := qm.GetProducerNodes(topicname)
+	proNodes, err := qm.GetProducer(topicname)
 	if err != nil {
 		return stats, err
 	}
@@ -318,6 +249,119 @@ func (qm *NSQManager) GetTopicStats(topicname string) []*TopicStats {
 	return topicStats
 }
 
+func (qm *NSQManager) getProducers() (map[string]*nsq.Producer, error) {
+	var errs []error
+	producers := make(map[string]*nsq.Producer, 10)
+	nsqNodes, _ := qm.GetNodesInfo()
+	for _, node := range nsqNodes {
+		nodeaddr := fmt.Sprintf("%s:%d", node.Hostname, node.TCPPort)
+		pro, err := nsq.NewProducer(nodeaddr, qm.config)
+		if err != nil {
+			errs = append(errs, err)
+			log.Error("nsq get producer: ", err.Error())
+			continue
+		}
+		err = pro.Ping()
+		if err != nil {
+			errs = append(errs, err)
+			log.Error("nsq ping error: ", err.Error())
+			continue
+		}
+		producers[nodeaddr] = pro
+	}
+	if len(errs) > 0 {
+		return producers, ErrList(errs)
+	}
+	return producers, nil
+}
+
+func (qm *NSQManager) updateProducer() {
+	ticker := time.NewTicker(time.Second * 60)
+	for {
+		select {
+		case <-ticker.C:
+			nodesInfo, _ := qm.GetNodesInfo()
+			for _, n := range nodesInfo {
+				nsqaddr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
+				if pro, ok := qm.producers[nsqaddr]; ok {
+					if err := pro.Ping(); err != nil {
+						log.Error("nsqd ping error: ", err.Error())
+						qm.Lock()
+						delete(qm.producers, nsqaddr)
+						qm.Unlock()
+					}
+				} else {
+					pro, err := nsq.NewProducer(nsqaddr, qm.config)
+					if err != nil {
+						log.Error("nsq new producer error: ", err.Error())
+					} else {
+						if err := pro.Ping(); err != nil {
+							log.Error("nsq ping error: ", err.Error())
+						} else {
+							qm.Lock()
+							qm.producers[nsqaddr] = pro
+							qm.Unlock()
+						}
+					}
+				}
+			}
+		}
+	}
+}
+
+// 在所有的producers中随机返回一个
+func (qm *NSQManager) GetOneProducer() (*nsq.Producer, error) {
+	if len(qm.producers) != 0 {
+		i := rand.Intn(len(qm.nsqdNodes))
+		log.Debugf("nsq nodes lenght: %d, rand: %d", len(qm.nsqdNodes), i)
+		qm.RLock()
+		n := qm.nsqdNodes[i]
+		addr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
+		if pro, ok := qm.producers[addr]; ok {
+			log.Debug("get producer ", addr)
+			qm.RUnlock()
+			return pro, nil
+		} else {
+			return qm.GetOneProducer()
+		}
+	}
+	return nil, fmt.Errorf("no nsqd server avaiable")
+}
+
+func (qm *NSQManager) Enqueue(name string, evt interface{}) {
+	log.Info("nsq publish ", name)
+	p, err := qm.GetOneProducer()
+	if err == nil {
+		evtMsg, err := json.Marshal(evt)
+		if err != nil {
+			return
+			log.Error("json marshal: ", err.Error())
+		}
+		err = p.Publish(name, evtMsg)
+		if err != nil {
+			return
+			log.Error("nsq publish: ", err.Error())
+		}
+	} else {
+		log.Error("nsq enqueue error: ", err.Error())
+	}
+}
+
+func (qm *NSQManager) NewNSQConsumer(topic, channel string, concurrency int) (*nsq.Consumer, error) {
+	log.Infof("new consumer %s/%s", topic, channel)
+	c, err := nsq.NewConsumer(topic, channel, qm.config)
+	if err != nil {
+		log.Error("nsq new comsumer: ", err.Error())
+		return c, err
+	}
+	err = c.ConnectToNSQLookupds(qm.lookupdAddrs)
+	if err != nil {
+		log.Error("nsq connect to nsq lookupds: ", err.Error())
+		return c, err
+	}
+	return c, nil
+}
+
 func (qm *NSQManager) PauseTopic(topicname string) error {
 	qs := fmt.Sprintf("topic=%s", topicname)
 	return qm.actionHelper(topicname, "topic", "pause", qs)
@@ -329,7 +373,7 @@ func (qm *NSQManager) UnPauseTopic(topicname string) error {
 }
 
 func (qm *NSQManager) actionHelper(topicname, url, action, qs string) error {
-	pros, err := qm.GetProducerNodes(topicname)
+	pros, err := qm.GetProducer(topicname)
 	if err != nil {
 		return err
 	}
@@ -352,56 +396,4 @@ func (qm *NSQManager) actionHelper(topicname, url, action, qs string) error {
 		}
 	}
 	return nil
-}
-
-func (qm *NSQManager) GetProducerNodes(topicname string) ([]*Producer, error) {
-	var errs []error
-	proNodes := make([]*Producer, 0, 10)
-	for _, lookup := range qm.lookupdAddrs {
-		endpoint := fmt.Sprintf("http://%s/lookup?topic=%s", lookup, topicname)
-		resp, err := http.Get(endpoint)
-		if err != nil {
-			errs = append(errs, err)
-			log.Error("nsq get producer node info: ", err.Error())
-			continue
-		}
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			errs = append(errs, err)
-			log.Errorf("nsqlookupd read error: %s", err.Error())
-			continue
-		}
-		resp.Body.Close()
-		var u struct {
-			StatusCode int64           `json:"status_code"`
-			StatusText string          `json:"status_txt"`
-			Data       json.RawMessage `json:"data"`
-		}
-
-		err = json.Unmarshal(body, &u)
-		if err != nil {
-			errs = append(errs, err)
-			log.Errorf("json unmarshal error1: %s", err.Error())
-			continue
-		}
-		if u.StatusCode != 200 {
-			errs = append(errs, err)
-			log.Errorf("api status code: %d, %s", u.StatusCode, u.StatusText)
-			continue
-		}
-		var v struct {
-			Producers []*Producer
-		}
-		err = json.Unmarshal(u.Data, &v)
-		if err != nil {
-			errs = append(errs, err)
-			log.Errorf("json unmarshal error2: %s", err.Error())
-			continue
-		}
-		proNodes = append(proNodes, v.Producers...)
-	}
-	if len(errs) > 0 {
-		return proNodes, ErrList(errs)
-	}
-	return proNodes, nil
 }

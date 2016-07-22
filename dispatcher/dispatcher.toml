@@ -1,6 +1,7 @@
 rpc_ping_interval = "10s" #心跳时间
 binlog_flush_interval = "5s" #binlog位置写入数据库的时间间隔
 config_db = "config.db"
+
 #mysql slave 信息
 [mysql]
 server_id = 2002
@@ -25,7 +26,6 @@ desc = "localhost:1237"
 
 [nsq]
 lookupd_http_address = ["172.17.0.1:4161"]
-nsqd_tcp_address = []
 lookup_interval = "60s" # 向nsqlookupd轮询nsqd节点信息
 
 
