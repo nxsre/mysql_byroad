@@ -24,7 +24,6 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 }
 
 func NewNSQConsumer(topic, channel string, concurrency int) *nsq.Consumer {
-	log.Debugf("new consumer %s/%s", topic, channel)
 	config := nsq.NewConfig()
 	c, err := nsq.NewConsumer(topic, channel, config)
 	if err != nil {
