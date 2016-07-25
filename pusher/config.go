@@ -19,6 +19,7 @@ func (d *duration) UnmarshalText(text []byte) error {
 
 type Config struct {
 	RPCPingInterval     duration      `toml:"rpc_ping_interval"`
+	Logfile             string        `toml:"logfile"`
 	MonitorConf         MonitorConf   `toml:"monitor"`
 	RPCServerConf       RPCServerConf `toml:"rpc_server"`
 	NSQConf             NSQConf       `toml:"nsq"`

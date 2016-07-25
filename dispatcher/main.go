@@ -52,6 +52,7 @@ func initGlobal() {
 func main() {
 	startTime = time.Now()
 	log.Debugf("Conf: %+v", Conf)
+	InitLog()
 	initGlobal()
 	conf := Conf.MysqlConf
 	handler := NewRowsEventHandler(conf)

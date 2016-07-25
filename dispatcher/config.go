@@ -24,6 +24,7 @@ var Conf Config
 
 type Config struct {
 	ConfigDB        string        `toml:"config_db"`
+	Logfile         string        `toml:"logfile"`
 	BinlogInterval  duration      `toml:"binlog_flush_interval"`
 	RPCPingInterval duration      `toml:"rpc_ping_interval"`
 	MysqlConf       MysqlConf     `toml:"mysql"`

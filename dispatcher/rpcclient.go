@@ -102,7 +102,7 @@ func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err
 }
 
 func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
-	log.Info("rpc ping")
+	log.Debug("rpc ping")
 	client, err := this.GetClient()
 	if err != nil {
 		return

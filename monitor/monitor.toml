@@ -1,8 +1,7 @@
 debug = true
-nsqadmin_http_address = "localhost:4171"
 nsqlookupd_http_address = ["127.0.0.1:4161"]
 rpcclient_lookup_interval = "60s" # 心跳时间
-
+logfile = "/var/log/byroad/monitor.log"
 [mysql]
 host = "127.0.0.1"
 port = 3306

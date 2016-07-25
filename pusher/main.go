@@ -34,6 +34,7 @@ func initGlobal() {
 
 func main() {
 	log.Debugf("Conf: %+v", Conf)
+	InitLog()
 	initGlobal()
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
 		Conf.MysqlConf.Username, Conf.MysqlConf.Password, Conf.MysqlConf.Host, Conf.MysqlConf.Port,

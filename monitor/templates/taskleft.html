@@ -1,8 +1,1 @@
 {% include "columnlist.html"%}
-<script>
-	function updateColumn() {
-		$.get("/column/update",function(data, status) {
-			$("#column-list").replaceWith(data);
-		});
-	}
-</script>

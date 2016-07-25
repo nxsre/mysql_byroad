@@ -20,8 +20,8 @@ func (d *duration) UnmarshalText(text []byte) error {
 type Config struct {
 	Debug                   bool
 	RPCClientLookupInterval duration      `toml:"rpcclient_lookup_interval"`
-	NSQAdminHttpAddress     string        `toml:"nsqadmin_http_address"`
 	NSQLookupdAddress       []string      `toml:"nsqlookupd_http_address"`
+	Logfile                 string        `toml:"logfile"`
 	MysqlConf               MysqlConf     `toml:"mysql"`
 	RPCServerConf           RPCServerConf `toml:"rpcserver"`
 	WebConfig               WebConfig     `toml:"web"`

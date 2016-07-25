@@ -26,7 +26,7 @@ type httpJsonResponse struct {
 
 type UserInfo struct {
 	UserName string `json:"username"`
-	Mall     string `json:"mail"`
+	Mail     string `json:"mail"`
 	FullName string `json:"fullname"`
 }
 
@@ -93,8 +93,6 @@ func StartServer() {
 	m.Get("/addtask", addTaskHTML)
 	m.Get("/task", tasklist)
 	m.Get("/taskmodify/:taskid", modifytask)
-	m.Get("/task/log/:taskid", loglist)
-	m.Get("/log/download/:filename", downloadlog)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
@@ -509,59 +507,6 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	return string(body)
 }
 
-func loglist(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
-	taskid := ctx.ParamsInt64("taskid")
-	task := &model.Task{
-		ID: taskid,
-	}
-	ex, _ := task.Exists()
-	if !ex {
-		ctx.HTML(404, "404")
-		return
-	}
-	if !checkTaskUser(task, sess) {
-		ctx.HTML(403, "403")
-		return
-	}
-	tls, _ := model.GetTaskLogByTaskId(taskid, 0, 20)
-	for _, tl := range tls {
-		tl.CreateTime = tl.CreateTime.Local()
-	}
-	ctx.Data["task"] = task
-	ctx.Data["logs"] = tls
-	ctx.HTML(200, "loglist")
-}
-
-func downloadlog(ctx *macaron.Context, sess session.Store) {
-	/*if !checkAuth(ctx, sess, "admin") {
-		ctx.HTML(403, "403")
-		return
-	}
-	filename := ctx.Params("filename")
-	rpcclient := rpcManager.GetClient(ctx.GetCookie("client"))
-	if rpcclient != nil {
-		logList, _ := rpcclient.GetLogList()
-		host := logList.Host
-		resp, err := http.Get("http://" + host + "/" + filename)
-		if err != nil {
-			logger.Error(err.Error())
-			ctx.Write([]byte(err.Error()))
-			return
-		}
-		b, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			logger.Error(err.Error())
-			ctx.Write([]byte(err.Error()))
-			return
-		}
-		ctx.ServeContent(filename, bytes.NewReader(b))
-	}*/
-}
-
 func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Name = strings.TrimSpace(src.Name)
 	dst.Apiurl = strings.TrimSpace(src.Apiurl)
@@ -584,21 +529,6 @@ func FieldExists(task *model.Task, field *model.NotifyField) bool {
 		}
 	}
 	return false
-}
-
-func getLogList(client string) ([]string, error) {
-	files := make([]string, 0, 15)
-	/*names, err := ioutil.ReadDir(filepath.Join(configer.GetString("web", "logdir", "log/"), client))
-	if err != nil {
-		return nil, err
-	}
-	for _, file := range names {
-		if file.IsDir() {
-			continue
-		}
-		files = append(files, file.Name())
-	}*/
-	return files, nil
 }
 
 func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
