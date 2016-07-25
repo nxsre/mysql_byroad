@@ -334,13 +334,13 @@ func (qm *NSQManager) Enqueue(name string, evt interface{}) {
 	if err == nil {
 		evtMsg, err := json.Marshal(evt)
 		if err != nil {
-			return
 			log.Error("json marshal: ", err.Error())
+			return
 		}
 		err = p.Publish(name, evtMsg)
 		if err != nil {
-			return
 			log.Error("nsq publish: ", err.Error())
+			return
 		}
 	} else {
 		log.Error("nsq enqueue error: ", err.Error())

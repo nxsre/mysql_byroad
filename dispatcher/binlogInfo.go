@@ -3,9 +3,8 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
-	"time"
-
 	"strconv"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/siddontang/go-mysql/client"

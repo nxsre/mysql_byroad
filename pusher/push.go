@@ -109,11 +109,14 @@ func (sc *SendClient) ResendMessage(evt *model.NotifyEvent) {
 func (sc *SendClient) LogSendError(evt *model.NotifyEvent, reason string) {
 	log.Errorf("log send error: %+v, reason: %s", evt, reason)
 	msg, _ := json.Marshal(evt)
-	tl := model.TaskLog{
+	tl := &model.TaskLog{
 		TaskId:     evt.TaskID,
 		Message:    string(msg),
 		Reason:     reason,
 		CreateTime: time.Now(),
 	}
-	tl.Insert()
+	_, err := tl.Insert()
+	if err != nil {
+		log.Errorf("senderror insert error: %s", err.Error())
+	}
 }

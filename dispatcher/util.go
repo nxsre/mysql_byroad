@@ -3,9 +3,9 @@ package main
 import (
 	"mysql_byroad/model"
 	"reflect"
+	"regexp"
+	"strings"
 )
-import "strings"
-import "regexp"
 
 func isEqual(v1, v2 interface{}) bool {
 	return reflect.DeepEqual(v1, v2)

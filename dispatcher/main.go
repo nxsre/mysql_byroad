@@ -6,7 +6,6 @@ import (
 	"os/signal"
 	"syscall"
 	"time"
-
 	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
