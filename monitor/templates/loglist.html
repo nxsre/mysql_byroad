@@ -1,15 +1,16 @@
 {% include "header.html"%}
 <div class="container">
+  <h3>最新20条日志</h3>
   <table class="table table-bordered table-striped">
     <tr>
-      <th width="5%">任务ID</th>
+      <th width="5%">序号</th>
       <th width="25%">时间</th>
       <th width="40%">错误信息</th>
       <th width="30%">消息</th>
     </tr>
     {% for log in logs %}
       <tr>
-        <td><div class="click-show">{{task.ID}}</div></td>
+        <td><div class="click-show">{{forloop.Counter}}</div></td>
         <td><div class="click-show">{{log.CreateTime}}</div></td>
         <td><div class="click-show"> {{log.Reason}}</div></td>
         <td><div class="click-show"> {{log.Message}}</div></td>

@@ -169,7 +169,7 @@ func (qm *NSQManager) GetProducer(topicname string) ([]*Producer, error) {
 		}
 		if u.StatusCode != 200 {
 			errs = append(errs, err)
-			log.Errorf("api status code: %d, %s", u.StatusCode, u.StatusText)
+			log.Errorf("topic: %s, error: api status code: %d, %s", topicname, u.StatusCode, u.StatusText)
 			continue
 		}
 		var v struct {

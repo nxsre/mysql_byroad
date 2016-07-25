@@ -102,6 +102,7 @@ func StartServer() {
 	m.Delete("/task/:taskid", doDeleteTask)
 
 	m.Get("/task/detail/:taskid", getTaskStatistic)
+	m.Get("/task/log/:taskid", loglist)
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
 
@@ -356,7 +357,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	pusherManager.AddTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
-
+	log.Printf("%s: add task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
@@ -387,6 +388,7 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	pusherManager.DeleteTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(204)
+	log.Printf("%s: delete task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
@@ -451,6 +453,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
+	log.Printf("%s: update task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
@@ -504,7 +507,35 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	dispatcherManager.UpdateTask(task)
 	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
+	log.Printf("%s: change task state %v", sess.Get("user").(string), task.Name)
 	return string(body)
+}
+
+func loglist(ctx *macaron.Context, sess session.Store) {
+	if !checkAuth(ctx, sess, "all") {
+		ctx.HTML(403, "403")
+		return
+	}
+	taskid := ctx.ParamsInt64("taskid")
+	task := &model.Task{
+		ID: taskid,
+	}
+	ex, _ := task.Exists()
+	if !ex {
+		ctx.HTML(404, "404")
+		return
+	}
+	if !checkTaskUser(task, sess) {
+		ctx.HTML(403, "403")
+		return
+	}
+	tls, _ := model.GetTaskLogByTaskId(taskid, 0, 20)
+	for _, tl := range tls {
+		tl.CreateTime = tl.CreateTime.Local()
+	}
+	ctx.Data["task"] = task
+	ctx.Data["logs"] = tls
+	ctx.HTML(200, "loglist")
 }
 
 func copyTask(src *TaskForm, dst *model.Task) {
@@ -541,7 +572,7 @@ func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
 		ID: taskid,
 	}
 	if ext, _ := task.Exists(); !ext {
-		ctx.HTML(403, "403")
+		ctx.HTML(404, "404")
 		return
 	}
 	if !checkTaskUser(task, sess) {

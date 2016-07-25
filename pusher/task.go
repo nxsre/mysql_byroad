@@ -28,8 +28,10 @@ func (tm *TaskManager) InitTaskMap(tasks []*model.Task) {
 
 func (tm *TaskManager) InitTasKRoutine() {
 	for _, task := range tm.taskMap.cmap {
-		consumers := tm.newConsumers(task)
-		tm.taskConsumerMap[task.ID] = consumers
+		if task.Stat == model.TASK_STATE_START {
+			consumers := tm.newConsumers(task)
+			tm.taskConsumerMap[task.ID] = consumers
+		}
 	}
 }
 
@@ -45,6 +47,9 @@ func (tm *TaskManager) StopTask(task *model.Task) {
 	tm.stopConsumers(task)
 }
 
+/*
+新建consumer，因此在使用应保证之前的consumer都已停止，要不然之前创建的consumer可能会继续消费
+*/
 func (tm *TaskManager) StartTask(task *model.Task) {
 	tm.taskMap.Set(task.ID, task)
 	consumers := tm.newConsumers(task)
