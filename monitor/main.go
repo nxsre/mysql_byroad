@@ -23,8 +23,8 @@ var (
 
 func main() {
 	var err error
-	log.Debugf("Conf: %+v", Conf)
 	InitLog()
+	log.Debugf("Conf: %+v", Conf)
 	pusherManager = NewPusherManager()
 	dispatcherManager = NewDispatcherManager()
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")

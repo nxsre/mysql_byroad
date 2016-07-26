@@ -2,7 +2,7 @@ rpc_ping_interval = "10s" #心跳时间
 binlog_flush_interval = "5s" #binlog位置写入数据库的时间间隔
 config_db = "config.db"
 logfile = "/var/log/byroad/dispatcher.log"
-
+loglevel = "Error" # Debug Info Warn Error Fatal Panic
 #mysql slave 信息
 [mysql]
 server_id = 2002

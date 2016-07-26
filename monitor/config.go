@@ -25,6 +25,7 @@ type Config struct {
 	MysqlConf               MysqlConf     `toml:"mysql"`
 	RPCServerConf           RPCServerConf `toml:"rpcserver"`
 	WebConfig               WebConfig     `toml:"web"`
+	LogLevel                string        `toml:"loglevel"`
 }
 type MysqlConf struct {
 	Host     string

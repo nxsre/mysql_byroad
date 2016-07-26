@@ -31,6 +31,7 @@ type Config struct {
 	MonitorConf     MonitorConf   `toml:"monitor"`
 	RPCServerConf   RPCServerConf `toml:"rpc_server"`
 	NSQConf         NSQConf       `toml:"nsq"`
+	LogLevel        string        `toml:"loglevel"`
 }
 
 type MysqlConf struct {

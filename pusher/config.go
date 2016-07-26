@@ -25,6 +25,7 @@ type Config struct {
 	NSQConf             NSQConf       `toml:"nsq"`
 	MysqlConf           MysqlConf     `toml:"mysql"`
 	MaxIdleConnsPerHost int           `toml:"max_idle_conns_per_host"`
+	LogLevel            string        `toml:"loglevel"`
 }
 
 type MysqlConf struct {
