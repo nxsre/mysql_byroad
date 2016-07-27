@@ -160,8 +160,10 @@ func startReplication() {
 	err := syncer.RegisterSlave(mc.Host, uint16(mc.Port), mc.Username, mc.Password)
 	if err != nil {
 		sysLogger.LogErr(err)
-		sysClean()
-		os.Exit(1)
+		/*sysClean()
+		os.Exit(1)*/
+		eventDoneChan <- true
+		return
 	}
 	filename := configer.GetString("binlog", "filename")
 	pos := uint32(configer.GetInt("binlog", "position"))
@@ -184,8 +186,10 @@ func startReplication() {
 	streamer, err := syncer.StartSync(mysql.Position{binlogInfo.Filename, binlogInfo.Position})
 	if err != nil {
 		sysLogger.LogErr(err)
-		sysClean()
-		os.Exit(1)
+		/*sysClean()
+		os.Exit(1)*/
+		eventDoneChan <- true
+		return
 	}
 	timeout := time.Second
 	for running {
