@@ -3,8 +3,8 @@ package slave
 import (
 	"database/sql"
 	"fmt"
-	"mysql_byroad/model"
 	"mysql_byroad/common"
+	"mysql_byroad/model"
 	"sort"
 	"strings"
 	"sync"
@@ -68,13 +68,19 @@ func (this *ColumnManager) GetColumnName(schema, table string, index int) string
 
 func (this *ColumnManager) UpdateGetColumnNames(schema, table string) []string {
 	var err error
+	columnNames := []string{}
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/information_schema", this.username, this.password, this.host, this.port)
 	this.db, err = sql.Open("mysql", dsn)
-	sysLogger.LogErr(err)
+	if err != nil {
+		sysLogger.LogErr(err)
+		return columnNames
+	}
 	defer this.db.Close()
 	stmt, err := this.db.Prepare("SELECT COLUMN_NAME FROM columns WHERE table_schema = ? AND table_name = ?")
-	sysLogger.LogErr(err)
-	columnNames := []string{}
+	if err != nil {
+		sysLogger.LogErr(err)
+		return columnNames
+	}
 	if err != nil {
 		return columnNames
 	}
@@ -115,7 +121,7 @@ func (this *ColumnManager) getColumnsMap() {
 	sqlStr := "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM columns "
 	nodisplay := getNoDisplaySchema()
 	if nodisplay != "" {
-		sqlStr +=  "WHERE TABLE_SCHEMA NOT IN (?)"
+		sqlStr += "WHERE TABLE_SCHEMA NOT IN (?)"
 	}
 	stm, err := this.db.Prepare(sqlStr)
 	if err != nil {

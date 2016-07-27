@@ -2,10 +2,11 @@ package slave
 
 import (
 	"encoding/json"
-	"time"
-	"github.com/garyburd/redigo/redis"
 	"mysql_byroad/common"
 	"mysql_byroad/model"
+	"time"
+
+	"github.com/garyburd/redigo/redis"
 )
 
 /*
