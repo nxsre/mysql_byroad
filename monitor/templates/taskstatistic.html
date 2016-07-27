@@ -1,7 +1,7 @@
 <div class="container">
     {% for statistic in statistics %}
     <h4><span>
-        <span>Hostname:</span> <span class="label label-info">{{statistic.Producer.Hostname}}:{{statistic.Producer.HTTPPort}}</span>
+        <span>BroadcastAddress:</span> <span class="label label-info">{{statistic.Producer.BroadcastAddress}}:{{statistic.Producer.HTTPPort}}</span>
         <span>Topic:</span> <span class="label label-info">{{statistic.Topic.Name}}</span>
     </span></h4>
     <table class="table table-condensed">
@@ -21,22 +21,4 @@
         {% endfor %}
     </table>
     {% endfor%}
-<!--
-    {% for statistic in statistics %}
-    <ul class="nav">
-        <li><span>Hostname:</span> {{statistic.Node.Hostname}}:{{statistic.Node.HTTPPort}}
-            <span>Topic:</span> {{statistic.Topic.Name}}
-            <ul>
-                {% for channel in statistic.Topic.Channels %}
-                <li>
-                    <span>channel name: </span>{{channel.Name}}
-                    <span>depth: </span>{{channel.Depth}}
-                    <span>backend depth: </span>{{channel.BackendDepth}}
-                    <span>messages: </span>{{channel.MessageCount}}
-                </li>
-                {% endfor %}
-            </ul>
-        </li>
-    </ul>
-    {% endfor %}-->
 </div>

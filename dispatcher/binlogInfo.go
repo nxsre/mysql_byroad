@@ -43,15 +43,15 @@ func (confdb *ConfigDB) GetBinlogInfo() (*model.BinlogInfo, error) {
 	binfo := &model.BinlogInfo{}
 	binfo.Filename, err = confdb.GetConfig("last_file_name")
 	if err != nil {
-		return nil, err
+		return binfo, err
 	}
 	pos, err := confdb.GetConfig("last_position")
 	if err != nil {
-		return nil, err
+		return binfo, err
 	}
 	pos32, err := strconv.Atoi(pos)
 	if err != nil {
-		return nil, err
+		return binfo, err
 	}
 	binfo.Position = uint32(pos32)
 	return binfo, nil

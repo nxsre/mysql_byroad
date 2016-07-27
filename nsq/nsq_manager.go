@@ -198,7 +198,7 @@ func (qm *NSQManager) GetStats(topicname string) ([]*NodeStats, error) {
 		return stats, err
 	}
 	for _, n := range proNodes {
-		addr := fmt.Sprintf("%s:%d", n.Hostname, n.HTTPPort)
+		addr := fmt.Sprintf("%s:%d", n.BroadcastAddress, n.HTTPPort)
 		s, err := getNodeStats(addr)
 		if err != nil {
 			errs = append(errs, err)
@@ -254,7 +254,7 @@ func (qm *NSQManager) getProducers() (map[string]*nsq.Producer, error) {
 	producers := make(map[string]*nsq.Producer, 10)
 	nsqNodes, _ := qm.GetNodesInfo()
 	for _, node := range nsqNodes {
-		nodeaddr := fmt.Sprintf("%s:%d", node.Hostname, node.TCPPort)
+		nodeaddr := fmt.Sprintf("%s:%d", node.BroadcastAddress, node.TCPPort)
 		pro, err := nsq.NewProducer(nodeaddr, qm.config)
 		if err != nil {
 			errs = append(errs, err)
@@ -282,7 +282,7 @@ func (qm *NSQManager) updateProducer() {
 		case <-ticker.C:
 			nodesInfo, _ := qm.GetNodesInfo()
 			for _, n := range nodesInfo {
-				nsqaddr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
+				nsqaddr := fmt.Sprintf("%s:%d", n.BroadcastAddress, n.TCPPort)
 				if pro, ok := qm.producers[nsqaddr]; ok {
 					if err := pro.Ping(); err != nil {
 						log.Error("nsqd ping error: ", err.Error())
@@ -316,7 +316,7 @@ func (qm *NSQManager) GetOneProducer() (*nsq.Producer, error) {
 		log.Debugf("nsq nodes lenght: %d, rand: %d", len(qm.nsqdNodes), i)
 		qm.RLock()
 		n := qm.nsqdNodes[i]
-		addr := fmt.Sprintf("%s:%d", n.Hostname, n.TCPPort)
+		addr := fmt.Sprintf("%s:%d", n.BroadcastAddress, n.TCPPort)
 		if pro, ok := qm.producers[addr]; ok {
 			log.Debug("get producer ", addr)
 			qm.RUnlock()
@@ -378,7 +378,7 @@ func (qm *NSQManager) actionHelper(topicname, url, action, qs string) error {
 		return err
 	}
 	for _, pro := range pros {
-		endpoint := fmt.Sprintf("http://%s:%d/%s/%s?%s", pro.Hostname, pro.HTTPPort, url, action, qs)
+		endpoint := fmt.Sprintf("http://%s:%d/%s/%s?%s", pro.BroadcastAddress, pro.HTTPPort, url, action, qs)
 		resp, err := http.PostForm(endpoint, nil)
 		if err != nil {
 			log.Error("http post form error: ", err.Error())

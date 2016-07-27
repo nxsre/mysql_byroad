@@ -39,6 +39,7 @@ func (rep *ReplicationClient) AddHandler(handler EventHandler) {
 func startReplication(rep *ReplicationClient) {
 	defer func() {
 		if err := recover(); err != nil {
+			log.Errorf("%v", err)
 			rep.StopChan <- true
 		}
 	}()
@@ -51,7 +52,10 @@ func startReplication(rep *ReplicationClient) {
 	pos := rep.BinlogPosition
 	log.Debugf("config filename %s, pos %d", filename, pos)
 	if filename == "" || pos == 0 {
-		binfo, _ := confdb.GetBinlogInfo()
+		binfo, err := confdb.GetBinlogInfo()
+		if err != nil {
+			log.Errorf(err.Error())
+		}
 		filename = binfo.Filename
 		pos = binfo.Position
 		log.Debugf("config db filename %s, pos %d", filename, pos)
@@ -59,11 +63,11 @@ func startReplication(rep *ReplicationClient) {
 			addr := fmt.Sprintf("%s:%d", rep.Host, rep.Port)
 			c, err := client.Connect(addr, rep.Username, rep.Password, "")
 			if err != nil {
-				log.Panicf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+				log.Errorf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
 			}
 			rr, err := c.Execute("SHOW MASTER STATUS")
 			if err != nil {
-				log.Panicf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+				log.Errorf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
 			}
 			filename, _ = rr.GetString(0, 0)
 			position, _ := rr.GetInt(0, 1)
@@ -73,7 +77,7 @@ func startReplication(rep *ReplicationClient) {
 	}
 	streamer, err := syncer.StartSync(mysql.Position{filename, pos})
 	if err != nil {
-		log.Panicf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+		log.Fatalf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
 	}
 	log.Infof("start replication client on %s:%d at %s, %d", rep.Host, rep.Port, filename, pos)
 	timeout := time.Second

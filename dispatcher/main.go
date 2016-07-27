@@ -2,11 +2,11 @@ package main
 
 import (
 	"fmt"
+	"mysql_byroad/model"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/mattn/go-sqlite3"
@@ -43,7 +43,7 @@ func initGlobal() {
 	binlogInfo = &model.BinlogInfo{}
 
 	confdb, err = NewConfigDB()
-	if err != nil{
+	if err != nil {
 		log.Panic(err)
 	}
 }
@@ -83,7 +83,10 @@ func HandleSignal() {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
 			replicationClient.Stop()
 			rpcClient.DeregisterClient(rpcServer.schema, rpcServer.desc)
-			confdb.SaveBinlogInfo()
+			_, err := confdb.SaveBinlogInfo()
+			if err != nil {
+				log.Errorf("save binlog info error: %s", err.Error())
+			}
 			<-replicationClient.StopChan
 			time.Sleep(1 * time.Second)
 			return

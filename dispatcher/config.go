@@ -5,6 +5,8 @@ import (
 	"flag"
 	"time"
 
+	"mysql_byroad/model"
+
 	"github.com/BurntSushi/toml"
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
@@ -87,6 +89,8 @@ func NewConfigDB() (*ConfigDB, error) {
 	if err != nil {
 		return nil, err
 	}
+	model.Init(db)
+	model.CreateConfigTable()
 	confdb.db = db
 	confdb.filename = Conf.ConfigDB
 	return confdb, nil
