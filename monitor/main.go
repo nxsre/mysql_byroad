@@ -29,7 +29,7 @@ func main() {
 	dispatcherManager = NewDispatcherManager()
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcServer.start()
-	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress, nil)
+	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress, nil, nil)
 	if err != nil {
 		log.Error("new nsq manager error: ", err.Error())
 	}

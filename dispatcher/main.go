@@ -36,7 +36,7 @@ func initGlobal() {
 	rpcClient.RegisterClient(rpcServer.schema, rpcServer.desc)
 	columnManager = NewColumnManager(Conf.MysqlConf)
 	taskManager = NewTaskManager()
-	eventEnqueuer = NewEventEnqueuer(Conf.NSQConf.LookupdHttpAddrs)
+	eventEnqueuer = NewEventEnqueuer()
 	binlogStatistics = &model.BinlogStatistics{
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}

@@ -16,9 +16,9 @@ type EventEnqueuer struct {
 	sync.WaitGroup
 }
 
-func NewEventEnqueuer(lookupAddrs []string) *EventEnqueuer {
+func NewEventEnqueuer() *EventEnqueuer {
 	ee := &EventEnqueuer{}
-	qm, err := nsqm.NewNSQManager(lookupAddrs, nil)
+	qm, err := nsqm.NewNSQManager(Conf.NSQConf.LookupdHttpAddrs, Conf.NSQConf.NsqdAddrs, nil)
 	if err != nil {
 		log.Error(err.Error())
 	}

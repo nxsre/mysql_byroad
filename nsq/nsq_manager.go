@@ -30,18 +30,20 @@ func (l ErrList) Errors() []error {
 
 type NSQManager struct {
 	lookupdAddrs []string
+	nsqaddrs     []string
 	nsqdNodes    []*Node
 	producers    map[string]*nsq.Producer
 	config       *nsq.Config
 	sync.RWMutex
 }
 
-func NewNSQManager(lookupAddrs []string, config *nsq.Config) (*NSQManager, error) {
+func NewNSQManager(lookupAddrs []string, nsqaddrs []string, config *nsq.Config) (*NSQManager, error) {
 	if config == nil {
 		config = nsq.NewConfig()
 	}
 	qm := &NSQManager{
 		lookupdAddrs: lookupAddrs,
+		nsqaddrs:     nsqaddrs,
 		config:       config,
 	}
 	var err error
@@ -255,6 +257,21 @@ func (qm *NSQManager) getProducers() (map[string]*nsq.Producer, error) {
 	nsqNodes, _ := qm.GetNodesInfo()
 	for _, node := range nsqNodes {
 		nodeaddr := fmt.Sprintf("%s:%d", node.BroadcastAddress, node.TCPPort)
+		pro, err := nsq.NewProducer(nodeaddr, qm.config)
+		if err != nil {
+			errs = append(errs, err)
+			log.Error("nsq get producer: ", err.Error())
+			continue
+		}
+		err = pro.Ping()
+		if err != nil {
+			errs = append(errs, err)
+			log.Error("nsq ping error: ", err.Error())
+			continue
+		}
+		producers[nodeaddr] = pro
+	}
+	for _, nodeaddr := range qm.nsqaddrs {
 		pro, err := nsq.NewProducer(nodeaddr, qm.config)
 		if err != nil {
 			errs = append(errs, err)
