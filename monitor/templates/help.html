@@ -1,0 +1,15 @@
+{% include "header.html"%}
+<div class="container">
+    <div class="help-content">
+        <h3>消息中对mysql字段类型为text和blob的处理</h3>
+        <p>mysql对text类型的字段在binlog传输时，是当做二进制数据的，因此，在接收到binlog时，
+        不能对text类型的数据当做字符串处理。在消息中，<strong>对数据进行json处理时，会进行base64编码，</strong>
+        在接收到消息时，请自行解码还原。</p> 
+    </div>
+    <div class="help-content">
+        <h3>任务的启动和停止</h3>
+        <p>任务状态为运行时，不能修改任务的推送并发数，如要修改，请先停止任务，修改后再启动。</p> 
+    </div>
+</div>
+
+{% include "footer.html" %}

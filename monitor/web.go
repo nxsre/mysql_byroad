@@ -93,6 +93,9 @@ func StartServer() {
 	m.Get("/addtask", addTaskHTML)
 	m.Get("/task", tasklist)
 	m.Get("/taskmodify/:taskid", modifytask)
+	m.Get("/task/detail/:taskid", getTaskStatistic)
+	m.Get("/task/log/:taskid", loglist)
+	m.Get("/help", help)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
@@ -101,8 +104,6 @@ func StartServer() {
 
 	m.Delete("/task/:taskid", doDeleteTask)
 
-	m.Get("/task/detail/:taskid", getTaskStatistic)
-	m.Get("/task/log/:taskid", loglist)
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
 
@@ -582,4 +583,8 @@ func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
 	stats := nsqManager.GetTopicStats(task.Name)
 	ctx.Data["statistics"] = stats
 	ctx.HTML(200, "taskdetail")
+}
+
+func help(ctx *macaron.Context, sess session.Store) {
+	ctx.HTML(200, "help")
 }

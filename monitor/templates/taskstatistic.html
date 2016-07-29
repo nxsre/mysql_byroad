@@ -1,15 +1,15 @@
 <div class="container">
     {% for statistic in statistics %}
     <h4><span>
-        <span>BroadcastAddress:</span> <span class="label label-info">{{statistic.Producer.BroadcastAddress}}:{{statistic.Producer.HTTPPort}}</span>
+        <span>主机地址:</span> <span class="label label-info">{{statistic.Producer.BroadcastAddress}}:{{statistic.Producer.HTTPPort}}</span>
         <span>Topic:</span> <span class="label label-info">{{statistic.Topic.Name}}</span>
     </span></h4>
     <table class="table table-condensed">
         <tr>
             <th>Channel</th>
-            <th>Depth</th>
-            <th>BackendDepth</th>
-            <th>Messages</th>
+            <th>当前消息总数</th>
+            <th>磁盘消息数</th>
+            <th>已接收送消息总数</th>
         </tr>
         {% for channel in statistic.Topic.Channels %}
             <tr>

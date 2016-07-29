@@ -1,11 +1,11 @@
 <ul class="nav nav-sidebar" id="column-list">
 	{% for key in colslist %}
 	<li>
-		<a data-toggle="collapse" aria-expanded="false" aria-controls="{{key.Schema}}" href="#"><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{key.Schema}}</a>
+		<a data-toggle="collapse" aria-expanded="false" aria-controls="{{key.Schema}}" href="#"><span style="color:#666;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{key.Schema}}</a>
 		<ul class="collapse" id="{{key.Schema}}">
 			{% for t in key.OrderedTables %}
 			<li>
-				<a data-toggle="collapse" aria-expanded="true" aria-controls="{{key.Schema}}{{t.Table}}" href="#"><span class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{t.Table}}</a>
+				<a data-toggle="collapse" aria-expanded="true" aria-controls="{{key.Schema}}{{t.Table}}" href="#"><span style="color:#555;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{t.Table}}</a>
 				<ul class="collapse" id="{{key.Schema}}{{t.Table}}">
 					{% for c in t.Columns %}
 					<li style="list-style-type: disc">
