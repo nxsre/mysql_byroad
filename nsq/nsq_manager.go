@@ -328,19 +328,24 @@ func (qm *NSQManager) updateProducer() {
 
 // 在所有的producers中随机返回一个
 func (qm *NSQManager) GetOneProducer() (*nsq.Producer, error) {
-	if len(qm.producers) != 0 {
+	var addr string
+	if len(qm.nsqaddrs) != 0 {
+		i := rand.Intn(len(qm.nsqaddrs))
+		addr = qm.nsqaddrs[i]
+	} else if len(qm.nsqdNodes) != 0 {
 		i := rand.Intn(len(qm.nsqdNodes))
 		log.Debugf("nsq nodes lenght: %d, rand: %d", len(qm.nsqdNodes), i)
-		qm.RLock()
 		n := qm.nsqdNodes[i]
-		addr := fmt.Sprintf("%s:%d", n.BroadcastAddress, n.TCPPort)
-		if pro, ok := qm.producers[addr]; ok {
-			log.Debug("get producer ", addr)
-			qm.RUnlock()
-			return pro, nil
-		} else {
-			return qm.GetOneProducer()
-		}
+		addr = fmt.Sprintf("%s:%d", n.BroadcastAddress, n.TCPPort)
+	}
+	qm.RLock()
+	if pro, ok := qm.producers[addr]; ok {
+		log.Debug("get producer ", addr)
+		qm.RUnlock()
+		return pro, nil
+	} else {
+		qm.RUnlock()
+		return qm.GetOneProducer()
 	}
 	return nil, fmt.Errorf("no nsqd server avaiable")
 }

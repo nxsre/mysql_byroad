@@ -5,6 +5,8 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 func isEqual(v1, v2 interface{}) bool {
@@ -26,7 +28,7 @@ func isMatch(s1, s2 string) bool {
 	if s1 == s2 {
 		return true
 	}
-
+	log.Debugf("s1: %s, s2: %s", s1, s2)
 	if strings.Index(s1, "*") != -1 {
 		r, _ := regexp.Compile("^" + strings.Replace(s1, "*", "([\\w]+)", -1))
 		if r.MatchString(s2) {

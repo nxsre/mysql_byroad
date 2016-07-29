@@ -3,6 +3,8 @@ package main
 import (
 	"mysql_byroad/model"
 	"sync"
+
+	log "github.com/Sirupsen/logrus"
 )
 
 type TaskMatchMap map[string]map[string]map[string][]int64
@@ -41,19 +43,21 @@ func (this *NotifyTaskMap) GetNotifyTaskIDs(schema, table, column string) []int6
 	this.RLock()
 	defer this.RUnlock()
 	cmap := this.notifyTasks
+	log.Debugf("notify tasks: %+v", cmap)
+	var ids = []int64{}
 	if cmap != nil && cmap[schema] != nil && cmap[schema][table] != nil && cmap[schema][table][column] != nil {
-		return cmap[schema][table][column]
+		ids = append(ids, cmap[schema][table][column]...)
 	}
 	for s, smap := range cmap {
 		if isSchemaMatch(s, schema) {
 			for k, _ := range smap {
 				if isTableMatch(k, table) && cmap[s][k][column] != nil {
-					return cmap[s][k][column]
+					ids = append(ids, cmap[s][k][column]...)
 				}
 			}
 		}
 	}
-	return nil
+	return ids
 }
 
 /*

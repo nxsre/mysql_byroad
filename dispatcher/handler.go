@@ -150,7 +150,7 @@ func (eh *RowsEventHandler) genNotifyEvents(schema, table string, columns []*mod
 	taskFieldMap := make(map[int64][]*model.ColumnValue)
 	for _, column := range columns {
 		ids := taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
-		log.Debug("ids ", ids)
+		log.Debug("%s %s %s %d", schema, table, column.ColunmName, ids)
 		for _, taskID := range ids {
 			if taskFieldMap[taskID] == nil {
 				taskFieldMap[taskID] = make([]*model.ColumnValue, 0)
