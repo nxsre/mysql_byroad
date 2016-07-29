@@ -22,7 +22,6 @@ func NewRowsEventHandler(conf MysqlConf) *RowsEventHandler {
 func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 	switch e := ev.Event.(type) {
 	case *replication.RowsEvent:
-		binlogInfo.Position = ev.Header.LogPos
 		switch ev.Header.EventType {
 		case replication.WRITE_ROWS_EVENTv1, replication.WRITE_ROWS_EVENTv2:
 			reh.HandleWriteEvent(e)
@@ -33,6 +32,7 @@ func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 		default:
 			log.Info("Event type %s not supported", ev.Header.EventType)
 		}
+		binlogInfo.Position = ev.Header.LogPos
 	case *replication.RotateEvent:
 		binlogInfo.Filename = string(e.NextLogName)
 		binlogInfo.Position = uint32(e.Position)

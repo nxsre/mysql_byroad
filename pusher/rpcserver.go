@@ -13,6 +13,7 @@ type RPCServer struct {
 	protocol string
 	schema   string
 	desc     string
+	listener net.Listener
 }
 
 func NewRPCServer(protocol, schema, desc string) *RPCServer {
@@ -24,6 +25,10 @@ func NewRPCServer(protocol, schema, desc string) *RPCServer {
 	return &server
 }
 
+func (this *RPCServer) getSchema() string {
+	return this.listener.Addr().String()
+}
+
 func (this *RPCServer) startRpcServer() {
 	rpc.Register(this)
 	rpc.HandleHTTP()
@@ -31,7 +36,8 @@ func (this *RPCServer) startRpcServer() {
 	if e != nil {
 		panic(e.Error())
 	}
-	log.Infof("start rpc server at %s", this.schema)
+	this.listener = l
+	log.Infof("start rpc server at %s", this.getSchema())
 	go http.Serve(l, nil)
 }
 

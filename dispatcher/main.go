@@ -33,7 +33,7 @@ func initGlobal() {
 	rpcServer = NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
 	rpcServer.startRpcServer()
 	rpcClient = NewRPCClient("tcp", rpcClientSchema, "")
-	rpcClient.RegisterClient(rpcServer.schema, rpcServer.desc)
+	rpcClient.RegisterClient(rpcServer.getSchema(), rpcServer.desc)
 	columnManager = NewColumnManager(Conf.MysqlConf)
 	taskManager = NewTaskManager()
 	eventEnqueuer = NewEventEnqueuer()
