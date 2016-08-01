@@ -338,14 +338,9 @@ func (qm *NSQManager) GetOneProducer() (*nsq.Producer, error) {
 		n := qm.nsqdNodes[i]
 		addr = fmt.Sprintf("%s:%d", n.BroadcastAddress, n.TCPPort)
 	}
-	qm.RLock()
 	if pro, ok := qm.producers[addr]; ok {
 		log.Debug("get producer ", addr)
-		qm.RUnlock()
 		return pro, nil
-	} else {
-		qm.RUnlock()
-		return qm.GetOneProducer()
 	}
 	return nil, fmt.Errorf("no nsqd server avaiable")
 }

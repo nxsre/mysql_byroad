@@ -27,7 +27,7 @@ desc = "localhost:1237"
 
 [nsq]
 # lookupd_http_address = ["127.0.0.1:4161"]
-nsqd_tcp_address = ["127.0.0.1:4150"]
+nsqd_tcp_address = ["127.0.0.1:4150", "127.0.0.1:4153"]
 lookup_interval = "60s" # 向nsqlookupd轮询nsqd节点信息
 
 
