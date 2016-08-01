@@ -35,24 +35,24 @@ func (this *RowsEventHandler) Enqueue(schema, table, event string, taskFieldMap 
 	log.Debug(taskFieldMap)
 	for taskid, fields := range taskFieldMap {
 		log.Debug("rows event handler enqueue, task id ", taskid)
-		eventEnqueuer.Add(1)
+		this.eventEnqueuer.Add(1)
 		go this.enqueue(schema, table, event, taskid, fields)
 	}
-	eventEnqueuer.Wait()
+	this.eventEnqueuer.Wait()
 }
 
 func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64, fields []*model.ColumnValue) {
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
 	ntyevt.Fields = make([]*model.ColumnValue, 0)
-	task := taskManager.GetTask(taskid)
+	task := dispatcher.taskManager.GetTask(taskid)
 	if task == nil {
-		eventEnqueuer.Done()
+		this.eventEnqueuer.Done()
 		return
 	}
 	updateChanged := false
 	for _, f := range fields {
-		tf := taskManager.GetTaskField(task, schema, table, f.ColunmName)
+		tf := dispatcher.taskManager.GetTaskField(task, schema, table, f.ColunmName)
 		if tf == nil {
 			continue
 		}
@@ -75,10 +75,10 @@ func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64,
 		}
 	}
 	if len(ntyevt.Fields) == 0 && len(ntyevt.Keys) == 0 {
-		eventEnqueuer.Done()
+		this.eventEnqueuer.Done()
 		return
 	} else if event == model.UPDATE_EVENT && !updateChanged {
-		eventEnqueuer.Done()
+		this.eventEnqueuer.Done()
 		return
 	}
 	ntyevt.Schema = schema
@@ -86,6 +86,6 @@ func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64,
 	ntyevt.Event = event
 	ntyevt.TaskID = task.ID
 	name := genTaskQueueName(task)
-	eventEnqueuer.queueManager.Enqueue(name, ntyevt)
-	eventEnqueuer.Done()
+	this.eventEnqueuer.queueManager.Enqueue(name, ntyevt)
+	this.eventEnqueuer.Done()
 }

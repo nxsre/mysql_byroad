@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"mysql_byroad/model"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -11,6 +12,7 @@ import (
 )
 
 type ReplicationClient struct {
+	Name           string
 	ServerId       uint32
 	Host           string
 	Port           uint16
@@ -21,6 +23,31 @@ type ReplicationClient struct {
 	handler        []EventHandler
 	running        bool
 	StopChan       chan bool
+	confdb         *ConfigDB
+
+	binlogInfo *model.BinlogInfo
+}
+
+func NewReplicationClient(conf MysqlConf) *ReplicationClient {
+	replicationClient := &ReplicationClient{
+		Name:           conf.Name,
+		ServerId:       conf.ServerId,
+		Host:           conf.Host,
+		Port:           conf.Port,
+		Username:       conf.Username,
+		Password:       conf.Password,
+		BinlogFilename: conf.BinlogFilename,
+		BinlogPosition: conf.BinlogPosition,
+		StopChan:       make(chan bool, 1),
+	}
+	confdb, err := NewConfigDB()
+	if err != nil {
+		log.Panic(err)
+	}
+	replicationClient.confdb = confdb
+	binlogInfo := &model.BinlogInfo{}
+	replicationClient.binlogInfo = binlogInfo
+	return replicationClient
 }
 
 type EventHandler interface {
@@ -30,6 +57,7 @@ type EventHandler interface {
 func (rep *ReplicationClient) Start() {
 	rep.running = true
 	go startReplication(rep)
+	go rep.BinlogTick()
 }
 
 func (rep *ReplicationClient) AddHandler(handler EventHandler) {
@@ -52,7 +80,7 @@ func startReplication(rep *ReplicationClient) {
 	pos := rep.BinlogPosition
 	log.Debugf("config filename %s, pos %d", filename, pos)
 	if filename == "" || pos == 0 {
-		binfo, err := confdb.GetBinlogInfo()
+		binfo, err := rep.confdb.GetBinlogInfo(rep.Name)
 		if err != nil {
 			log.Errorf(err.Error())
 		}
@@ -101,4 +129,18 @@ func startReplication(rep *ReplicationClient) {
 
 func (rep *ReplicationClient) Stop() {
 	rep.running = false
+}
+
+func (rep *ReplicationClient) SaveBinlog() {
+	rep.confdb.SaveBinlogInfo(rep.Name, rep.binlogInfo)
+}
+
+func (rep *ReplicationClient) BinlogTick() {
+	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
+	for {
+		select {
+		case <-ticker.C:
+			rep.SaveBinlog()
+		}
+	}
 }

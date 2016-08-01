@@ -9,13 +9,18 @@ import (
 )
 
 type RowsEventHandler struct {
+	eventEnqueuer     *EventEnqueuer
+	replicationClient *ReplicationClient
 }
 
 /*
 	对row格式的数据进行处理
 */
-func NewRowsEventHandler(conf MysqlConf) *RowsEventHandler {
+func NewRowsEventHandler(rep *ReplicationClient) *RowsEventHandler {
 	reh := &RowsEventHandler{}
+	eventEnqueuer := NewEventEnqueuer()
+	reh.eventEnqueuer = eventEnqueuer
+	reh.replicationClient = rep
 	return reh
 }
 
@@ -32,10 +37,10 @@ func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 		default:
 			log.Info("Event type %s not supported", ev.Header.EventType)
 		}
-		binlogInfo.Position = ev.Header.LogPos
+		reh.replicationClient.binlogInfo.Position = ev.Header.LogPos
 	case *replication.RotateEvent:
-		binlogInfo.Filename = string(e.NextLogName)
-		binlogInfo.Position = uint32(e.Position)
+		reh.replicationClient.binlogInfo.Filename = string(e.NextLogName)
+		reh.replicationClient.binlogInfo.Position = uint32(e.Position)
 	}
 }
 
@@ -43,15 +48,15 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 	log.Info("handle write event")
 	event := model.INSERT_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	if !taskManager.InNotifyTable(schema, table) {
+	if !dispatcher.taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
-		binlogStatistics.IncStatistic(schema, table, event)
+		dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
-			column := columnManager.GetColumnName(schema, table, j)
-			if taskManager.InNotifyField(schema, table, column) {
+			column := dispatcher.columnManager.GetColumnName(schema, table, j)
+			if dispatcher.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := r.(type) {
@@ -71,15 +76,15 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 	log.Info("handle delete event")
 	event := model.DELETE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	if !taskManager.InNotifyTable(schema, table) {
+	if !dispatcher.taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
-		binlogStatistics.IncStatistic(schema, table, event)
+		dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
-			column := columnManager.GetColumnName(schema, table, j)
-			if taskManager.InNotifyField(schema, table, column) {
+			column := dispatcher.columnManager.GetColumnName(schema, table, j)
+			if dispatcher.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				//c.Value = r
@@ -100,7 +105,7 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 	log.Info("handle update event")
 	event := model.UPDATE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	if !taskManager.InNotifyTable(schema, table) {
+	if !dispatcher.taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	oldRows, newRows := getUpdateRows(e)
@@ -108,10 +113,10 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		oldRow := oldRows[i]
 		newRow := newRows[i]
-		binlogStatistics.IncStatistic(schema, table, event)
+		dispatcher.IncStatistic(schema, table, event)
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
-			column := columnManager.GetColumnName(schema, table, j)
-			if taskManager.InNotifyField(schema, table, column) {
+			column := dispatcher.columnManager.GetColumnName(schema, table, j)
+			if dispatcher.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := newRow[j].(type) {
@@ -149,7 +154,7 @@ func (eh *RowsEventHandler) genNotifyEvents(schema, table string, columns []*mod
 	//为相应的任务添加订阅了的字段
 	taskFieldMap := make(map[int64][]*model.ColumnValue)
 	for _, column := range columns {
-		ids := taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
+		ids := dispatcher.taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
 		log.Debug("%s %s %s %d", schema, table, column.ColunmName, ids)
 		for _, taskID := range ids {
 			if taskFieldMap[taskID] == nil {

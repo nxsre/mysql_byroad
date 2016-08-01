@@ -4,15 +4,14 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"strconv"
-	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/siddontang/go-mysql/client"
 )
 
-func GetMasterStatus() (*model.BinlogInfo, error) {
-	addr := fmt.Sprintf("%s:%d", Conf.MysqlConf.Host, Conf.MysqlConf.Port)
-	c, err := client.Connect(addr, Conf.MysqlConf.Username, Conf.MysqlConf.Password, "")
+func GetMasterStatus(conf MysqlConf) (*model.BinlogInfo, error) {
+	addr := fmt.Sprintf("%s:%d", conf.Host, conf.Port)
+	c, err := client.Connect(addr, conf.Username, conf.Password, "")
 	if err != nil {
 		log.Error("get master status: ", err.Error())
 		return nil, err
@@ -32,20 +31,20 @@ func GetMasterStatus() (*model.BinlogInfo, error) {
 	return binfo, nil
 }
 
-func (confdb *ConfigDB) SaveBinlogInfo() (int64, error) {
-	confdb.SaveConfig("last_file_name", binlogInfo.Filename, "")
-	confdb.SaveConfig("last_position", fmt.Sprintf("%d", binlogInfo.Position), "")
+func (confdb *ConfigDB) SaveBinlogInfo(desc string, binlogInfo *model.BinlogInfo) (int64, error) {
+	confdb.SaveConfig("last_file_name", binlogInfo.Filename, desc)
+	confdb.SaveConfig("last_position", fmt.Sprintf("%d", binlogInfo.Position), desc)
 	return 0, nil
 }
 
-func (confdb *ConfigDB) GetBinlogInfo() (*model.BinlogInfo, error) {
+func (confdb *ConfigDB) GetBinlogInfo(desc string) (*model.BinlogInfo, error) {
 	var err error
 	binfo := &model.BinlogInfo{}
-	binfo.Filename, err = confdb.GetConfig("last_file_name")
+	binfo.Filename, err = confdb.GetConfig("last_file_name", desc)
 	if err != nil {
 		return binfo, err
 	}
-	pos, err := confdb.GetConfig("last_position")
+	pos, err := confdb.GetConfig("last_position", desc)
 	if err != nil {
 		return binfo, err
 	}
@@ -55,14 +54,4 @@ func (confdb *ConfigDB) GetBinlogInfo() (*model.BinlogInfo, error) {
 	}
 	binfo.Position = uint32(pos32)
 	return binfo, nil
-}
-
-func binlogTicker() {
-	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
-	for {
-		select {
-		case <-ticker.C:
-			confdb.SaveBinlogInfo()
-		}
-	}
 }

@@ -5,6 +5,7 @@ logfile = "/var/log/byroad/dispatcher.log"
 loglevel = "Info" # Debug Info Warn Error Fatal Panic
 #mysql slave 信息
 [mysql]
+name = "localhost1"
 server_id = 2002
 host = "127.0.0.1"
 port = 3306

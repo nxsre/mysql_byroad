@@ -3,9 +3,8 @@ package main
 import (
 	"database/sql"
 	"flag"
-	"time"
-
 	"mysql_byroad/model"
+	"time"
 
 	"github.com/BurntSushi/toml"
 	log "github.com/Sirupsen/logrus"
@@ -37,6 +36,7 @@ type Config struct {
 }
 
 type MysqlConf struct {
+	Name           string
 	ServerId       uint32 `toml:"server_id"`
 	Host           string
 	Port           uint16
@@ -119,8 +119,8 @@ func (confdb *ConfigDB) SaveConfig(key, value, desc string) (int64, error) {
 	}
 }
 
-func (confdb *ConfigDB) GetConfig(key string) (string, error) {
+func (confdb *ConfigDB) GetConfig(key, desc string) (string, error) {
 	var value string
-	err := confdb.db.Get(&value, "SELECT value FROM config WHERE key=?", key)
+	err := confdb.db.Get(&value, "SELECT value FROM config WHERE key=? AND description=?", key, desc)
 	return value, err
 }

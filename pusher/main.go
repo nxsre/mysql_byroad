@@ -64,7 +64,7 @@ func HandleSignal() {
 		log.Infof("get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
-			_, err := rpcclient.DeregisterClient(rpcserver.schema, rpcserver.desc)
+			_, err := rpcclient.DeregisterClient(rpcserver.getSchema(), rpcserver.desc)
 			if err != nil {
 				log.Error("rpc deregister error: ", err.Error())
 			}

@@ -46,9 +46,9 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("rpc add task: %+v", task)
 	*status = "sucess"
-	taskManager.taskIdMap.Set(task.ID, task)
+	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
 	if task.Stat == model.TASK_STATE_START {
-		taskManager.notifyTaskMap.AddTask(task)
+		dispatcher.taskManager.notifyTaskMap.AddTask(task)
 	}
 	return nil
 }
@@ -56,56 +56,56 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 	log.Info("rpc delete task: ", id)
 	*status = "success"
-	taskManager.taskIdMap.Delete(id)
-	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
+	dispatcher.taskManager.taskIdMap.Delete(id)
+	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("rpc update task: %+v", task)
 	*status = "success"
-	taskManager.taskIdMap.Set(task.ID, task)
-	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
+	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
+	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 	log.Infof("rpc start task: %+v", task)
 	*status = "success"
-	taskManager.taskIdMap.Set(task.ID, task)
-	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
+	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
+	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 	log.Infof("rpc stop task: %+v", task)
 	*status = "success"
-	taskManager.taskIdMap.Set(task.ID, task)
-	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
+	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
+	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Info("rpc get db columns")
-	*os = columnManager.GetOrderedColumns()
+	*os = dispatcher.columnManager.GetOrderedColumns()
 	return nil
 }
 
 func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Info("rpc get all columns")
-	*os = columnManager.GetOrderedColumns()
+	*os = dispatcher.columnManager.GetOrderedColumns()
 	return nil
 }
 
 func (rs *RPCServer) GetBinlogStatistics(username string, statics *[]*model.BinlogStatistic) error {
 	log.Info("rpc get binlog statistics")
-	*statics = binlogStatistics.Statistics
+	*statics = dispatcher.binlogStatistics.Statistics
 	return nil
 }
 
 func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) error {
 	log.Info("rpc get status")
-	start := startTime
+	start := dispatcher.startTime
 	duration := time.Now().Sub(start)
 	statusMap := make(map[string]interface{})
 	statusMap["Start"] = start.String()
@@ -117,13 +117,13 @@ func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) erro
 
 func (rs *RPCServer) GetMasterStatus(username string, binfo *model.BinlogInfo) error {
 	log.Info("rpc get master status")
-	info, err := GetMasterStatus()
+	info, err := GetMasterStatus(Conf.MysqlConf)
 	*binfo = *info
 	return err
 }
 
 func (rs *RPCServer) GetCurrentBinlogInfo(username string, binfo *model.BinlogInfo) error {
 	log.Info("rpc get current binlog info")
-	*binfo = *binlogInfo
+	*binfo = *(dispatcher.replicationClient.binlogInfo)
 	return nil
 }
