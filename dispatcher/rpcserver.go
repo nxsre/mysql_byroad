@@ -69,6 +69,22 @@ func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	return nil
 }
 
+func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
+	log.Infof("rpc start task: %+v", task)
+	*status = "success"
+	taskManager.taskIdMap.Set(task.ID, task)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
+	return nil
+}
+
+func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
+	log.Infof("rpc stop task: %+v", task)
+	*status = "success"
+	taskManager.taskIdMap.Set(task.ID, task)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
+	return nil
+}
+
 func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Info("rpc get db columns")
 	*os = columnManager.GetOrderedColumns()

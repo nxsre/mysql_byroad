@@ -86,3 +86,21 @@ func (pm *PusherManager) UpdateTask(task *model.Task) {
 		}
 	}
 }
+
+func (pm *PusherManager) StartTask(task *model.Task) {
+	for _, client := range pm.rpcclients {
+		status, err := client.StartTask(task)
+		if err != nil {
+			log.Errorf("pusher manager start task status: %s, error: %s", status, err.Error())
+		}
+	}
+}
+
+func (pm *PusherManager) StopTask(task *model.Task) {
+	for _, client := range pm.rpcclients {
+		status, err := client.StopTask(task)
+		if err != nil {
+			log.Errorf("pusher manager stop task status: %s, error: %s", status, err.Error())
+		}
+	}
+}

@@ -64,10 +64,20 @@ func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("update task: %+v", task)
 	*status = "success"
-	if task.Stat == model.TASK_STATE_START {
-		taskManager.StartTask(task)
-	} else {
-		taskManager.StopTask(task)
-	}
+	taskManager.UpdateTask(task)
+	return nil
+}
+
+func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
+	log.Infof("start task: %+v", task)
+	*status = "success"
+	taskManager.StartTask(task)
+	return nil
+}
+
+func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
+	log.Infof("stop task: %+v", task)
+	*status = "success"
+	taskManager.StopTask(task)
 	return nil
 }

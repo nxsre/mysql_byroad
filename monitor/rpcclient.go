@@ -70,6 +70,32 @@ func (this *RPCClient) UpdateTask(task *model.Task) (status string, err error) {
 	return
 }
 
+func (this *RPCClient) StartTask(task *model.Task) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.StartTask", task, &status)
+	if err != nil {
+		log.Error("rpc start task error: %s", err.Error())
+	}
+	return
+}
+
+func (this *RPCClient) StopTask(task *model.Task) (status string, err error) {
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("RPCServer.StopTask", task, &status)
+	if err != nil {
+		log.Error("rpc stop task error: %s", err.Error())
+	}
+	return
+}
+
 func (this *RPCClient) GetColumns(dbname string) (dbmap model.OrderedSchemas, err error) {
 	client, err := this.GetClient()
 	if err != nil {

@@ -502,11 +502,14 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	}
 	if stat == model.TASK_STATE_START {
 		nsqManager.UnPauseTopic(task.Name)
+		dispatcherManager.StartTask(task)
+		pusherManager.StartTask(task)
 	} else if stat == model.TASK_STATE_STOP {
 		nsqManager.PauseTopic(task.Name)
+		dispatcherManager.StopTask(task)
+		pusherManager.StopTask(task)
 	}
-	dispatcherManager.UpdateTask(task)
-	pusherManager.UpdateTask(task)
+
 	body, _ := json.Marshal(resp)
 	log.Printf("%s: change task state %v", sess.Get("user").(string), task.Name)
 	return string(body)

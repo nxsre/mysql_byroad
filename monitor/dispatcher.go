@@ -95,6 +95,24 @@ func (dm *DispatcherManager) UpdateTask(task *model.Task) {
 	}
 }
 
+func (dm *DispatcherManager) StartTask(task *model.Task) {
+	for _, client := range dm.rpcclients {
+		status, err := client.StartTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager start task status: %s, error: %s", status, err.Error())
+		}
+	}
+}
+
+func (dm *DispatcherManager) StopTask(task *model.Task) {
+	for _, client := range dm.rpcclients {
+		status, err := client.StopTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager stop task status: %s, error: %s", status, err.Error())
+		}
+	}
+}
+
 func (dm *DispatcherManager) GetColumns(schema string) (dbmap model.OrderedSchemas, err error) {
 	for _, client := range dm.rpcclients {
 		if client.Schema == schema {

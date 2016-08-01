@@ -3,6 +3,7 @@ package main
 import (
 	"mysql_byroad/model"
 
+	log "github.com/Sirupsen/logrus"
 	"github.com/nsqio/go-nsq"
 )
 
@@ -14,7 +15,7 @@ type TaskManager struct {
 func NewTaskManager() *TaskManager {
 	tm := &TaskManager{
 		taskMap:         NewTaskIdMap(100),
-		taskConsumerMap: make(map[int64][]*nsq.Consumer, 100),
+		taskConsumerMap: make(map[int64][]*nsq.Consumer, 10),
 	}
 
 	return tm
@@ -59,6 +60,30 @@ func (tm *TaskManager) StartTask(task *model.Task) {
 func (tm *TaskManager) DeleteTask(task *model.Task) {
 	tm.taskMap.Delete(task.ID)
 	tm.stopConsumers(task)
+	delete(tm.taskConsumerMap, task.ID)
+}
+
+/*
+根据任务的状态更新任务，如果任务的状态是停止或者任务的状态是正常，但是并发数没有改变，则不对consumer做操作，
+如果状态为正常，并且并发数有改变，则相应的增加或减少consumer
+*/
+func (tm *TaskManager) UpdateTask(task *model.Task) {
+	oldTask := tm.GetTask(task.ID)
+	tm.taskMap.Set(task.ID, task)
+	if task.Stat == model.TASK_STATE_STOP {
+		return
+	}
+	if oldTask == nil {
+		return
+	}
+	if oldTask.RoutineCount == task.RoutineCount {
+		return
+	}
+	if oldTask.RoutineCount < task.RoutineCount {
+		tm.incConsumers(task, task.RoutineCount-oldTask.RoutineCount)
+	} else {
+		tm.descConsumers(task, oldTask.RoutineCount-task.RoutineCount)
+	}
 }
 
 func (tm *TaskManager) newConsumers(task *model.Task) []*nsq.Consumer {
@@ -75,5 +100,37 @@ func (tm *TaskManager) stopConsumers(task *model.Task) {
 		for _, c := range cs {
 			c.Stop()
 		}
+	}
+}
+
+func (tm *TaskManager) incConsumers(task *model.Task, num int) {
+	log.Debugf("inc consumers %+v,  %d", task, num)
+	if consums, ok := tm.taskConsumerMap[task.ID]; ok {
+		log.Debugf("before: len consumers %d", len(consums))
+		for i := 0; i < num; i++ {
+			c := NewNSQConsumer(task.Name, task.Name, 1)
+			consums = append(consums, c)
+		}
+		tm.taskConsumerMap[task.ID] = consums
+		log.Debugf("after: len consumers %d", len(consums))
+	}
+}
+
+func (tm *TaskManager) descConsumers(task *model.Task, num int) {
+	log.Debugf("desc consumer %+v, %d", task, num)
+	if consums, ok := tm.taskConsumerMap[task.ID]; ok {
+		log.Debugf("before: len consumers %d", len(consums))
+		if len(consums) <= num {
+			tm.stopConsumers(task)
+		} else {
+			for i := 0; i < num; i++ {
+				c := consums[i]
+				c.Stop()
+				consums[i] = nil
+			}
+			consums = consums[num:]
+		}
+		tm.taskConsumerMap[task.ID] = consums
+		log.Debugf("after: len consumers %d", len(consums))
 	}
 }
