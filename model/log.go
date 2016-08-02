@@ -15,7 +15,7 @@ func createTaskLogTable() {
 		id INTEGER PRIMARY KEY AUTO_INCREMENT,
 		task_id INTEGER NOT NULL,
 		message VARCHAR(1000),
-		reason VARCHAR(1000),
+		reason VARCHAR(10000),
 		create_time DATETIME
 	)`
 	confdb.MustExec(sql)
