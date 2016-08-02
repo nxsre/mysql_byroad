@@ -26,6 +26,7 @@ type ReplicationClient struct {
 	confdb         *ConfigDB
 
 	binlogInfo *model.BinlogInfo
+	columnManager *ColumnManager
 }
 
 func NewReplicationClient(conf MysqlConf) *ReplicationClient {
@@ -47,6 +48,8 @@ func NewReplicationClient(conf MysqlConf) *ReplicationClient {
 	replicationClient.confdb = confdb
 	binlogInfo := &model.BinlogInfo{}
 	replicationClient.binlogInfo = binlogInfo
+	columnManager := NewColumnManager(conf)
+	replicationClient.columnManager = columnManager
 	return replicationClient
 }
 

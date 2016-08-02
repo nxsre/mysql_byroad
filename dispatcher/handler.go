@@ -55,7 +55,7 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
-			column := dispatcher.columnManager.GetColumnName(schema, table, j)
+			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
 			if dispatcher.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
@@ -83,7 +83,7 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
-			column := dispatcher.columnManager.GetColumnName(schema, table, j)
+			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
 			if dispatcher.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
@@ -115,7 +115,7 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		newRow := newRows[i]
 		dispatcher.IncStatistic(schema, table, event)
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
-			column := dispatcher.columnManager.GetColumnName(schema, table, j)
+			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
 			if dispatcher.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column

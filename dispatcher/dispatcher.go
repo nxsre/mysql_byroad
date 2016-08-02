@@ -9,7 +9,6 @@ import (
 type Dispatcher struct {
 	startTime         time.Time
 	replicationClient *ReplicationClient
-	columnManager     *ColumnManager
 	taskManager       *TaskManager
 	rpcClient         *RPCClient
 	rpcServer         *RPCServer
@@ -26,8 +25,7 @@ func NewDispatcher() *Dispatcher {
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}
 
-    //TODO: 多个mysql实例，遍历生成columnManager 和 replication client
-	columnManager := NewColumnManager(Conf.MysqlConf)
+	//TODO: 多个mysql实例，遍历生成columnManager 和 replication client
 	replicationClient := NewReplicationClient(Conf.MysqlConf)
 	handler := NewRowsEventHandler(replicationClient)
 	replicationClient.AddHandler(handler)
@@ -35,7 +33,6 @@ func NewDispatcher() *Dispatcher {
 	dispatcher := &Dispatcher{}
 	dispatcher.startTime = time.Now()
 	dispatcher.replicationClient = replicationClient
-	dispatcher.columnManager = columnManager
 	dispatcher.taskManager = taskManager
 	dispatcher.rpcClient = rpcClient
 	dispatcher.rpcServer = rpcServer
@@ -54,8 +51,8 @@ func (d *Dispatcher) IncStatistic(schema, table, event string) {
 }
 
 func (d *Dispatcher) Stop() {
-	d.replicationClient.Stop()
 	d.rpcClient.DeregisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
+	d.replicationClient.Stop()
 	<-d.replicationClient.StopChan
 	d.replicationClient.SaveBinlog()
 }
