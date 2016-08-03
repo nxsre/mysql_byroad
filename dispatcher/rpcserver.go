@@ -46,9 +46,10 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("rpc add task: %+v", task)
 	*status = "sucess"
-	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
+	taskManager := GetTaskManagerInstance()
+	taskManager.taskIdMap.Set(task.ID, task)
 	if task.Stat == model.TASK_STATE_START {
-		dispatcher.taskManager.notifyTaskMap.AddTask(task)
+		taskManager.notifyTaskMap.AddTask(task)
 	}
 	return nil
 }
@@ -56,32 +57,36 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 	log.Info("rpc delete task: ", id)
 	*status = "success"
-	dispatcher.taskManager.taskIdMap.Delete(id)
-	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
+	taskManager := GetTaskManagerInstance()
+	taskManager.taskIdMap.Delete(id)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("rpc update task: %+v", task)
 	*status = "success"
-	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
-	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
+	taskManager := GetTaskManagerInstance()
+	taskManager.taskIdMap.Set(task.ID, task)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 	log.Infof("rpc start task: %+v", task)
 	*status = "success"
-	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
-	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
+	taskManager := GetTaskManagerInstance()
+	taskManager.taskIdMap.Set(task.ID, task)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 	log.Infof("rpc stop task: %+v", task)
 	*status = "success"
-	dispatcher.taskManager.taskIdMap.Set(task.ID, task)
-	dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(dispatcher.taskManager.taskIdMap)
+	taskManager := GetTaskManagerInstance()
+	taskManager.taskIdMap.Set(task.ID, task)
+	taskManager.notifyTaskMap.UpdateNotifyTaskMap(taskManager.taskIdMap)
 	return nil
 }
 

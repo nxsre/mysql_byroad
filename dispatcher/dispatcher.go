@@ -9,7 +9,6 @@ import (
 type Dispatcher struct {
 	startTime         time.Time
 	replicationClient *ReplicationClient
-	taskManager       *TaskManager
 	rpcClient         *RPCClient
 	rpcServer         *RPCServer
 	binlogStatistics  *model.BinlogStatistics
@@ -20,7 +19,6 @@ func NewDispatcher() *Dispatcher {
 	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
 	rpcServer := NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
 	rpcClient := NewRPCClient("tcp", rpcClientSchema, "")
-	taskManager := NewTaskManager()
 	binlogStatistics := &model.BinlogStatistics{
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}
@@ -33,7 +31,6 @@ func NewDispatcher() *Dispatcher {
 	dispatcher := &Dispatcher{}
 	dispatcher.startTime = time.Now()
 	dispatcher.replicationClient = replicationClient
-	dispatcher.taskManager = taskManager
 	dispatcher.rpcClient = rpcClient
 	dispatcher.rpcServer = rpcServer
 	dispatcher.binlogStatistics = binlogStatistics

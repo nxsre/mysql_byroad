@@ -41,18 +41,23 @@ func (this *RowsEventHandler) Enqueue(schema, table, event string, taskFieldMap 
 	this.eventEnqueuer.Wait()
 }
 
+/*
+根据字段的内容，对订阅了的任务组装相应的消息内容，对于update操作，判断内容是否有变化，
+没有变化的字段将不会添加到消息体中
+*/
 func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64, fields []*model.ColumnValue) {
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
 	ntyevt.Fields = make([]*model.ColumnValue, 0)
-	task := dispatcher.taskManager.GetTask(taskid)
+	taskManager := GetTaskManagerInstance()
+	task := taskManager.GetTask(taskid)
 	if task == nil {
 		this.eventEnqueuer.Done()
 		return
 	}
 	updateChanged := false
 	for _, f := range fields {
-		tf := dispatcher.taskManager.GetTaskField(task, schema, table, f.ColunmName)
+		tf := taskManager.GetTaskField(task, schema, table, f.ColunmName)
 		if tf == nil {
 			continue
 		}

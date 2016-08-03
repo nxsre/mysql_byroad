@@ -25,10 +25,13 @@ type ReplicationClient struct {
 	StopChan       chan bool
 	confdb         *ConfigDB
 
-	binlogInfo *model.BinlogInfo
+	binlogInfo    *model.BinlogInfo
 	columnManager *ColumnManager
 }
 
+/*
+binlog replication实例，通过模拟mysql的slave，得到binlog信息，将binlog event发送到其所有的handler进行处理
+*/
 func NewReplicationClient(conf MysqlConf) *ReplicationClient {
 	replicationClient := &ReplicationClient{
 		Name:           conf.Name,
@@ -67,6 +70,10 @@ func (rep *ReplicationClient) AddHandler(handler EventHandler) {
 	rep.handler = append(rep.handler, handler)
 }
 
+/*
+生成mysql slave的实例，其中binlog的位置信息首先从配置文件中读取，如果不存在，则使用本地数据库记录的位置，
+如果本地数据库中位置信息不存在，则使用 'SHOW MASTER STATUS' 获得当前的binlog信息
+*/
 func startReplication(rep *ReplicationClient) {
 	defer func() {
 		if err := recover(); err != nil {
@@ -138,6 +145,9 @@ func (rep *ReplicationClient) SaveBinlog() {
 	rep.confdb.SaveBinlogInfo(rep.Name, rep.binlogInfo)
 }
 
+/*
+定时将binlog的信息写入本地数据库文件，防止意外丢失
+*/
 func (rep *ReplicationClient) BinlogTick() {
 	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
 	for {

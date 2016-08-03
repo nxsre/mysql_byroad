@@ -56,7 +56,7 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 	log.Info("rpc register client")
 	client, err := this.GetClient()
 	if err != nil {
-		this.pingLookup(schema, desc)
+		this.pingLoop(schema, desc)
 		return
 	}
 	defer client.Close()
@@ -69,11 +69,11 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 	if err != nil {
 		log.Errorf("register rpc client error: %s", err.Error())
 	}
-	this.pingLookup(schema, desc)
+	this.pingLoop(schema, desc)
 	return
 }
 
-func (this *RPCClient) pingLookup(schema, desc string) {
+func (this *RPCClient) pingLoop(schema, desc string) {
 	go func() {
 		for {
 			this.Ping(schema, desc)
