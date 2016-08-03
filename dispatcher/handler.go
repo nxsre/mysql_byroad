@@ -6,21 +6,28 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/siddontang/go-mysql/replication"
+	"golang.org/x/net/context"
 )
 
 type RowsEventHandler struct {
 	eventEnqueuer     *EventEnqueuer
 	replicationClient *ReplicationClient
+	taskManager *TaskManager
+	dispatcher *Dispatcher
+	ctx context.Context
 }
 
 /*
 	对row格式的数据进行处理
 */
-func NewRowsEventHandler(rep *ReplicationClient) *RowsEventHandler {
+func NewRowsEventHandler(ctx context.Context) *RowsEventHandler {
+	disp := ctx.Value("dispatcher").(*Dispatcher)
 	reh := &RowsEventHandler{}
-	eventEnqueuer := NewEventEnqueuer()
+	eventEnqueuer := NewEventEnqueuer(ctx)
 	reh.eventEnqueuer = eventEnqueuer
-	reh.replicationClient = rep
+	reh.dispatcher = disp
+	reh.replicationClient = disp.replicationClient
+	reh.taskManager = disp.taskManager
 	return reh
 }
 
@@ -48,16 +55,15 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 	log.Debug("handle write event")
 	event := model.INSERT_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	taskManager := GetTaskManagerInstance()
-	if !taskManager.InNotifyTable(schema, table) {
+	if !eh.taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
-		dispatcher.IncStatistic(schema, table, event)
+		eh.dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
-			if taskManager.InNotifyField(schema, table, column) {
+			if eh.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := r.(type) {
@@ -77,16 +83,15 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 	log.Debug("handle delete event")
 	event := model.DELETE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	taskManager := GetTaskManagerInstance()
-	if !taskManager.InNotifyTable(schema, table) {
+	if !eh.taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	for _, row := range e.Rows {
 		columns := []*model.ColumnValue{}
-		dispatcher.IncStatistic(schema, table, event)
+		eh.dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
 			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
-			if taskManager.InNotifyField(schema, table, column) {
+			if eh.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := r.(type) {
@@ -106,8 +111,7 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 	log.Debug("handle update event")
 	event := model.UPDATE_EVENT
 	schema, table := string(e.Table.Schema), string(e.Table.Table)
-	taskManager := GetTaskManagerInstance()
-	if !taskManager.InNotifyTable(schema, table) {
+	if !eh.taskManager.InNotifyTable(schema, table) {
 		return
 	}
 	oldRows, newRows := getUpdateRows(e)
@@ -115,10 +119,10 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		oldRow := oldRows[i]
 		newRow := newRows[i]
-		dispatcher.IncStatistic(schema, table, event)
+		eh.dispatcher.IncStatistic(schema, table, event)
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
 			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
-			if taskManager.InNotifyField(schema, table, column) {
+			if eh.taskManager.InNotifyField(schema, table, column) {
 				c := new(model.ColumnValue)
 				c.ColunmName = column
 				switch t := newRow[j].(type) {
@@ -155,9 +159,8 @@ func (eh *RowsEventHandler) genNotifyEvents(schema, table string, columns []*mod
 	log.Debugf("gen notify event: %s %s %s %v", event, schema, table, columns)
 	//为相应的任务添加订阅了的字段
 	taskFieldMap := make(map[int64][]*model.ColumnValue)
-	taskManager := GetTaskManagerInstance()
 	for _, column := range columns {
-		ids := taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
+		ids := eh.taskManager.GetNotifyTaskIDs(schema, table, column.ColunmName)
 		log.Debug("%s %s %s %d", schema, table, column.ColunmName, ids)
 		for _, taskID := range ids {
 			if taskFieldMap[taskID] == nil {

@@ -3,9 +3,9 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
-	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"golang.org/x/net/context"
 )
 
 type TaskManager struct {
@@ -13,25 +13,15 @@ type TaskManager struct {
 	taskIdMap     *TaskIdMap
 }
 
-var taskManager *TaskManager
-var once sync.Once
-
-func newTaskManager() *TaskManager {
+func NewTaskManager(ctx context.Context) *TaskManager {
+	config := ctx.Value("dispatcher").(*Dispatcher).Config.MonitorConf
 	tm := &TaskManager{}
-	tm.initTasks()
+	tm.initTasks(config.Host, config.RpcPort)
 	return tm
 }
 
-func GetTaskManagerInstance() *TaskManager {
-	once.Do(func() {
-		taskManager = newTaskManager()
-	})
-	return taskManager
-}
-
-func (tm *TaskManager) initTasks() {
-	conf := Conf.MonitorConf
-	schema := fmt.Sprintf("%s:%d", conf.Host, conf.RpcPort)
+func (tm *TaskManager) initTasks(host string, port int) {
+	schema := fmt.Sprintf("%s:%d", host, port)
 	rpcClient := NewRPCClient("tcp", schema, "")
 	tasks, err := rpcClient.GetAllTasks("")
 	if err != nil {

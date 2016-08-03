@@ -9,6 +9,7 @@ import (
 	"github.com/siddontang/go-mysql/client"
 	"github.com/siddontang/go-mysql/mysql"
 	"github.com/siddontang/go-mysql/replication"
+	"golang.org/x/net/context"
 )
 
 type ReplicationClient struct {
@@ -32,7 +33,8 @@ type ReplicationClient struct {
 /*
 binlog replication实例，通过模拟mysql的slave，得到binlog信息，将binlog event发送到其所有的handler进行处理
 */
-func NewReplicationClient(conf MysqlConf) *ReplicationClient {
+func NewReplicationClient(ctx context.Context) *ReplicationClient {
+	conf := ctx.Value("dispatcher").(*Dispatcher).Config.MysqlConf
 	replicationClient := &ReplicationClient{
 		Name:           conf.Name,
 		ServerId:       conf.ServerId,
@@ -51,7 +53,7 @@ func NewReplicationClient(conf MysqlConf) *ReplicationClient {
 	replicationClient.confdb = confdb
 	binlogInfo := &model.BinlogInfo{}
 	replicationClient.binlogInfo = binlogInfo
-	columnManager := NewColumnManager(conf)
+	columnManager := NewColumnManager(ctx)
 	replicationClient.columnManager = columnManager
 	return replicationClient
 }
@@ -77,7 +79,7 @@ func (rep *ReplicationClient) AddHandler(handler EventHandler) {
 func startReplication(rep *ReplicationClient) {
 	defer func() {
 		if err := recover(); err != nil {
-			log.Errorf("%v", err)
+			log.Panicf("%v", err)
 			rep.StopChan <- true
 		}
 	}()

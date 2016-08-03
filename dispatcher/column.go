@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
+	"golang.org/x/net/context"
 )
 
 type columnMap map[string]map[string][]string
@@ -23,12 +24,16 @@ type ColumnManager struct {
 	db       *sql.DB
 	columns  columnMap
 	sync.RWMutex
+	ctx context.Context
 }
 
 /*
    读取mysql的information_schema表，获取所有列的相关信息
 */
-func NewColumnManager(config MysqlConf) *ColumnManager {
+func NewColumnManager(ctx context.Context) *ColumnManager {
+	dis := ctx.Value("dispatcher").(*Dispatcher)
+	config := dis.Config.MysqlConf
+
 	cm := ColumnManager{
 		username: config.Username,
 		password: config.Password,

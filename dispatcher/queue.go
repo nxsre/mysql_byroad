@@ -6,6 +6,7 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
+	"golang.org/x/net/context"
 )
 
 type Enqueuer interface {
@@ -13,12 +14,16 @@ type Enqueuer interface {
 }
 type EventEnqueuer struct {
 	queueManager Enqueuer
+	taskManager *TaskManager
 	sync.WaitGroup
 }
 
-func NewEventEnqueuer() *EventEnqueuer {
+func NewEventEnqueuer(ctx context.Context) *EventEnqueuer {
+	disp := ctx.Value("dispatcher").(*Dispatcher)
+	config := disp.Config
 	ee := &EventEnqueuer{}
-	qm, err := nsqm.NewNSQManager(Conf.NSQConf.LookupdHttpAddrs, Conf.NSQConf.NsqdAddrs, nil)
+	ee.taskManager = disp.taskManager
+	qm, err := nsqm.NewNSQManager(config.NSQConf.LookupdHttpAddrs, config.NSQConf.NsqdAddrs, nil)
 	if err != nil {
 		log.Error(err.Error())
 	}
@@ -49,15 +54,14 @@ func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64,
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
 	ntyevt.Fields = make([]*model.ColumnValue, 0)
-	taskManager := GetTaskManagerInstance()
-	task := taskManager.GetTask(taskid)
+	task := this.taskManager.GetTask(taskid)
 	if task == nil {
 		this.eventEnqueuer.Done()
 		return
 	}
 	updateChanged := false
 	for _, f := range fields {
-		tf := taskManager.GetTaskField(task, schema, table, f.ColunmName)
+		tf := this.taskManager.GetTaskField(task, schema, table, f.ColunmName)
 		if tf == nil {
 			continue
 		}

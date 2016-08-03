@@ -10,20 +10,16 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-var (
-	dispatcher *Dispatcher
-)
-
 func main() {
 	InitLog()
 	log.Debugf("Conf: %+v", Conf)
-	dispatcher = NewDispatcher()
+	dispatcher := NewDispatcher(&Conf)
 	dispatcher.Start()
-	HandleSignal()
+	dispatcher.HandleSignal()
 }
 
 // HandleSignal fetch signal from chan then do exit or reload.
-func HandleSignal() {
+func (d *Dispatcher) HandleSignal() {
 	// Block until a signal is received.
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, syscall.SIGHUP, syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGINT, syscall.SIGSTOP)
@@ -32,7 +28,7 @@ func HandleSignal() {
 		log.Infof("get a signal %s", s.String())
 		switch s {
 		case syscall.SIGQUIT, syscall.SIGTERM, syscall.SIGSTOP, syscall.SIGINT:
-			dispatcher.Stop()
+			d.Stop()
 			time.Sleep(1 * time.Second)
 			return
 		case syscall.SIGHUP:

@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"time"
+
+	"golang.org/x/net/context"
 )
 
 type Dispatcher struct {
@@ -12,28 +14,35 @@ type Dispatcher struct {
 	rpcClient         *RPCClient
 	rpcServer         *RPCServer
 	binlogStatistics  *model.BinlogStatistics
+	taskManager       *TaskManager
+	Config            *Config
 }
 
-func NewDispatcher() *Dispatcher {
-	rpcClientSchema := fmt.Sprintf("%s:%d", Conf.MonitorConf.Host, Conf.MonitorConf.RpcPort)
-	rpcServerSchema := fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port)
-	rpcServer := NewRPCServer("tcp", rpcServerSchema, Conf.RPCServerConf.Desc)
+func NewDispatcher(config *Config) *Dispatcher {
+	dispatcher := &Dispatcher{
+		Config: config,
+	}
+	dispatcher.startTime = time.Now()
+	ctx := context.WithValue(context.Background(), "dispatcher", dispatcher)
+
+	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
+	rpcServerSchema := fmt.Sprintf("%s:%d", config.RPCServerConf.Host, config.RPCServerConf.Port)
+	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.RPCServerConf.Desc)
 	rpcClient := NewRPCClient("tcp", rpcClientSchema, "")
+	dispatcher.rpcClient = rpcClient
+	dispatcher.rpcServer = rpcServer
 	binlogStatistics := &model.BinlogStatistics{
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}
+	dispatcher.binlogStatistics = binlogStatistics
+	taskManager := NewTaskManager(ctx)
+	dispatcher.taskManager = taskManager
 
 	//TODO: 多个mysql实例，遍历生成columnManager 和 replication client
-	replicationClient := NewReplicationClient(Conf.MysqlConf)
-	handler := NewRowsEventHandler(replicationClient)
-	replicationClient.AddHandler(handler)
-
-	dispatcher := &Dispatcher{}
-	dispatcher.startTime = time.Now()
+	replicationClient := NewReplicationClient(ctx)
 	dispatcher.replicationClient = replicationClient
-	dispatcher.rpcClient = rpcClient
-	dispatcher.rpcServer = rpcServer
-	dispatcher.binlogStatistics = binlogStatistics
+	handler := NewRowsEventHandler(ctx)
+	replicationClient.AddHandler(handler)
 	return dispatcher
 }
 
