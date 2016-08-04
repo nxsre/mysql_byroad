@@ -3,8 +3,12 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
+	"os"
+	"os/signal"
+	"syscall"
 	"time"
 
+	log "github.com/Sirupsen/logrus"
 	"golang.org/x/net/context"
 )
 
