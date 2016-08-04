@@ -12,9 +12,8 @@ import (
 type RowsEventHandler struct {
 	eventEnqueuer     *EventEnqueuer
 	replicationClient *ReplicationClient
-	taskManager *TaskManager
-	dispatcher *Dispatcher
-	ctx context.Context
+	taskManager       *TaskManager
+	dispatcher        *Dispatcher
 }
 
 /*

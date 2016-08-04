@@ -1,6 +1,7 @@
 {
 	"ImportPath": "mysql_byroad",
 	"GoVersion": "go1.6",
+	"GodepVersion": "v74",
 	"Packages": [
 		"./..."
 	],
@@ -18,10 +19,6 @@
 		{
 			"ImportPath": "github.com/Unknwon/com",
 			"Rev": "28b053d5a2923b87ce8c5a08f3af779894a72758"
-		},
-		{
-			"ImportPath": "github.com/Unknwon/goconfig",
-			"Rev": "18bc852dc01720ee9f0e9e0a01a1bdbc8744095c"
 		},
 		{
 			"ImportPath": "github.com/go-macaron/binding",
@@ -101,6 +98,10 @@
 		{
 			"ImportPath": "github.com/siddontang/go/hack",
 			"Rev": "354e14e6c093c661abb29fd28403b3c19cff5514"
+		},
+		{
+			"ImportPath": "golang.org/x/net/context",
+			"Rev": "154d9f9ea81208afed560f4cf27b4860c8ed1904"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",

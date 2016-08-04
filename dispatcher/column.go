@@ -10,7 +10,6 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
-	"golang.org/x/net/context"
 )
 
 type columnMap map[string]map[string][]string
@@ -24,7 +23,6 @@ type ColumnManager struct {
 	db       *sql.DB
 	columns  columnMap
 	sync.RWMutex
-	ctx context.Context
 }
 
 /*

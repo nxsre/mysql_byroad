@@ -11,8 +11,8 @@ host = "127.0.0.1"
 port = 3306
 username = "root"
 password = "root"
-binlog_filename = ""
-binlog_position = 0
+binlog_filename = "mysql-bin.000072"
+binlog_position = 12020
 exclude = ["information_schema", "performance_schema", "mysql"]
 
 # monitor的地址和rpc信息，用于获取任务信息

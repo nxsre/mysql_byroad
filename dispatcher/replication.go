@@ -26,9 +26,9 @@ type ReplicationClient struct {
 	StopChan       chan bool
 	confdb         *ConfigDB
 
-	binlogInfo    *model.BinlogInfo
-	columnManager *ColumnManager
-	ctx           context.Context
+	binlogInfo         *model.BinlogInfo
+	columnManager      *ColumnManager
+	saveBinlogInterval time.Duration
 }
 
 /*
@@ -38,16 +38,16 @@ func NewReplicationClient(ctx context.Context) *ReplicationClient {
 	conf := ctx.Value("dispatcher").(*Dispatcher).Config
 	myconf := conf.MysqlConf
 	replicationClient := &ReplicationClient{
-		Name:           myconf.Name,
-		ServerId:       myconf.ServerId,
-		Host:           myconf.Host,
-		Port:           myconf.Port,
-		Username:       myconf.Username,
-		Password:       myconf.Password,
-		BinlogFilename: myconf.BinlogFilename,
-		BinlogPosition: myconf.BinlogPosition,
-		StopChan:       make(chan bool, 1),
-		ctx:            ctx,
+		Name:               myconf.Name,
+		ServerId:           myconf.ServerId,
+		Host:               myconf.Host,
+		Port:               myconf.Port,
+		Username:           myconf.Username,
+		Password:           myconf.Password,
+		BinlogFilename:     myconf.BinlogFilename,
+		BinlogPosition:     myconf.BinlogPosition,
+		StopChan:           make(chan bool, 1),
+		saveBinlogInterval: conf.BinlogInterval.Duration,
 	}
 	confdb, err := NewConfigDB(conf.ConfigDB)
 	if err != nil {
@@ -154,8 +154,7 @@ func (rep *ReplicationClient) SaveBinlog() {
 定时将binlog的信息写入本地数据库文件，防止意外丢失
 */
 func (rep *ReplicationClient) BinlogTick() {
-	duration := rep.ctx.Value("dispatcher").(*Dispatcher).Config.BinlogInterval.Duration
-	ticker := time.NewTicker(duration)
+	ticker := time.NewTicker(rep.saveBinlogInterval)
 	for {
 		select {
 		case <-ticker.C:
