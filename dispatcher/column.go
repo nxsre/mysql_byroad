@@ -30,10 +30,7 @@ type ColumnManager struct {
 /*
    读取mysql的information_schema表，获取所有列的相关信息
 */
-func NewColumnManager(ctx context.Context) *ColumnManager {
-	dis := ctx.Value("dispatcher").(*Dispatcher)
-	config := dis.Config.MysqlConf
-
+func NewColumnManager(config MysqlConf) *ColumnManager {
 	cm := ColumnManager{
 		username: config.Username,
 		password: config.Password,

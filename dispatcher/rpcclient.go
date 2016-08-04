@@ -9,9 +9,10 @@ import (
 )
 
 type RPCClient struct {
-	protocol string
-	Schema   string
-	Desc     string
+	protocol     string
+	Schema       string
+	Desc         string
+	pingInterval time.Duration
 }
 
 type ServiceSignal struct {
@@ -20,11 +21,12 @@ type ServiceSignal struct {
 	Desc   string
 }
 
-func NewRPCClient(protocol, schema, desc string) *RPCClient {
+func NewRPCClient(protocol, schema, desc string, ping time.Duration) *RPCClient {
 	client := RPCClient{
-		protocol: protocol,
-		Schema:   schema,
-		Desc:     desc,
+		protocol:     protocol,
+		Schema:       schema,
+		Desc:         desc,
+		pingInterval: ping,
 	}
 
 	return &client
@@ -77,7 +79,7 @@ func (this *RPCClient) pingLoop(schema, desc string) {
 	go func() {
 		for {
 			this.Ping(schema, desc)
-			time.Sleep(Conf.RPCPingInterval.Duration)
+			time.Sleep(this.pingInterval)
 		}
 	}()
 }

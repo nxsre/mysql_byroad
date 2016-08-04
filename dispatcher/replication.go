@@ -28,32 +28,35 @@ type ReplicationClient struct {
 
 	binlogInfo    *model.BinlogInfo
 	columnManager *ColumnManager
+	ctx           context.Context
 }
 
 /*
 binlog replication实例，通过模拟mysql的slave，得到binlog信息，将binlog event发送到其所有的handler进行处理
 */
 func NewReplicationClient(ctx context.Context) *ReplicationClient {
-	conf := ctx.Value("dispatcher").(*Dispatcher).Config.MysqlConf
+	conf := ctx.Value("dispatcher").(*Dispatcher).Config
+	myconf := conf.MysqlConf
 	replicationClient := &ReplicationClient{
-		Name:           conf.Name,
-		ServerId:       conf.ServerId,
-		Host:           conf.Host,
-		Port:           conf.Port,
-		Username:       conf.Username,
-		Password:       conf.Password,
-		BinlogFilename: conf.BinlogFilename,
-		BinlogPosition: conf.BinlogPosition,
+		Name:           myconf.Name,
+		ServerId:       myconf.ServerId,
+		Host:           myconf.Host,
+		Port:           myconf.Port,
+		Username:       myconf.Username,
+		Password:       myconf.Password,
+		BinlogFilename: myconf.BinlogFilename,
+		BinlogPosition: myconf.BinlogPosition,
 		StopChan:       make(chan bool, 1),
+		ctx:            ctx,
 	}
-	confdb, err := NewConfigDB()
+	confdb, err := NewConfigDB(conf.ConfigDB)
 	if err != nil {
 		log.Panic(err)
 	}
 	replicationClient.confdb = confdb
 	binlogInfo := &model.BinlogInfo{}
 	replicationClient.binlogInfo = binlogInfo
-	columnManager := NewColumnManager(ctx)
+	columnManager := NewColumnManager(conf.MysqlConf)
 	replicationClient.columnManager = columnManager
 	return replicationClient
 }
@@ -151,7 +154,8 @@ func (rep *ReplicationClient) SaveBinlog() {
 定时将binlog的信息写入本地数据库文件，防止意外丢失
 */
 func (rep *ReplicationClient) BinlogTick() {
-	ticker := time.NewTicker(Conf.BinlogInterval.Duration)
+	duration := rep.ctx.Value("dispatcher").(*Dispatcher).Config.BinlogInterval.Duration
+	ticker := time.NewTicker(duration)
 	for {
 		select {
 		case <-ticker.C:

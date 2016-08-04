@@ -21,8 +21,6 @@ func (d *duration) UnmarshalText(text []byte) error {
 	return err
 }
 
-var Conf Config
-
 type Config struct {
 	ConfigDB        string        `toml:"config_db"`
 	Logfile         string        `toml:"logfile"`
@@ -64,12 +62,14 @@ type NSQConf struct {
 	LookupInterval   duration `toml:"lookup_interval"`
 }
 
-func init() {
+func InitConfig() *Config {
+	config := Config{}
 	configFile := ParseConfig()
-	_, err := toml.DecodeFile(configFile, &Conf)
+	_, err := toml.DecodeFile(configFile, &config)
 	if err != nil {
 		panic(err)
 	}
+	return &config
 }
 
 func ParseConfig() string {
@@ -83,16 +83,16 @@ type ConfigDB struct {
 	filename string
 }
 
-func NewConfigDB() (*ConfigDB, error) {
+func NewConfigDB(filename string) (*ConfigDB, error) {
 	confdb := &ConfigDB{}
-	db, err := sqlx.Open("sqlite3", Conf.ConfigDB)
+	db, err := sqlx.Open("sqlite3", filename)
 	if err != nil {
 		return nil, err
 	}
 	model.Init(db)
 	model.CreateConfigTable()
 	confdb.db = db
-	confdb.filename = Conf.ConfigDB
+	confdb.filename = filename
 	return confdb, nil
 }
 
