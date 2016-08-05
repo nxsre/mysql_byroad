@@ -318,6 +318,15 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	task := new(model.Task)
 	copyTask(&t, task)
 	task.CreateUser = sess.Get("user").(string)
+	schema := ctx.GetCookie("client")
+	rpcclient, ok := dispatcherManager.GetRPCClient(schema)
+	if !ok {
+		resp.Error = true
+		resp.Message = "没有相应的数据库实例"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	task.DBInstanceName = rpcclient.Desc
 	task.Fields = *new(model.NotifyFields)
 	for _, c := range fields {
 		send := ctx.QueryInt(c)
@@ -464,10 +473,14 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	var sortTasks []*model.Task
+	schema := ctx.GetCookie("client")
+	client, ok := dispatcherManager.GetRPCClient(schema)
 	if checkAuth(ctx, sess, "admin") {
-		sortTasks, _ = model.GetAllTask()
+		if ok {
+			sortTasks, _ = model.GetTaskByInstanceName(client.Desc)
+		}
 	} else {
-		sortTasks, _ = model.GetTasks(sess.Get("user").(string))
+		sortTasks, _ = model.GetTasksByUserAndInstance(sess.Get("user").(string), client.Desc)
 	}
 	sort.Sort(TaskSlice(sortTasks))
 	ctx.Data["tasks"] = sortTasks

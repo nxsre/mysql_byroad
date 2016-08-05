@@ -26,6 +26,7 @@ type Task struct {
 	Desc           string
 	Statistic      *Statistic
 	PackProtocal   DataPackProtocal `db:"pack_protocal"`
+	DBInstanceName string           `db:"db_instance_name"` // 该任务所属的mysql实例
 }
 
 func CreateTaskTable() {
@@ -43,14 +44,18 @@ func CreateTaskTable() {
 		"`retry_count` INTEGER NOT NULL," +
 		"`timeout` INTEGER NOT NULL," +
 		"`desc` VARCHAR(255)," +
-		"`pack_protocal` INTEGER" +
+		"`pack_protocal` INTEGER," +
+		"`db_instance_name` VARCHAR(255) NOT NULL," +
 		")"
 	confdb.MustExec(s)
 }
 
 func (task *Task) _insert() (id int64, err error) {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
-	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat, task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal)
+	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
+		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
+		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
+		task.DBInstanceName)
 	if err != nil {
 		return 0, err
 	}
@@ -206,9 +211,51 @@ func (task *Task) NameExists() (bool, error) {
 	}
 }
 
-func GetTasks(createUser string) ([]*Task, error) {
+func GetTasksByUser(createUser string) ([]*Task, error) {
 	ts := []*Task{}
 	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=?", createUser)
+	if err != nil {
+		return nil, err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range ts {
+		for _, field := range fields {
+			if task.ID == field.TaskID {
+				task.Fields = append(task.Fields, field)
+			}
+		}
+	}
+	return ts, nil
+}
+
+func GetTaskByInstanceName(name string) ([]*Task, error) {
+	ts := []*Task{}
+	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE db_instance_name=?", name)
+	if err != nil {
+		return nil, err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range ts {
+		for _, field := range fields {
+			if task.ID == field.TaskID {
+				task.Fields = append(task.Fields, field)
+			}
+		}
+	}
+	return ts, nil
+}
+
+func GetTasksByUserAndInstance(username, instance string) ([]*Task, error) {
+	ts := []*Task{}
+	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=? AND db_instance_name=?", username, instance)
 	if err != nil {
 		return nil, err
 	}

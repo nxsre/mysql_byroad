@@ -31,7 +31,7 @@ func NewDispatcher(config *Config) *Dispatcher {
 
 	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
 	rpcServerSchema := fmt.Sprintf("%s:%d", config.RPCServerConf.Host, config.RPCServerConf.Port)
-	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.RPCServerConf.Desc)
+	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.DBInstanceName)
 	rpcClient := NewRPCClient("tcp", rpcClientSchema, "", config.RPCPingInterval.Duration)
 	dispatcher.rpcClient = rpcClient
 	dispatcher.rpcServer = rpcServer

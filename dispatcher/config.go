@@ -31,6 +31,7 @@ type Config struct {
 	RPCServerConf   RPCServerConf `toml:"rpc_server"`
 	NSQConf         NSQConf       `toml:"nsq"`
 	LogLevel        string        `toml:"loglevel"`
+	DBInstanceName  string        `toml:"db_instance_name"`
 }
 
 type MysqlConf struct {
