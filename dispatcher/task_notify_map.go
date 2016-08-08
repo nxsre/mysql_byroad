@@ -45,9 +45,9 @@ func (this *NotifyTaskMap) GetNotifyTaskIDs(schema, table, column string) []int6
 	cmap := this.notifyTasks
 	log.Debugf("notify tasks: %+v", cmap)
 	var ids = []int64{}
-	if cmap != nil && cmap[schema] != nil && cmap[schema][table] != nil && cmap[schema][table][column] != nil {
+	/*	if cmap != nil && cmap[schema] != nil && cmap[schema][table] != nil && cmap[schema][table][column] != nil {
 		ids = append(ids, cmap[schema][table][column]...)
-	}
+	}*/
 	for s, smap := range cmap {
 		if isSchemaMatch(s, schema) {
 			for k, _ := range smap {

@@ -89,7 +89,7 @@ func (tm *TaskManager) UpdateTask(task *model.Task) {
 func (tm *TaskManager) newConsumers(task *model.Task) []*nsq.Consumer {
 	consumers := make([]*nsq.Consumer, 0, 10)
 	for i := 0; i < task.RoutineCount; i++ {
-		c := NewNSQConsumer(task.Name, task.Name, 1)
+		c := NewTaskConsumer(task)
 		consumers = append(consumers, c)
 	}
 	return consumers
@@ -108,7 +108,7 @@ func (tm *TaskManager) incConsumers(task *model.Task, num int) {
 	if consums, ok := tm.taskConsumerMap[task.ID]; ok {
 		log.Debugf("before: len consumers %d", len(consums))
 		for i := 0; i < num; i++ {
-			c := NewNSQConsumer(task.Name, task.Name, 1)
+			c := NewTaskConsumer(task)
 			consums = append(consums, c)
 		}
 		tm.taskConsumerMap[task.ID] = consums
