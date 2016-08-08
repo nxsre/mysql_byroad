@@ -14,6 +14,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/go-macaron/binding"
+	"github.com/go-macaron/gzip"
 	"github.com/go-macaron/pongo2"
 	"github.com/go-macaron/session"
 	"gopkg.in/macaron.v1"
@@ -63,6 +64,8 @@ func StartServer() {
 		//Provider:       "redis",
 		//ProviderConfig: fmt.Sprintf("addr=%s:%s", redisHost, redisPort),
 	}))
+	m.Use(gzip.Gziper())
+
 	m.Use(func(ctx *macaron.Context, sess session.Store) {
 		if ctx.Req.URL.Path == "/auth/login" {
 			return

@@ -25,6 +25,10 @@
 			"Rev": "2502aaf4bce3a4e6451b4610847bfb8dffdb6266"
 		},
 		{
+			"ImportPath": "github.com/go-macaron/gzip",
+			"Rev": "cad1c6580a07c56f5f6bc52d66002a05985c5854"
+		},
+		{
 			"ImportPath": "github.com/go-macaron/inject",
 			"Rev": "c5ab7bf3a307593cd44cb272d1a5beea473dd072"
 		},
@@ -54,6 +58,26 @@
 		{
 			"ImportPath": "github.com/juju/errors",
 			"Rev": "b2c7a7da5b2995941048f60146e67702a292e468"
+		},
+		{
+			"ImportPath": "github.com/klauspost/compress/flate",
+			"Comment": "v1.0-12-g14eb9c4",
+			"Rev": "14eb9c4951195779ecfbec34431a976de7335b0a"
+		},
+		{
+			"ImportPath": "github.com/klauspost/compress/gzip",
+			"Comment": "v1.0-12-g14eb9c4",
+			"Rev": "14eb9c4951195779ecfbec34431a976de7335b0a"
+		},
+		{
+			"ImportPath": "github.com/klauspost/cpuid",
+			"Comment": "v1.0",
+			"Rev": "09cded8978dc9e80714c4d85b0322337b0a1e5e0"
+		},
+		{
+			"ImportPath": "github.com/klauspost/crc32",
+			"Comment": "v1.0",
+			"Rev": "19b0b332c9e4516a6370a0456e6182c3b5036720"
 		},
 		{
 			"ImportPath": "github.com/mattn/go-sqlite3",
@@ -119,7 +143,8 @@
 		},
 		{
 			"ImportPath": "gopkg.in/macaron.v1",
-			"Rev": "1c6dd87797ae9319b4658cbd48d1d0420b279fd5"
+			"Comment": "v1.1.6",
+			"Rev": "2133042f8d1022b8253e4e23f7940467941409ce"
 		}
 	]
 }
