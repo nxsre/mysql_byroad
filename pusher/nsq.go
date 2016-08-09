@@ -16,7 +16,7 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 	log.Debug(string(msg.Body))
 	evt := new(model.NotifyEvent)
 	err := json.Unmarshal(msg.Body, evt)
-	evt.RetryCount = int(msg.Attempts)
+	evt.RetryCount = int(msg.Attempts) - 1
 	ret, err := sendClient.SendMessage(evt)
 	log.Debugf("send message ret %s, error: %v", ret, err)
 	if !isSuccessSend(ret) {
@@ -47,7 +47,7 @@ func NewNSQConsumer(topic, channel string, concurrency int) *nsq.Consumer {
 
 func NewTaskConsumer(task *model.Task) *nsq.Consumer {
 	config := nsq.NewConfig()
-	config.MaxAttempts = uint16(task.RetryCount)
+	config.MaxAttempts = uint16(task.RetryCount + 1)
 	config.DefaultRequeueDelay = time.Millisecond * time.Duration(task.ReSendTime)
 	c, err := nsq.NewConsumer(task.Name, task.Name, config)
 	if err != nil {

@@ -8,15 +8,19 @@
         <tr>
             <th>Channel</th>
             <th>当前消息总数</th>
+            <th>准备重推消息数</th>
             <th>磁盘消息数</th>
             <th>已接收送消息总数</th>
+            <th>重推消息总数</th>
         </tr>
         {% for channel in statistic.Topic.Channels %}
             <tr>
                 <td>{{channel.Name}}</td>
                 <td>{{channel.Depth}}</td>
+                <td>{{channel.DeferredCount}}</td>
                 <td>{{channel.BackendDepth}}</td>
                 <td>{{channel.MessageCount}}</td>
+                <td>{{channel.RequeueCount}}</td>
             </tr>
         {% endfor %}
     </table>
