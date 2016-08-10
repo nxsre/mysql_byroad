@@ -89,7 +89,7 @@ func startReplication(rep *ReplicationClient) {
 	syncer := replication.NewBinlogSyncer(rep.ServerId, "mysql")
 	err := syncer.RegisterSlave(rep.Host, rep.Port, rep.Username, rep.Password)
 	if err != nil {
-		log.Panicf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+		log.Fatalf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
 	}
 	filename := rep.BinlogFilename
 	pos := rep.BinlogPosition
@@ -130,8 +130,7 @@ func startReplication(rep *ReplicationClient) {
 			if err == replication.ErrGetEventTimeout {
 				continue
 			} else {
-				log.Error(err.Error())
-				continue
+				log.Fatalf("get event: %s", err.Error())
 			}
 		}
 		for _, handler := range rep.handler {
