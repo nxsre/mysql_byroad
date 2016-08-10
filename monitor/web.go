@@ -349,10 +349,11 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 			task.Fields = append(task.Fields, f)
 		}
 	}
-	if ex, _ := task.NameExists(); ex {
+	if ex, err := task.NameExists(); ex {
 		resp.Error = true
 		resp.Message = "任务名已经存在!"
 		body, _ := json.Marshal(resp)
+		log.Errorf("add task: %s", err.Error())
 		return string(body)
 	}
 
@@ -360,6 +361,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	if err != nil {
 		resp.Error = true
 		resp.Message = "添加失败!"
+		log.Errorf("add task: %s", err.Error())
 	} else {
 		resp.Message = "添加成功!"
 	}
@@ -394,6 +396,7 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	if err != nil {
 		resp.Error = true
 		resp.Message = "删除失败"
+		log.Error("delete task: ", err.Error())
 	} else {
 		resp.Message = "删除成功"
 	}
@@ -415,7 +418,8 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	task := &model.Task{
 		ID: taskid,
 	}
-	if ext, _ := task.Exists(); !ext {
+	if ext, err := task.Exists(); !ext {
+		log.Errorf("do update task: %s", err.Error())
 		return return403(ctx)
 	}
 	if !checkTaskUser(task, sess) {
@@ -459,6 +463,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
+		log.Error("do update task: ", err.Error())
 	} else {
 		resp.Message = "更新成功!"
 	}
@@ -478,12 +483,21 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 	var sortTasks []*model.Task
 	schema := ctx.GetCookie("client")
 	client, ok := dispatcherManager.GetRPCClient(schema)
+	var err error
 	if checkAuth(ctx, sess, "admin") {
 		if ok {
-			sortTasks, _ = model.GetTaskByInstanceName(client.Desc)
+			sortTasks, err = model.GetTaskByInstanceName(client.Desc)
+			if err != nil {
+				log.Error("get task by instance name: ", err.Error())
+			}
 		}
 	} else {
-		sortTasks, _ = model.GetTasksByUserAndInstance(sess.Get("user").(string), client.Desc)
+		if ok {
+			sortTasks, err = model.GetTasksByUserAndInstance(sess.Get("user").(string), client.Desc)
+			if err != nil {
+				log.Error("get tasks by user and instance: ", err.Error())
+			}
+		}
 	}
 	sort.Sort(TaskSlice(sortTasks))
 	ctx.Data["tasks"] = sortTasks
@@ -512,6 +526,7 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
+		log.Error("change task stat: ", err.Error())
 	} else {
 		resp.Error = false
 		resp.Message = "操作成功"
@@ -549,7 +564,10 @@ func loglist(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	tls, _ := model.GetTaskLogByTaskId(taskid, 0, 20)
+	tls, err := model.GetTaskLogByTaskId(taskid, 0, 20)
+	if err != nil {
+		log.Error("get task log by task id: ", err.Error())
+	}
 	for _, tl := range tls {
 		tl.CreateTime = tl.CreateTime.Local()
 	}
