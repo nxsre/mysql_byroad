@@ -8,29 +8,28 @@ import (
 )
 
 type PusherManager struct {
-	rpcclients map[string]*RPCClient
-	timers     map[string]*time.Timer
+	rpcclients *RPCClientMap
+	timers     *TimerMap
 }
 
 func NewPusherManager() *PusherManager {
 	pm := &PusherManager{
-		rpcclients: make(map[string]*RPCClient, 10),
-		timers:     make(map[string]*time.Timer, 10),
+		rpcclients: NewRPCClientMap(),
+		timers:     NewTimerMap(),
 	}
 	return pm
 }
 
 func (pm *PusherManager) GetPushClient(schema string) (*RPCClient, bool) {
-	client, ok := pm.rpcclients[schema]
-	return client, ok
+	return pm.rpcclients.Get(schema)
 }
 
 func (pm *PusherManager) AddPushClient(schema, desc string) {
-	if _, ok := pm.rpcclients[schema]; !ok {
+	if _, ok := pm.rpcclients.Get(schema); !ok {
 		client := NewRPCClient("tcp", schema, desc)
-		pm.rpcclients[schema] = client
+		pm.rpcclients.Set(schema, client)
 		timer := time.NewTimer(Conf.RPCClientLookupInterval.Duration)
-		pm.timers[schema] = timer
+		pm.timers.Set(schema, timer)
 		go func() {
 			for {
 				<-timer.C
@@ -39,29 +38,29 @@ func (pm *PusherManager) AddPushClient(schema, desc string) {
 		}()
 	}
 
-	log.Infof("add push client: %s, length: %d ", schema, len(pm.rpcclients))
+	log.Infof("add push client: %s, length: %d ", schema, pm.rpcclients.Length())
 }
 
 func (pm *PusherManager) DeletePushClient(schema string) {
-	delete(pm.rpcclients, schema)
-	if timer, ok := pm.timers[schema]; ok {
+	pm.rpcclients.Delete(schema)
+	if timer, ok := pm.timers.Get(schema); ok {
 		timer.Stop()
 	}
-	delete(pm.timers, schema)
-	log.Infof("delete push client %s, length: %d", schema, len(pm.rpcclients))
+	pm.timers.Delete(schema)
+	log.Infof("delete push client %s, length: %d", schema, pm.rpcclients.Length())
 }
 
 func (pm *PusherManager) UpdatePushClient(schema, desc string) {
-	if timer, ok := pm.timers[schema]; ok {
+	if timer, ok := pm.timers.Get(schema); ok {
 		timer.Reset(Conf.RPCClientLookupInterval.Duration)
 	}
-	if _, ok := pm.rpcclients[schema]; !ok {
+	if _, ok := pm.rpcclients.Get(schema); !ok {
 		pm.AddPushClient(schema, desc)
 	}
 }
 
 func (pm *PusherManager) AddTask(task *model.Task) {
-	for _, client := range pm.rpcclients {
+	for client := range pm.rpcclients.Iter() {
 		status, err := client.AddTask(task)
 		if err != nil {
 			log.Errorf("pusher manager add task status: %s, error: %s", status, err.Error())
@@ -70,7 +69,7 @@ func (pm *PusherManager) AddTask(task *model.Task) {
 }
 
 func (pm *PusherManager) DeleteTask(task *model.Task) {
-	for _, client := range pm.rpcclients {
+	for client := range pm.rpcclients.Iter() {
 		status, err := client.DeleteTask(task)
 		if err != nil {
 			log.Errorf("pusher manager delete task status: %s, error: %s", status, err.Error())
@@ -79,7 +78,7 @@ func (pm *PusherManager) DeleteTask(task *model.Task) {
 }
 
 func (pm *PusherManager) UpdateTask(task *model.Task) {
-	for _, client := range pm.rpcclients {
+	for client := range pm.rpcclients.Iter() {
 		status, err := client.UpdateTask(task)
 		if err != nil {
 			log.Errorf("pusher manager update task status: %s, error: %s", status, err.Error())
@@ -88,7 +87,7 @@ func (pm *PusherManager) UpdateTask(task *model.Task) {
 }
 
 func (pm *PusherManager) StartTask(task *model.Task) {
-	for _, client := range pm.rpcclients {
+	for client := range pm.rpcclients.Iter() {
 		status, err := client.StartTask(task)
 		if err != nil {
 			log.Errorf("pusher manager start task status: %s, error: %s", status, err.Error())
@@ -97,7 +96,7 @@ func (pm *PusherManager) StartTask(task *model.Task) {
 }
 
 func (pm *PusherManager) StopTask(task *model.Task) {
-	for _, client := range pm.rpcclients {
+	for client := range pm.rpcclients.Iter() {
 		status, err := client.StopTask(task)
 		if err != nil {
 			log.Errorf("pusher manager stop task status: %s, error: %s", status, err.Error())
