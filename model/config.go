@@ -6,7 +6,7 @@ import (
 
 func CreateConfigTable() {
 	s := "CREATE TABLE IF NOT EXISTS `config` ( " +
-		"`id` INTEGER PRIMARY KEY AUTOINCREMENT," +
+		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
 		"`key` varchar(120) NOT NULL," +
 		"`value` varchar(120) NOT NULL," +
 		"`description` varchar(120)" +

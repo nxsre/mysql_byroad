@@ -73,7 +73,7 @@ func StartServer() {
 		username := sess.Get("user")
 		if !Conf.Debug {
 			if username == nil {
-				ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AuthURL, Conf.WebConfig.AppName))
+				ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AuthURL, Conf.WebConfig.AliasName))
 			} else {
 				if checkAuth(ctx, sess, "admin") {
 					ctx.Data["isAdmin"] = true
@@ -234,7 +234,7 @@ func array2string(arr []string) string {
 
 func logout(ctx *macaron.Context, sess session.Store) {
 	sess.Destory(ctx)
-	ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AppName))
+	ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AliasName))
 }
 
 func index(ctx *macaron.Context, sess session.Store) {

@@ -49,7 +49,10 @@ func NewReplicationClient(ctx context.Context) *ReplicationClient {
 		StopChan:           make(chan bool, 1),
 		saveBinlogInterval: conf.BinlogInterval.Duration,
 	}
-	confdb, err := NewConfigDB(conf.ConfigDB)
+	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
+		conf.DBConfig.Username, conf.DBConfig.Password, conf.DBConfig.Host, conf.DBConfig.Port,
+		conf.DBConfig.DBName)
+	confdb, err := NewConfigDB(dsn)
 	if err != nil {
 		log.Panic(err)
 	}

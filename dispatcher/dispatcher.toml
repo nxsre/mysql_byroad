@@ -1,6 +1,5 @@
 rpc_ping_interval = "10s" #心跳时间
 binlog_flush_interval = "5s" #binlog位置写入数据库的时间间隔
-config_db = "config.db"
 logfile = "/var/log/byroad/dispatcher.log"
 loglevel = "Info" # Debug Info Warn Error Fatal Panic
 db_instance_name = "localhost"  #该实例的名称，用于区分不同实例上的任务
@@ -32,4 +31,11 @@ port = 0 #随机选择端口
 nsqd_tcp_address = ["127.0.0.1:4150", "127.0.0.1:4153"]
 lookup_interval = "60s" # 向nsqlookupd轮询nsqd节点信息
 
+# 保存binlog信息
+[db_config]
+host = "127.0.0.1"
+port = 3306
+username = "root"
+password = "root"
+dbname = "byroad"
 

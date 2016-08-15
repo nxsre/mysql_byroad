@@ -4,6 +4,8 @@ import (
 	"mysql_byroad/model"
 	"time"
 
+	"sort"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -20,11 +22,26 @@ func NewDispatcherManager() *DispatcherManager {
 	return dm
 }
 
+type OrderRPCClients []*RPCClient
+
+func (o OrderRPCClients) Len() int {
+	return len(o)
+}
+
+func (o OrderRPCClients) Less(i, j int) bool {
+	return o[i].Desc < o[j].Desc
+}
+
+func (o OrderRPCClients) Swap(i, j int) {
+	o[i], o[j] = o[j], o[i]
+}
+
 func (dm *DispatcherManager) GetRPCClients() []*RPCClient {
 	clients := make([]*RPCClient, 0, 10)
 	for c := range dm.rpcclients.Iter() {
 		clients = append(clients, c)
 	}
+	sort.Sort(OrderRPCClients(clients))
 	return clients
 }
 

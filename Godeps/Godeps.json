@@ -18,6 +18,7 @@
 		},
 		{
 			"ImportPath": "github.com/Unknwon/com",
+			"Comment": "v1",
 			"Rev": "28b053d5a2923b87ce8c5a08f3af779894a72758"
 		},
 		{
@@ -30,7 +31,7 @@
 		},
 		{
 			"ImportPath": "github.com/go-macaron/inject",
-			"Rev": "c5ab7bf3a307593cd44cb272d1a5beea473dd072"
+			"Rev": "d8a0b8677191f4380287cfebd08e462217bac7ad"
 		},
 		{
 			"ImportPath": "github.com/go-macaron/pongo2",
@@ -138,8 +139,8 @@
 		},
 		{
 			"ImportPath": "gopkg.in/ini.v1",
-			"Comment": "v0-59-g641bc91",
-			"Rev": "641bc9176a619ec385aa1fd54cb2b102103fe86f"
+			"Comment": "v1.18.0",
+			"Rev": "cf53f9204df4fbdd7ec4164b57fa6184ba168292"
 		},
 		{
 			"ImportPath": "gopkg.in/macaron.v1",

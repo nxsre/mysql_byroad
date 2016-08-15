@@ -41,11 +41,12 @@ type RPCServerConf struct {
 }
 
 type WebConfig struct {
-	Host    string
-	Port    int
-	AuthURL string `toml:"auth_url"`
-	AppKey  string `toml:"appkey"`
-	AppName string `toml:"appname"`
+	Host      string
+	Port      int
+	AuthURL   string `toml:"auth_url"`
+	AppKey    string `toml:"appkey"`
+	AppName   string `toml:"appname"`
+	AliasName string `toml:"aliasname"`
 }
 
 var Conf Config
