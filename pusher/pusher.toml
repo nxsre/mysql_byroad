@@ -4,7 +4,7 @@ logfile = "/var/log/byroad/pusher.log"
 loglevel = "Info" # Debug Info Warn Error Fatal Panic
 
 [nsq]
-lookupd_http_address = ["172.17.0.1:4161"]
+lookupd_http_address = ["127.0.0.1:4161"]
 
 [monitor]
 host = "127.0.0.1"
@@ -20,5 +20,5 @@ desc = "localhost:1239"
 host = "127.0.0.1"
 port = 3306
 username = "root"
-password = "root"
+password = "toor"
 dbname = "byroad"
