@@ -51,6 +51,15 @@ func (m *Monitor) GetAllTasks(username string, tasks *[]*model.Task) error {
 	return nil
 }
 
+func (m *Monitor) GetTaskByInstanceName(dbname string, tasks *[]*model.Task) error {
+	ts, err := model.GetTaskByInstanceName(dbname)
+	if err != nil {
+		return err
+	}
+	*tasks = ts
+	return nil
+}
+
 func (m *Monitor) HandlePushClientSignal(ss *ServiceSignal, status *string) error {
 	log.Debugf("push client signal %+v", ss)
 	if ss.Code == "1" {

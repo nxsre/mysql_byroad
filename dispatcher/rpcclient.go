@@ -54,6 +54,20 @@ func (this *RPCClient) GetAllTasks(username string) (tasks []*model.Task, err er
 	return
 }
 
+func (this *RPCClient) GetTasks(dbname string) (tasks []*model.Task, err error) {
+	log.Info("rpc client get tasks")
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("Monitor.GetTaskByInstanceName", dbname, &tasks)
+	if err != nil {
+		log.Errorf("rpc get tasks error: %s", err.Error())
+	}
+	return
+}
+
 func (this *RPCClient) RegisterClient(schema, desc string) (status string, err error) {
 	log.Info("rpc register client")
 	client, err := this.GetClient()

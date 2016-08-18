@@ -86,45 +86,55 @@ func (dm *DispatcherManager) UpdateDispatchClient(schema, desc string) {
 
 func (dm *DispatcherManager) AddTask(task *model.Task) {
 	for client := range dm.rpcclients.Iter() {
-		status, err := client.AddTask(task)
-		if err != nil {
-			log.Errorf("dispatch manager add task status: %s, error: %s", status, err.Error())
+		if client.Desc == task.DBInstanceName {
+			status, err := client.AddTask(task)
+			if err != nil {
+				log.Errorf("dispatch manager add task status: %s, error: %s", status, err.Error())
+			}
 		}
 	}
 }
 
 func (dm *DispatcherManager) DeleteTask(task *model.Task) {
 	for client := range dm.rpcclients.Iter() {
-		status, err := client.DeleteTask(task)
-		if err != nil {
-			log.Errorf("dispatch manager delete task status: %s, error: %s", status, err.Error())
+		if client.Desc == task.DBInstanceName {
+			status, err := client.DeleteTask(task)
+			if err != nil {
+				log.Errorf("dispatch manager delete task status: %s, error: %s", status, err.Error())
+			}
 		}
 	}
 }
 
 func (dm *DispatcherManager) UpdateTask(task *model.Task) {
 	for client := range dm.rpcclients.Iter() {
-		status, err := client.UpdateTask(task)
-		if err != nil {
-			log.Errorf("dispatch manager update task status: %s, error: %s", status, err.Error())
+		if client.Desc == task.DBInstanceName {
+			status, err := client.UpdateTask(task)
+			if err != nil {
+				log.Errorf("dispatch manager update task status: %s, error: %s", status, err.Error())
+			}
 		}
 	}
 }
 
 func (dm *DispatcherManager) StartTask(task *model.Task) {
 	for client := range dm.rpcclients.Iter() {
-		status, err := client.StartTask(task)
-		if err != nil {
-			log.Errorf("dispatch manager start task status: %s, error: %s", status, err.Error())
+		if client.Desc == task.DBInstanceName {
+			status, err := client.StartTask(task)
+			if err != nil {
+				log.Errorf("dispatch manager start task status: %s, error: %s", status, err.Error())
+			}
 		}
 	}
 }
 
 func (dm *DispatcherManager) StopTask(task *model.Task) {
 	for client := range dm.rpcclients.Iter() {
-		status, err := client.StopTask(task)
-		if err != nil {
-			log.Errorf("dispatch manager stop task status: %s, error: %s", status, err.Error())
+		if client.Desc == task.DBInstanceName {
+			status, err := client.StopTask(task)
+			if err != nil {
+				log.Errorf("dispatch manager stop task status: %s, error: %s", status, err.Error())
+			}
 		}
 	}
 }

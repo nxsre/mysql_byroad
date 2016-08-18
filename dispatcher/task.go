@@ -23,7 +23,8 @@ func NewTaskManager(ctx context.Context) *TaskManager {
 
 func (tm *TaskManager) initTasks() {
 	rpcClient := tm.ctx.Value("dispatcher").(*Dispatcher).rpcClient
-	tasks, err := rpcClient.GetAllTasks("")
+	conf := tm.ctx.Value("dispatcher").(*Dispatcher).Config
+	tasks, err := rpcClient.GetTasks(conf.DBInstanceName)
 	if err != nil {
 		log.Error("get all tasks: ", err.Error())
 	}
