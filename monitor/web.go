@@ -147,7 +147,6 @@ func checkTaskUser(t *model.Task, sess session.Store) bool {
 	}
 	user := sess.Get("user").(string)
 	return user == t.CreateUser
-	return true
 }
 
 func return403(ctx *macaron.Context) string {
@@ -234,7 +233,7 @@ func array2string(arr []string) string {
 
 func logout(ctx *macaron.Context, sess session.Store) {
 	sess.Destory(ctx)
-	ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AliasName))
+	ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AppName, Conf.WebConfig.AliasName))
 }
 
 func index(ctx *macaron.Context, sess session.Store) {
