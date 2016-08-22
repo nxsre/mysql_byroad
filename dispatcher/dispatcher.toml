@@ -39,3 +39,5 @@ username = "root"
 password = "toor"
 dbname = "byroad"
 
+[kafka]
+hosts = ["localhost:9092"]

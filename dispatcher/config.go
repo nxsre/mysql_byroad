@@ -32,6 +32,7 @@ type Config struct {
 	NSQConf         NSQConf       `toml:"nsq"`
 	LogLevel        string        `toml:"loglevel"`
 	DBInstanceName  string        `toml:"db_instance_name"`
+	KafkaConf       Kafka         `toml:"kafka"`
 }
 
 type MysqlConf struct {
@@ -69,6 +70,10 @@ type DBConfig struct {
 	Username string
 	Password string
 	DBName   string `toml:"dbname"`
+}
+
+type Kafka struct {
+	Hosts []string `toml:"hosts"`
 }
 
 func InitConfig() *Config {
