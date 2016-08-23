@@ -33,6 +33,7 @@ type Config struct {
 	LogLevel        string        `toml:"loglevel"`
 	DBInstanceName  string        `toml:"db_instance_name"`
 	KafkaConf       Kafka         `toml:"kafka"`
+	ZookeeperConf   Zookeeper     `toml:"zookeeper"`
 }
 
 type MysqlConf struct {
@@ -74,6 +75,10 @@ type DBConfig struct {
 
 type Kafka struct {
 	Hosts []string `toml:"hosts"`
+}
+
+type Zookeeper struct {
+	Addrs []string `toml:"addrs"`
 }
 
 func InitConfig() *Config {

@@ -10,20 +10,16 @@ import (
 type TaskManager struct {
 	notifyTaskMap *NotifyTaskMap
 	taskIdMap     *TaskIdMap
-	ctx           context.Context
 }
 
 func NewTaskManager(ctx context.Context) *TaskManager {
-	tm := &TaskManager{
-		ctx: ctx,
-	}
-	tm.initTasks()
+	tm := &TaskManager{}
 	return tm
 }
 
-func (tm *TaskManager) initTasks() {
-	rpcClient := tm.ctx.Value("dispatcher").(*Dispatcher).rpcClient
-	conf := tm.ctx.Value("dispatcher").(*Dispatcher).Config
+func (tm *TaskManager) initTasks(ctx context.Context) {
+	rpcClient := ctx.Value("dispatcher").(*Dispatcher).rpcClient
+	conf := ctx.Value("dispatcher").(*Dispatcher).Config
 	tasks, err := rpcClient.GetTasks(conf.DBInstanceName)
 	if err != nil {
 		log.Error("get all tasks: ", err.Error())
@@ -32,9 +28,35 @@ func (tm *TaskManager) initTasks() {
 	for _, t := range tasks {
 		tm.taskIdMap.Set(t.ID, t)
 	}
-	log.Debug("task map:", tm.taskIdMap)
+	for _, task := range tasks {
+		log.Debug("task: ", task)
+	}
 	tm.notifyTaskMap = NewNotifyTaskMap(tm.taskIdMap)
 	log.Debug("notify task map: ", tm.notifyTaskMap)
+	tm.initTaskConsumers(ctx, tasks)
+}
+
+func (tm *TaskManager) initTaskConsumers(ctx context.Context, tasks []*model.Task) {
+	consumers := make(map[string]*KafkaConsumer)
+	config := ctx.Value("dispatcher").(*Dispatcher).Config
+	kafkaHandler := NewKafkaEventHandler(ctx)
+	for _, task := range tasks {
+		for _, field := range task.Fields {
+			topic := GenTopicName(field.Schema, field.Table)
+			if _, ok := consumers[topic]; !ok {
+				consumer, err := NewKafkaConsumer(field.Schema, field.Table, config.ZookeeperConf.Addrs)
+				if err != nil {
+					log.Errorf("new kafka consumer error: %s", err.Error())
+					continue
+				}
+				consumer.HandleMessage()
+				consumer.AddHandler(kafkaHandler)
+				consumers[topic] = consumer
+			}
+		}
+	}
+	disp := ctx.Value("dispatcher").(*Dispatcher)
+	disp.consumers = consumers
 }
 
 func (tm *TaskManager) InNotifyTable(schema, table string) bool {

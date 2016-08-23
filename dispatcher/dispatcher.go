@@ -15,6 +15,8 @@ import (
 type Dispatcher struct {
 	startTime         time.Time
 	replicationClient *ReplicationClient
+	kafkaEventHandler *KafkaEventHandler
+	consumers         map[string]*KafkaConsumer
 	rpcClient         *RPCClient
 	rpcServer         *RPCServer
 	binlogStatistics  *model.BinlogStatistics
@@ -41,19 +43,19 @@ func NewDispatcher(config *Config) *Dispatcher {
 	dispatcher.binlogStatistics = binlogStatistics
 	taskManager := NewTaskManager(ctx)
 	dispatcher.taskManager = taskManager
-
+	taskManager.initTasks(ctx)
 	//TODO: 多个mysql实例，遍历生成columnManager 和 replication client
 	replicationClient := NewReplicationClient(ctx)
 	dispatcher.replicationClient = replicationClient
-	handler := NewRowsEventHandler(ctx)
-	replicationClient.AddHandler(handler)
+	/*handler := NewRowsEventHandler(ctx)
+	replicationClient.AddHandler(handler)*/
 	return dispatcher
 }
 
 func (d *Dispatcher) Start() {
 	d.rpcServer.startRpcServer()
 	d.rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
-	d.replicationClient.Start()
+	// d.replicationClient.Start()
 }
 
 func (d *Dispatcher) IncStatistic(schema, table, event string) {
@@ -62,9 +64,9 @@ func (d *Dispatcher) IncStatistic(schema, table, event string) {
 
 func (d *Dispatcher) Stop() {
 	d.rpcClient.DeregisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
-	d.replicationClient.Stop()
-	<-d.replicationClient.StopChan
-	d.replicationClient.SaveBinlog()
+	/*	d.replicationClient.Stop()
+		<-d.replicationClient.StopChan
+		d.replicationClient.SaveBinlog()*/
 }
 
 // HandleSignal fetch signal from chan then do exit or reload.

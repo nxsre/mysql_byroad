@@ -55,21 +55,28 @@ func (entity *Entity) Length() int {
 	return len(data)
 }
 
+type KafkaHandler interface {
+	HandleKafkaEvent(entity *Entity)
+}
+
 type KafkaConsumer struct {
 	Database string
 	Table    string
 	consumer *consumergroup.ConsumerGroup
+	handlers []KafkaHandler
 }
 
 func NewKafkaConsumer(database, table string, zookeeper []string) (*KafkaConsumer, error) {
 	kconsumer := KafkaConsumer{
 		Database: database,
 		Table:    table,
+		handlers: make([]KafkaHandler, 0, 1),
 	}
 	config := consumergroup.NewConfig()
 	config.Offsets.Initial = sarama.OffsetNewest
 	topic := kconsumer.GetTopic()
 	consumer, err := consumergroup.JoinConsumerGroup(topic, []string{topic}, zookeeper, config)
+	log.Debugf("new kafka consumer topic: %s", topic)
 	if err != nil {
 		return nil, err
 	}
@@ -82,13 +89,21 @@ func (kconsumer *KafkaConsumer) GetTopic() string {
 }
 
 func (kconsumer *KafkaConsumer) HandleMessage() {
-	for msg := range kconsumer.consumer.Messages() {
-		entity := Entity{}
-		err := json.Unmarshal(msg.Value, &entity)
-		if err != nil {
-			log.Panic(err)
+	go func() {
+		for msg := range kconsumer.consumer.Messages() {
+			log.Debugf("receive consumer message")
+			entity := Entity{}
+			err := json.Unmarshal(msg.Value, &entity)
+			if err != nil {
+				log.Errorf("kafka consumer unmarshal error: %s", err.Error())
+			}
+			for _, handler := range kconsumer.handlers {
+				handler.HandleKafkaEvent(&entity)
+			}
 		}
+	}()
+}
 
-		log.Println(entity.String())
-	}
+func (kconsumer *KafkaConsumer) AddHandler(handler KafkaHandler) {
+	kconsumer.handlers = append(kconsumer.handlers, handler)
 }

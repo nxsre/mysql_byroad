@@ -51,3 +51,7 @@ func inStrs(strings []string, s string) bool {
 	}
 	return false
 }
+
+func GenTopicName(schema, table string) string {
+	return schema + "___" + table
+}
