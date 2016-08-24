@@ -14,6 +14,11 @@ import (
 	"github.com/nsqio/go-nsq"
 )
 
+var (
+	nsqManager *NSQManager
+	once       sync.Once
+)
+
 type ErrList []error
 
 func (l ErrList) Error() string {
@@ -35,6 +40,16 @@ type NSQManager struct {
 	producers    map[string]*nsq.Producer
 	config       *nsq.Config
 	sync.RWMutex
+}
+
+func GetManager(lookupAddrs []string, nsqaddrs []string, config *nsq.Config) (*NSQManager, error) {
+	var err error
+	once.Do(func() {
+		nsqManager, err = NewNSQManager(lookupAddrs, nsqaddrs, config)
+		nsqManager.InitProducers()
+		nsqManager.ProducerUpdateLoop()
+	})
+	return nsqManager, err
 }
 
 func NewNSQManager(lookupAddrs []string, nsqaddrs []string, config *nsq.Config) (*NSQManager, error) {

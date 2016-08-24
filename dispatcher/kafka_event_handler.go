@@ -19,12 +19,10 @@ func NewKafkaEventHandler(ctx context.Context) *KafkaEventHandler {
 	disp := ctx.Value("dispatcher").(*Dispatcher)
 	config := disp.Config
 	keh := &KafkaEventHandler{}
-	qm, err := nsqm.NewNSQManager(config.NSQConf.LookupdHttpAddrs, config.NSQConf.NsqdAddrs, nil)
+	qm, err := nsqm.GetManager(config.NSQConf.LookupdHttpAddrs, config.NSQConf.NsqdAddrs, nil)
 	if err != nil {
 		log.Error(err.Error())
 	}
-	qm.InitProducers()
-	qm.ProducerUpdateLoop()
 	keh.queueManager = qm
 	keh.dispatcher = disp
 	keh.taskManager = disp.taskManager

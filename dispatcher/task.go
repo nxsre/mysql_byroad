@@ -4,23 +4,27 @@ import (
 	"mysql_byroad/model"
 
 	log "github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
 type TaskManager struct {
 	notifyTaskMap *NotifyTaskMap
 	taskIdMap     *TaskIdMap
+	rpcSchema     string
 }
 
-func NewTaskManager(ctx context.Context) *TaskManager {
-	tm := &TaskManager{}
+func NewTaskManager(rpcSchema string) *TaskManager {
+	tm := &TaskManager{
+		rpcSchema: rpcSchema,
+	}
 	return tm
 }
 
-func (tm *TaskManager) initTasks(ctx context.Context) {
-	rpcClient := ctx.Value("dispatcher").(*Dispatcher).rpcClient
-	conf := ctx.Value("dispatcher").(*Dispatcher).Config
-	tasks, err := rpcClient.GetTasks(conf.DBInstanceName)
+/*
+通过rpc，从monitor获取所有的任务信息
+*/
+func (tm *TaskManager) InitTasks() {
+	rpcClient := NewRPCClient(tm.rpcSchema)
+	tasks, err := rpcClient.GetAllTasks("")
 	if err != nil {
 		log.Error("get all tasks: ", err.Error())
 	}
@@ -33,30 +37,6 @@ func (tm *TaskManager) initTasks(ctx context.Context) {
 	}
 	tm.notifyTaskMap = NewNotifyTaskMap(tm.taskIdMap)
 	log.Debug("notify task map: ", tm.notifyTaskMap)
-	tm.initTaskConsumers(ctx, tasks)
-}
-
-func (tm *TaskManager) initTaskConsumers(ctx context.Context, tasks []*model.Task) {
-	consumers := make(map[string]*KafkaConsumer)
-	config := ctx.Value("dispatcher").(*Dispatcher).Config
-	kafkaHandler := NewKafkaEventHandler(ctx)
-	for _, task := range tasks {
-		for _, field := range task.Fields {
-			topic := GenTopicName(field.Schema, field.Table)
-			if _, ok := consumers[topic]; !ok {
-				consumer, err := NewKafkaConsumer(field.Schema, field.Table, config.ZookeeperConf.Addrs)
-				if err != nil {
-					log.Errorf("new kafka consumer error: %s", err.Error())
-					continue
-				}
-				consumer.HandleMessage()
-				consumer.AddHandler(kafkaHandler)
-				consumers[topic] = consumer
-			}
-		}
-	}
-	disp := ctx.Value("dispatcher").(*Dispatcher)
-	disp.consumers = consumers
 }
 
 func (tm *TaskManager) InNotifyTable(schema, table string) bool {

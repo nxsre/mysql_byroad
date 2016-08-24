@@ -9,10 +9,8 @@ import (
 )
 
 type RPCClient struct {
-	protocol     string
-	Schema       string
-	Desc         string
-	pingInterval time.Duration
+	protocol string
+	Schema   string
 }
 
 type ServiceSignal struct {
@@ -21,12 +19,10 @@ type ServiceSignal struct {
 	Desc   string
 }
 
-func NewRPCClient(protocol, schema, desc string, ping time.Duration) *RPCClient {
+func NewRPCClient(schema string) *RPCClient {
 	client := RPCClient{
-		protocol:     protocol,
-		Schema:       schema,
-		Desc:         desc,
-		pingInterval: ping,
+		protocol: "tcp",
+		Schema:   schema,
 	}
 
 	return &client
@@ -68,11 +64,11 @@ func (this *RPCClient) GetTasks(dbname string) (tasks []*model.Task, err error) 
 	return
 }
 
-func (this *RPCClient) RegisterClient(schema, desc string) (status string, err error) {
+func (this *RPCClient) RegisterClient(schema, desc string, interval time.Duration) (status string, err error) {
 	log.Info("rpc register client")
 	client, err := this.GetClient()
 	if err != nil {
-		this.pingLoop(schema, desc)
+		this.PingLoop(schema, desc, interval)
 		return
 	}
 	defer client.Close()
@@ -85,15 +81,15 @@ func (this *RPCClient) RegisterClient(schema, desc string) (status string, err e
 	if err != nil {
 		log.Errorf("register rpc client error: %s", err.Error())
 	}
-	this.pingLoop(schema, desc)
+	this.PingLoop(schema, desc, interval)
 	return
 }
 
-func (this *RPCClient) pingLoop(schema, desc string) {
+func (this *RPCClient) PingLoop(schema, desc string, interval time.Duration) {
 	go func() {
 		for {
 			this.Ping(schema, desc)
-			time.Sleep(this.pingInterval)
+			time.Sleep(interval)
 		}
 	}()
 }

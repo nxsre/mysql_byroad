@@ -34,16 +34,16 @@ func NewDispatcher(config *Config) *Dispatcher {
 	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
 	rpcServerSchema := fmt.Sprintf("%s:%d", config.RPCServerConf.Host, config.RPCServerConf.Port)
 	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.DBInstanceName)
-	rpcClient := NewRPCClient("tcp", rpcClientSchema, "", config.RPCPingInterval.Duration)
+	rpcClient := NewRPCClient(rpcClientSchema)
 	dispatcher.rpcClient = rpcClient
 	dispatcher.rpcServer = rpcServer
 	binlogStatistics := &model.BinlogStatistics{
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}
 	dispatcher.binlogStatistics = binlogStatistics
-	taskManager := NewTaskManager(ctx)
+	taskManager := NewTaskManager(rpcClientSchema)
 	dispatcher.taskManager = taskManager
-	taskManager.initTasks(ctx)
+	taskManager.InitTasks()
 	//TODO: 多个mysql实例，遍历生成columnManager 和 replication client
 	replicationClient := NewReplicationClient(ctx)
 	dispatcher.replicationClient = replicationClient
@@ -54,7 +54,7 @@ func NewDispatcher(config *Config) *Dispatcher {
 
 func (d *Dispatcher) Start() {
 	d.rpcServer.startRpcServer()
-	d.rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
+	d.rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc, d.Config.RPCPingInterval.Duration)
 	// d.replicationClient.Start()
 }
 
