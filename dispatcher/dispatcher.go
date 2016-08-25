@@ -24,9 +24,9 @@ func NewDispatcher(config *Config) *Dispatcher {
 	}
 	rpcServerSchema := fmt.Sprintf("%s:%d", config.RPCServerConf.Host, config.RPCServerConf.Port)
 	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
-	rpcServer := NewRPCServer(rpcServerSchema, config.DBInstanceName)
+	rpcServer := NewRPCServer(rpcServerSchema, config.RPCServerConf.Desc)
 	dispatcher.rpcServer = rpcServer
-	kafkaConsumerManager := NewKafkaConsumerManager(config.ZookeeperConf.Addrs)
+	kafkaConsumerManager := NewKafkaConsumerManager(config.KafkaConf)
 	dispatcher.kafkaConsumerManager = kafkaConsumerManager
 	taskManager := NewTaskManager(rpcClientSchema)
 	dispatcher.taskManager = taskManager

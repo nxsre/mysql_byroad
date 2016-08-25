@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"sync"
-	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
@@ -71,15 +70,16 @@ type KafkaConsumer struct {
 /*
 新建kafka consumer，使用consumer group的方式订阅topic
 */
-func NewKafkaConsumer(topic string, zookeeper []string) (*KafkaConsumer, error) {
+func NewKafkaConsumer(topic string, kafkaconfig KafkaConfig) (*KafkaConsumer, error) {
 	kconsumer := KafkaConsumer{
 		Topic:    topic,
 		handlers: make([]KafkaHandler, 0, 1),
 	}
 	config := consumergroup.NewConfig()
 	config.Offsets.Initial = sarama.OffsetNewest
-	config.Offsets.ProcessingTimeout = time.Second
-	consumer, err := consumergroup.JoinConsumerGroup(topic, []string{topic}, zookeeper, config)
+	config.Offsets.ProcessingTimeout = kafkaconfig.OffsetProcessingTimeout.Duration
+	config.Offsets.ResetOffsets = kafkaconfig.OffsetResetOffsets
+	consumer, err := consumergroup.JoinConsumerGroup(topic, []string{topic}, kafkaconfig.ZkAddrs, config)
 	log.Debugf("new kafka consumer topic: %s", topic)
 	if err != nil {
 		return nil, err
@@ -115,13 +115,13 @@ func (kconsumer *KafkaConsumer) Close() error {
 type KafkaConsumerManager struct {
 	consumers map[string]*KafkaConsumer
 	sync.RWMutex
-	zkaddrs []string
+	config KafkaConfig
 }
 
-func NewKafkaConsumerManager(zkaddrs []string) *KafkaConsumerManager {
+func NewKafkaConsumerManager(config KafkaConfig) *KafkaConsumerManager {
 	manager := KafkaConsumerManager{
 		consumers: make(map[string]*KafkaConsumer),
-		zkaddrs:   zkaddrs,
+		config:    config,
 	}
 	return &manager
 }
@@ -226,7 +226,7 @@ func (kcm *KafkaConsumerManager) traverseTask(task *model.Task) {
 	for _, field := range task.Fields {
 		topic := GenTopicName(field.Schema, field.Table)
 		if !kcm.TopicExists(topic) {
-			consumer, err := NewKafkaConsumer(topic, kcm.zkaddrs)
+			consumer, err := NewKafkaConsumer(topic, kcm.config)
 			if err != nil {
 				log.Errorf("new kafka consumer error: %s", err.Error())
 				continue

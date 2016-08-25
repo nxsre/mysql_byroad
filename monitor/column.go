@@ -28,7 +28,7 @@ type ColumnManager struct {
 /*
    读取mysql的information_schema表，获取所有列的相关信息
 */
-func NewColumnManager(config MysqlConf) *ColumnManager {
+func NewColumnManager(config MysqlInstanceConfig) *ColumnManager {
 	cm := ColumnManager{
 		username: config.Username,
 		password: config.Password,

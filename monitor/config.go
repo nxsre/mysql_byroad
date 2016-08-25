@@ -35,6 +35,16 @@ type MysqlConf struct {
 	DBName   string `toml:"dbname"`
 }
 
+type MysqlInstanceConfig struct {
+	Name     string
+	Host     string
+	Port     uint16
+	Username string
+	Password string
+	Include  []string
+	Exclude  []string
+}
+
 type RPCServerConf struct {
 	Host string
 	Port int
