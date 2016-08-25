@@ -109,6 +109,7 @@ func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int6
 		return
 	}
 	updateChanged := false
+	//shit
 	for _, f := range fields {
 		tf := keh.taskManager.GetTaskField(task, database, table, f.Name)
 		if tf == nil {

@@ -100,6 +100,10 @@ func (kconsumer *KafkaConsumer) HandleMessage() {
 			for _, handler := range kconsumer.handlers {
 				handler.HandleKafkaEvent(&entity)
 			}
+			err = kconsumer.consumer.CommitUpto(msg)
+			if err != nil {
+				log.Errorf("kafka commitupto error: %s", err.Error())
+			}
 		}
 	}()
 }

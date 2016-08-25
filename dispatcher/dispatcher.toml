@@ -21,5 +21,5 @@ lookup_interval = "60s" # 向nsqlookupd轮询nsqd节点信息
 [kafka]
 hosts = ["localhost:9092"]
 offset_processing_timeout = "1s"
-offset_reset_offsets = true
+offset_reset_offsets = false
 zk_addrs = ["localhost:2181"]
