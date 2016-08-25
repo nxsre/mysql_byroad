@@ -22,21 +22,19 @@ func NewTaskManager(rpcSchema string) *TaskManager {
 /*
 通过rpc，从monitor获取所有的任务信息
 */
-func (tm *TaskManager) InitTasks() {
+func (tm *TaskManager) InitTasks() ([]*model.Task, error) {
 	rpcClient := NewRPCClient(tm.rpcSchema)
 	tasks, err := rpcClient.GetAllTasks("")
 	if err != nil {
-		log.Error("get all tasks: ", err.Error())
+		return tasks, err
 	}
 	tm.taskIdMap = NewTaskIdMap(100)
 	for _, t := range tasks {
 		tm.taskIdMap.Set(t.ID, t)
 	}
-	for _, task := range tasks {
-		log.Debug("task: ", task)
-	}
 	tm.notifyTaskMap = NewNotifyTaskMap(tm.taskIdMap)
 	log.Debug("notify task map: ", tm.notifyTaskMap)
+	return tasks, nil
 }
 
 func (tm *TaskManager) InNotifyTable(schema, table string) bool {

@@ -150,7 +150,7 @@ func (kcm *KafkaConsumerManager) Iter() <-chan *KafkaConsumer {
 		for _, kc := range kcm.consumers {
 			ch <- kc
 		}
-		kcm.Unlock()
+		kcm.RUnlock()
 		close(ch)
 	}()
 	return ch
@@ -163,7 +163,7 @@ func (kcm *KafkaConsumerManager) IterBuffered() <-chan *KafkaConsumer {
 		for _, kc := range kcm.consumers {
 			ch <- kc
 		}
-		kcm.Unlock()
+		kcm.RUnlock()
 		close(ch)
 	}()
 	return ch

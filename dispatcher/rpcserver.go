@@ -9,26 +9,31 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
 type RPCServer struct {
-	protocol   string
-	schema     string
-	desc       string
-	listener   net.Listener
-	dispatcher *Dispatcher
+	protocol         string
+	schema           string
+	desc             string
+	listener         net.Listener
+	taskManager      *TaskManager
+	binlogStatistics *model.BinlogStatistics
+	startTime        time.Time
 }
 
-func NewRPCServer(ctx context.Context, protocol, schema, desc string) *RPCServer {
-	disp := ctx.Value("dispatcher").(*Dispatcher)
+func NewRPCServer(schema, desc string) *RPCServer {
 	server := RPCServer{
-		protocol:   protocol,
-		schema:     schema,
-		desc:       desc,
-		dispatcher: disp,
+		protocol:  "tcp",
+		schema:    schema,
+		desc:      desc,
+		startTime: time.Now(),
 	}
 	return &server
+}
+
+func (this *RPCServer) initServer(taskManager *TaskManager, binlogStatistics *model.BinlogStatistics) {
+	this.taskManager = taskManager
+	this.binlogStatistics = binlogStatistics
 }
 
 func (this *RPCServer) getSchema() string {
@@ -50,9 +55,9 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("rpc add task: %+v", task)
 	*status = "sucess"
-	rs.dispatcher.taskManager.taskIdMap.Set(task.ID, task)
+	rs.taskManager.taskIdMap.Set(task.ID, task)
 	if task.Stat == model.TASK_STATE_START {
-		rs.dispatcher.taskManager.notifyTaskMap.AddTask(task)
+		rs.taskManager.notifyTaskMap.AddTask(task)
 	}
 	return nil
 }
@@ -60,56 +65,44 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 	log.Info("rpc delete task: ", id)
 	*status = "success"
-	rs.dispatcher.taskManager.taskIdMap.Delete(id)
-	rs.dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.dispatcher.taskManager.taskIdMap)
+	rs.taskManager.taskIdMap.Delete(id)
+	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("rpc update task: %+v", task)
 	*status = "success"
-	rs.dispatcher.taskManager.taskIdMap.Set(task.ID, task)
-	rs.dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.dispatcher.taskManager.taskIdMap)
+	rs.taskManager.taskIdMap.Set(task.ID, task)
+	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 	log.Infof("rpc start task: %+v", task)
 	*status = "success"
-	rs.dispatcher.taskManager.taskIdMap.Set(task.ID, task)
-	rs.dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.dispatcher.taskManager.taskIdMap)
+	rs.taskManager.taskIdMap.Set(task.ID, task)
+	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 	log.Infof("rpc stop task: %+v", task)
 	*status = "success"
-	rs.dispatcher.taskManager.taskIdMap.Set(task.ID, task)
-	rs.dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.dispatcher.taskManager.taskIdMap)
-	return nil
-}
-
-func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Info("rpc get db columns")
-	*os = rs.dispatcher.replicationClient.columnManager.GetOrderedColumns()
-	return nil
-}
-
-func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
-	log.Info("rpc get all columns")
-	*os = rs.dispatcher.replicationClient.columnManager.GetOrderedColumns()
+	rs.taskManager.taskIdMap.Set(task.ID, task)
+	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
 	return nil
 }
 
 func (rs *RPCServer) GetBinlogStatistics(username string, statics *[]*model.BinlogStatistic) error {
 	log.Info("rpc get binlog statistics")
-	*statics = rs.dispatcher.binlogStatistics.Statistics
+	*statics = rs.binlogStatistics.Statistics
 	return nil
 }
 
 func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) error {
 	log.Info("rpc get status")
-	start := rs.dispatcher.startTime
+	start := rs.startTime
 	duration := time.Now().Sub(start)
 	statusMap := make(map[string]interface{})
 	statusMap["Start"] = start.String()
@@ -119,15 +112,9 @@ func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) erro
 	return nil
 }
 
-func (rs *RPCServer) GetMasterStatus(username string, binfo *model.BinlogInfo) error {
+/*func (rs *RPCServer) GetMasterStatus(username string, binfo *model.BinlogInfo) error {
 	log.Info("rpc get master status")
 	info, err := GetMasterStatus(rs.dispatcher.Config.MysqlConf)
 	*binfo = *info
 	return err
-}
-
-func (rs *RPCServer) GetCurrentBinlogInfo(username string, binfo *model.BinlogInfo) error {
-	log.Info("rpc get current binlog info")
-	*binfo = *(rs.dispatcher.replicationClient.binlogInfo)
-	return nil
-}
+}*/

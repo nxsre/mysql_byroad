@@ -64,11 +64,10 @@ func (this *RPCClient) GetTasks(dbname string) (tasks []*model.Task, err error) 
 	return
 }
 
-func (this *RPCClient) RegisterClient(schema, desc string, interval time.Duration) (status string, err error) {
+func (this *RPCClient) RegisterClient(schema, desc string) (status string, err error) {
 	log.Info("rpc register client")
 	client, err := this.GetClient()
 	if err != nil {
-		this.PingLoop(schema, desc, interval)
 		return
 	}
 	defer client.Close()
@@ -81,17 +80,21 @@ func (this *RPCClient) RegisterClient(schema, desc string, interval time.Duratio
 	if err != nil {
 		log.Errorf("register rpc client error: %s", err.Error())
 	}
-	this.PingLoop(schema, desc, interval)
 	return
 }
 
-func (this *RPCClient) PingLoop(schema, desc string, interval time.Duration) {
+/*
+定时发送ping消息，返回一个ticker，可用于结束ping loop
+*/
+func (this *RPCClient) PingLoop(schema, desc string, interval time.Duration) *time.Ticker {
+	ticker := time.NewTicker(interval)
 	go func() {
-		for {
+		for _ = range ticker.C {
 			this.Ping(schema, desc)
-			time.Sleep(interval)
 		}
+		log.Info("rpc stop ping loop")
 	}()
+	return ticker
 }
 
 func (this *RPCClient) DeregisterClient(schema, desc string) (status string, err error) {

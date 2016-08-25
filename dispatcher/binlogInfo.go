@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
-	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/siddontang/go-mysql/client"
@@ -28,30 +27,5 @@ func GetMasterStatus(conf MysqlConf) (*model.BinlogInfo, error) {
 	binfo := new(model.BinlogInfo)
 	binfo.Filename = filename
 	binfo.Position = pos
-	return binfo, nil
-}
-
-func (confdb *ConfigDB) SaveBinlogInfo(desc string, binlogInfo *model.BinlogInfo) (int64, error) {
-	confdb.SaveConfig("last_file_name", binlogInfo.Filename, desc)
-	confdb.SaveConfig("last_position", fmt.Sprintf("%d", binlogInfo.Position), desc)
-	return 0, nil
-}
-
-func (confdb *ConfigDB) GetBinlogInfo(desc string) (*model.BinlogInfo, error) {
-	var err error
-	binfo := &model.BinlogInfo{}
-	binfo.Filename, err = confdb.GetConfig("last_file_name", desc)
-	if err != nil {
-		return binfo, err
-	}
-	pos, err := confdb.GetConfig("last_position", desc)
-	if err != nil {
-		return binfo, err
-	}
-	pos32, err := strconv.Atoi(pos)
-	if err != nil {
-		return binfo, err
-	}
-	binfo.Position = uint32(pos32)
 	return binfo, nil
 }

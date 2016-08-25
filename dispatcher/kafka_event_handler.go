@@ -6,27 +6,32 @@ import (
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
-type KafkaEventHandler struct {
-	queueManager Enqueuer
-	taskManager  *TaskManager
-	dispatcher   *Dispatcher
+type Enqueuer interface {
+	Enqueue(name string, evt interface{})
 }
 
-func NewKafkaEventHandler(ctx context.Context) *KafkaEventHandler {
-	disp := ctx.Value("dispatcher").(*Dispatcher)
-	config := disp.Config
+type KafkaEventHandler struct {
+	queue            Enqueuer
+	taskManager      *TaskManager
+	BinlogStatistics *model.BinlogStatistics
+}
+
+func NewKafkaEventHandler(nsqConfig NSQConf, taskManager *TaskManager) (*KafkaEventHandler, error) {
 	keh := &KafkaEventHandler{}
-	qm, err := nsqm.GetManager(config.NSQConf.LookupdHttpAddrs, config.NSQConf.NsqdAddrs, nil)
+	qm, err := nsqm.GetManager(nsqConfig.LookupdHttpAddrs, nsqConfig.NsqdAddrs, nil)
 	if err != nil {
 		log.Error(err.Error())
+		return nil, err
 	}
-	keh.queueManager = qm
-	keh.dispatcher = disp
-	keh.taskManager = disp.taskManager
-	return keh
+	binlogStatistics := &model.BinlogStatistics{
+		Statistics: make([]*model.BinlogStatistic, 0, 100),
+	}
+	keh.queue = qm
+	keh.taskManager = taskManager
+	keh.BinlogStatistics = binlogStatistics
+	return keh, nil
 }
 
 func (keh *KafkaEventHandler) HandleKafkaEvent(evt *Entity) {
@@ -58,7 +63,7 @@ type UpdateColumn struct {
 }
 
 func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
-	keh.dispatcher.IncStatistic(evt.Database, evt.Table, evt.EventType)
+	keh.BinlogStatistics.IncStatistic(evt.Database, evt.Table, evt.EventType)
 	log.Debugf("gen notify event: %+v", evt)
 	taskFieldMap := make(map[int64][]*UpdateColumn)
 	for i := 0; i < len(evt.BeforeColumns); i++ {
@@ -87,10 +92,10 @@ func (keh *KafkaEventHandler) Enqueue(database, table, event string, taskFieldMa
 	for taskid, fields := range taskFieldMap {
 		log.Debugf("kafka event handler enqueue, task id %d, fields: %+v", taskid, fields)
 		wg.Add(1)
-		go func() {
-			keh.enqueue(database, table, event, taskid, fields)
+		go func(id int64, fs []*UpdateColumn) {
+			keh.enqueue(database, table, event, id, fs)
 			wg.Done()
-		}()
+		}(taskid, fields)
 	}
 	wg.Wait()
 }
@@ -148,5 +153,5 @@ func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int6
 	ntyevt.Event = event
 	ntyevt.TaskID = task.ID
 	name := genTaskQueueName(task)
-	keh.queueManager.Enqueue(name, ntyevt)
+	keh.queue.Enqueue(name, ntyevt)
 }

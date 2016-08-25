@@ -2,71 +2,62 @@ package main
 
 import (
 	"fmt"
-	"mysql_byroad/model"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"golang.org/x/net/context"
 )
 
 type Dispatcher struct {
-	startTime         time.Time
-	replicationClient *ReplicationClient
-	kafkaEventHandler *KafkaEventHandler
-	consumers         map[string]*KafkaConsumer
-	rpcClient         *RPCClient
-	rpcServer         *RPCServer
-	binlogStatistics  *model.BinlogStatistics
-	taskManager       *TaskManager
-	Config            *Config
+	rpcServer            *RPCServer
+	Config               *Config
+	pingTicker           *time.Ticker
+	kafkaConsumerManager *KafkaConsumerManager
+	taskManager          *TaskManager
 }
 
 func NewDispatcher(config *Config) *Dispatcher {
 	dispatcher := &Dispatcher{
 		Config: config,
 	}
-	dispatcher.startTime = time.Now()
-	ctx := context.WithValue(context.Background(), "dispatcher", dispatcher)
-
-	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
 	rpcServerSchema := fmt.Sprintf("%s:%d", config.RPCServerConf.Host, config.RPCServerConf.Port)
-	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.DBInstanceName)
-	rpcClient := NewRPCClient(rpcClientSchema)
-	dispatcher.rpcClient = rpcClient
+	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
+	rpcServer := NewRPCServer(rpcServerSchema, config.DBInstanceName)
 	dispatcher.rpcServer = rpcServer
-	binlogStatistics := &model.BinlogStatistics{
-		Statistics: make([]*model.BinlogStatistic, 0, 100),
-	}
-	dispatcher.binlogStatistics = binlogStatistics
+	kafkaConsumerManager := NewKafkaConsumerManager(config.ZookeeperConf.Addrs)
+	dispatcher.kafkaConsumerManager = kafkaConsumerManager
 	taskManager := NewTaskManager(rpcClientSchema)
 	dispatcher.taskManager = taskManager
-	taskManager.InitTasks()
-	//TODO: 多个mysql实例，遍历生成columnManager 和 replication client
-	replicationClient := NewReplicationClient(ctx)
-	dispatcher.replicationClient = replicationClient
-	/*handler := NewRowsEventHandler(ctx)
-	replicationClient.AddHandler(handler)*/
 	return dispatcher
 }
 
 func (d *Dispatcher) Start() {
+	rpcClientSchema := fmt.Sprintf("%s:%d", d.Config.MonitorConf.Host, d.Config.MonitorConf.RpcPort)
+	tasks, err := d.taskManager.InitTasks()
+	if err != nil {
+		log.Errorf("init tasks error: %s", err.Error())
+	}
+	d.kafkaConsumerManager.InitConsumers(tasks)
+	handler, err := NewKafkaEventHandler(d.Config.NSQConf, d.taskManager)
+	if err != nil {
+		log.Errorf("new kafka event handler error: %s", err.Error())
+	}
+	d.kafkaConsumerManager.AddHandler(handler)
+	d.rpcServer.initServer(d.taskManager, handler.BinlogStatistics)
 	d.rpcServer.startRpcServer()
-	d.rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc, d.Config.RPCPingInterval.Duration)
-	// d.replicationClient.Start()
-}
-
-func (d *Dispatcher) IncStatistic(schema, table, event string) {
-	d.binlogStatistics.IncStatistic(schema, table, event)
+	rpcClient := NewRPCClient(rpcClientSchema)
+	rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
+	d.pingTicker = rpcClient.PingLoop(d.rpcServer.getSchema(), d.rpcServer.desc, d.Config.RPCPingInterval.Duration)
 }
 
 func (d *Dispatcher) Stop() {
-	d.rpcClient.DeregisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
-	/*	d.replicationClient.Stop()
-		<-d.replicationClient.StopChan
-		d.replicationClient.SaveBinlog()*/
+	d.pingTicker.Stop()
+	rpcClientSchema := fmt.Sprintf("%s:%d", d.Config.MonitorConf.Host, d.Config.MonitorConf.RpcPort)
+	rpcClient := NewRPCClient(rpcClientSchema)
+	rpcClient.DeregisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
+	d.kafkaConsumerManager.StopConsumers()
 }
 
 // HandleSignal fetch signal from chan then do exit or reload.
