@@ -12,13 +12,14 @@ import (
 )
 
 type RPCServer struct {
-	protocol         string
-	schema           string
-	desc             string
-	listener         net.Listener
-	taskManager      *TaskManager
-	binlogStatistics *model.BinlogStatistics
-	startTime        time.Time
+	protocol             string
+	schema               string
+	desc                 string
+	listener             net.Listener
+	taskManager          *TaskManager
+	binlogStatistics     *model.BinlogStatistics
+	kafkaConsumerManager *KafkaConsumerManager
+	startTime            time.Time
 }
 
 func NewRPCServer(schema, desc string) *RPCServer {
@@ -31,9 +32,10 @@ func NewRPCServer(schema, desc string) *RPCServer {
 	return &server
 }
 
-func (this *RPCServer) initServer(taskManager *TaskManager, binlogStatistics *model.BinlogStatistics) {
+func (this *RPCServer) initServer(taskManager *TaskManager, binlogStatistics *model.BinlogStatistics, kafkaConsumerManager *KafkaConsumerManager) {
 	this.taskManager = taskManager
 	this.binlogStatistics = binlogStatistics
+	this.kafkaConsumerManager = kafkaConsumerManager
 }
 
 func (this *RPCServer) getSchema() string {
@@ -59,6 +61,7 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	if task.Stat == model.TASK_STATE_START {
 		rs.taskManager.notifyTaskMap.AddTask(task)
 	}
+	rs.kafkaConsumerManager.AddTask(task)
 	return nil
 }
 
@@ -75,6 +78,7 @@ func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	*status = "success"
 	rs.taskManager.taskIdMap.Set(task.ID, task)
 	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.kafkaConsumerManager.UpdateTask(task)
 	return nil
 }
 

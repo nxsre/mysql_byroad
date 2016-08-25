@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"sync"
+	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
@@ -62,8 +63,7 @@ type KafkaHandler interface {
 }
 
 type KafkaConsumer struct {
-	Database string
-	Table    string
+	Topic    string
 	consumer *consumergroup.ConsumerGroup
 	handlers []KafkaHandler
 }
@@ -71,15 +71,14 @@ type KafkaConsumer struct {
 /*
 新建kafka consumer，使用consumer group的方式订阅topic
 */
-func NewKafkaConsumer(database, table string, zookeeper []string) (*KafkaConsumer, error) {
+func NewKafkaConsumer(topic string, zookeeper []string) (*KafkaConsumer, error) {
 	kconsumer := KafkaConsumer{
-		Database: database,
-		Table:    table,
+		Topic:    topic,
 		handlers: make([]KafkaHandler, 0, 1),
 	}
 	config := consumergroup.NewConfig()
 	config.Offsets.Initial = sarama.OffsetNewest
-	topic := kconsumer.GetTopic()
+	config.Offsets.ProcessingTimeout = time.Second
 	consumer, err := consumergroup.JoinConsumerGroup(topic, []string{topic}, zookeeper, config)
 	log.Debugf("new kafka consumer topic: %s", topic)
 	if err != nil {
@@ -87,10 +86,6 @@ func NewKafkaConsumer(database, table string, zookeeper []string) (*KafkaConsume
 	}
 	kconsumer.consumer = consumer
 	return &kconsumer, nil
-}
-
-func (kconsumer *KafkaConsumer) GetTopic() string {
-	return GenTopicName(kconsumer.Database, kconsumer.Table)
 }
 
 func (kconsumer *KafkaConsumer) HandleMessage() {
@@ -133,13 +128,13 @@ func NewKafkaConsumerManager(zkaddrs []string) *KafkaConsumerManager {
 
 func (kcm *KafkaConsumerManager) Add(kc *KafkaConsumer) {
 	kcm.Lock()
-	kcm.consumers[kc.GetTopic()] = kc
+	kcm.consumers[kc.Topic] = kc
 	kcm.Unlock()
 }
 
 func (kcm *KafkaConsumerManager) Delete(kc *KafkaConsumer) {
 	kcm.Lock()
-	delete(kcm.consumers, kc.GetTopic())
+	delete(kcm.consumers, kc.Topic)
 	kcm.Unlock()
 }
 
@@ -188,17 +183,7 @@ func (kcm *KafkaConsumerManager) TopicExists(topic string) bool {
 */
 func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
 	for _, task := range tasks {
-		for _, field := range task.Fields {
-			topic := GenTopicName(field.Schema, field.Table)
-			if !kcm.TopicExists(topic) {
-				consumer, err := NewKafkaConsumer(field.Schema, field.Table, kcm.zkaddrs)
-				if err != nil {
-					log.Errorf("new kafka consumer error: %s", err.Error())
-					continue
-				}
-				kcm.Add(consumer)
-			}
-		}
+		kcm.traverseTask(task)
 	}
 }
 
@@ -217,10 +202,36 @@ func (kcm *KafkaConsumerManager) AddHandler(handler KafkaHandler) {
 */
 func (kcm *KafkaConsumerManager) StopConsumers() {
 	for consumer := range kcm.Iter() {
+		log.Debugf("close consumer %s", consumer.Topic)
 		err := consumer.Close()
 		if err != nil {
 			log.Errorf("kafka consumer close error: %s", err.Error())
 			continue
+		}
+	}
+}
+
+/*
+遍历任务订阅的所有字段信息，为没有订阅kafka相应topic的字段添加consumer
+*/
+func (kcm *KafkaConsumerManager) AddTask(task *model.Task) {
+	kcm.traverseTask(task)
+}
+
+func (kcm *KafkaConsumerManager) UpdateTask(task *model.Task) {
+	kcm.traverseTask(task)
+}
+
+func (kcm *KafkaConsumerManager) traverseTask(task *model.Task) {
+	for _, field := range task.Fields {
+		topic := GenTopicName(field.Schema, field.Table)
+		if !kcm.TopicExists(topic) {
+			consumer, err := NewKafkaConsumer(topic, kcm.zkaddrs)
+			if err != nil {
+				log.Errorf("new kafka consumer error: %s", err.Error())
+				continue
+			}
+			kcm.Add(consumer)
 		}
 	}
 }

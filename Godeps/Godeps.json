@@ -125,7 +125,7 @@
 		},
 		{
 			"ImportPath": "github.com/satori/go.uuid",
-			"Rev": "e673fdd4dea8a7334adbbe7f57b7e4b00bdc5502"
+			"Rev": "f9ab0dce87d815821e221626b772e3475a0d2749"
 		},
 		{
 			"ImportPath": "github.com/siddontang/go-mysql/client",
@@ -154,10 +154,6 @@
 		{
 			"ImportPath": "github.com/wvanbergen/kazoo-go",
 			"Rev": "0f768712ae6f76454f987c3356177e138df258f8"
-		},
-		{
-			"ImportPath": "golang.org/x/net/context",
-			"Rev": "154d9f9ea81208afed560f4cf27b4860c8ed1904"
 		},
 		{
 			"ImportPath": "golang.org/x/sys/unix",

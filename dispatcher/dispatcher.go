@@ -45,7 +45,7 @@ func (d *Dispatcher) Start() {
 		log.Errorf("new kafka event handler error: %s", err.Error())
 	}
 	d.kafkaConsumerManager.AddHandler(handler)
-	d.rpcServer.initServer(d.taskManager, handler.BinlogStatistics)
+	d.rpcServer.initServer(d.taskManager, handler.BinlogStatistics, d.kafkaConsumerManager)
 	d.rpcServer.startRpcServer()
 	rpcClient := NewRPCClient(rpcClientSchema)
 	rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
