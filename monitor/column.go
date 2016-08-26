@@ -10,6 +10,7 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 	_ "github.com/go-sql-driver/mysql"
+	"github.com/jmoiron/sqlx"
 )
 
 type columnMap map[string]map[string][]string
@@ -20,7 +21,7 @@ type ColumnManager struct {
 	host     string
 	port     uint16
 	exclude  []string
-	db       *sql.DB
+	db       *sqlx.DB
 	columns  columnMap
 	sync.RWMutex
 }
@@ -28,7 +29,7 @@ type ColumnManager struct {
 /*
    读取mysql的information_schema表，获取所有列的相关信息
 */
-func NewColumnManager(config MysqlInstanceConfig) *ColumnManager {
+func NewColumnManager(config MysqlInstanceConfig) (*ColumnManager, error) {
 	cm := ColumnManager{
 		username: config.Username,
 		password: config.Password,
@@ -36,8 +37,14 @@ func NewColumnManager(config MysqlInstanceConfig) *ColumnManager {
 		port:     config.Port,
 		exclude:  config.Exclude,
 	}
+	dsn := fmt.Sprintf("%s:%s@(%s:%d)/information_schema", config.Username, config.Password, config.Host, config.Port)
+	db, err := sqlx.Open("mysql", dsn)
+	cm.db = db
+	if err != nil {
+		return nil, err
+	}
 	cm.getColumnsMap()
-	return &cm
+	return &cm, nil
 }
 
 /*
@@ -79,12 +86,6 @@ func (this *ColumnManager) GetColumnName(schema, table string, index int) string
 */
 func (this *ColumnManager) UpdateGetColumnNames(schema, table string) []string {
 	var err error
-	dsn := fmt.Sprintf("%s:%s@(%s:%d)/information_schema", this.username, this.password, this.host, this.port)
-	this.db, err = sql.Open("mysql", dsn)
-	if err != nil {
-		log.Error("column manager: ", err.Error())
-	}
-	defer this.db.Close()
 	stmt, err := this.db.Prepare("SELECT COLUMN_NAME FROM columns WHERE table_schema = ? AND table_name = ?")
 	columnNames := []string{}
 	if err != nil {
@@ -121,13 +122,6 @@ func (this *ColumnManager) ReloadColumnsMap() {
 func (this *ColumnManager) getColumnsMap() {
 	columnsMap := make(columnMap)
 	var err error
-	dsn := fmt.Sprintf("%s:%s@(%s:%d)/information_schema", this.username, this.password, this.host, this.port)
-	this.db, err = sql.Open("mysql", dsn)
-	if err != nil {
-		log.Panic(err.Error())
-		return
-	}
-
 	sqlStr := "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME FROM columns "
 	nodisplay := this.getNoDisplaySchema()
 	if nodisplay != "" {
@@ -138,6 +132,7 @@ func (this *ColumnManager) getColumnsMap() {
 		log.Error("get columnsMap: ", err.Error())
 		return
 	}
+	defer stm.Close()
 	var rows *sql.Rows
 	rows, err = stm.Query()
 	if err != nil {
@@ -156,7 +151,6 @@ func (this *ColumnManager) getColumnsMap() {
 	this.Lock()
 	this.columns = columnsMap
 	this.Unlock()
-	this.db.Close()
 }
 
 func getOrderedColumnsList(columns columnMap) model.OrderedSchemas {
@@ -197,4 +191,30 @@ func (this *ColumnManager) getNoDisplaySchema() string {
 		data = data + "'" + schema + "'" + ","
 	}
 	return strings.TrimRight(data, ",")
+}
+
+func (this *ColumnManager) GetSchemas() (schemas []string, err error) {
+	sqlStr := "SELECT DISTINCT TABLE_SCHEMA FROM columns "
+	nodisplay := this.getNoDisplaySchema()
+	if nodisplay != "" {
+		sqlStr += "WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")"
+	}
+	err = this.db.Select(&schemas, sqlStr)
+	return
+}
+
+func (this *ColumnManager) GetTables(schema string) (tables []string, err error) {
+	sqlStr := "SELECT DISTINCT TABLE_NAME FROM columns WHERE TABLE_SCHEMA=? "
+	err = this.db.Select(&tables, sqlStr, schema)
+	return
+}
+
+func (this *ColumnManager) GetColumns(schema, table string) (columns []string, err error) {
+	sqlStr := "SELECT DISTINCT COLUMN_NAME FROM columns WHERE TABLE_SCHEMA=? AND TABLE_NAME=?"
+	err = this.db.Select(&columns, sqlStr, schema, table)
+	return
+}
+
+func (this *ColumnManager) Close() error {
+	return this.db.Close()
 }
