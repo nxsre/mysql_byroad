@@ -5,6 +5,7 @@ import (
 	"reflect"
 	"regexp"
 	"strings"
+	"sync"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -54,4 +55,16 @@ func inStrs(strings []string, s string) bool {
 
 func GenTopicName(schema, table string) string {
 	return schema + "___" + table
+}
+
+type WaitGroupWrapper struct {
+	sync.WaitGroup
+}
+
+func (w *WaitGroupWrapper) Wrap(cb func()) {
+	w.Add(1)
+	go func() {
+		cb()
+		w.Done()
+	}()
 }
