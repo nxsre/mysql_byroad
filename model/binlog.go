@@ -23,11 +23,3 @@ func (this *BinlogStatistics) IncStatistic(schema, table, event string) {
 	info := &BinlogStatistic{schema, table, event, 1}
 	this.Statistics = append(this.Statistics, info)
 }
-
-func (this *BinlogStatistics) Save() {
-
-}
-
-func (this *BinlogStatistics) Tick(_ interface{}) {
-	this.Save()
-}

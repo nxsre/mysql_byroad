@@ -25,13 +25,6 @@ func CreateStatisticTable() {
 		"`send_failed_count` INTEGER" +
 		")"
 	confdb.MustExec(s)
-	s = "CREATE TABLE IF NOT EXISTS `binlog_statistic`(" +
-		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
-		"`schema` VARCHAR(255) NOT NULL," +
-		"`table` VARCHAR(255) NOT NULL," +
-		"`count` INTEGER" +
-		")"
-	confdb.MustExec(s)
 }
 
 func (this *Statistic) IncSendMessageCount() {

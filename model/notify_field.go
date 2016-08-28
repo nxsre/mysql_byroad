@@ -1,9 +1,6 @@
 package model
 
-import (
-	"strings"
-	"time"
-)
+import "time"
 
 /*
    对应一个推送的消息对象
@@ -47,45 +44,40 @@ func CreateNotifyFieldTable() {
 
 type NotifyFields []*NotifyField
 
-func (field *NotifyField) _insert() (id int64, err error) {
+func (field *NotifyField) Insert() (id int64, err error) {
 	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES(?, ?, ?, ?, ?, ?)"
-	stmt, err := confdb.Prepare(s)
-	defer stmt.Close()
-	if err != nil {
-		return 0, err
-	}
-	res, err := stmt.Exec(field.Schema, field.Table, field.Column, field.Send, field.TaskID, time.Now())
+	res, err := confdb.Exec(s, field.Schema, field.Table, field.Column, field.Send, field.TaskID, time.Now())
 	if err != nil {
 		return 0, err
 	}
 	return res.RowsAffected()
 }
 
-func (fields NotifyFields) _insert(taskID int64) error {
+func (fields NotifyFields) Insert(taskID int64) error {
 	if len(fields) == 0 {
 		return nil
 	}
-	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES"
-	fs := []interface{}{}
+	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES (?, ?, ?, ?, ?, ?)"
+	tx, err := confdb.Beginx()
+	if err != nil {
+		return err
+	}
+	stmt, err := tx.Preparex(s)
+	if err != nil {
+		return err
+	}
 	for _, f := range fields {
 		f.TaskID = taskID
-		s += "(?, ?, ?, ?, ?, ?),"
-		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.TaskID, time.Now())
+		_, err = stmt.Exec(f.Schema, f.Table, f.Column, f.Send, f.TaskID, time.Now())
+		if err != nil {
+			err = tx.Rollback()
+			return err
+		}
 	}
-	s = strings.TrimRight(s, ",")
-	stmt, err := confdb.Prepare(s)
-	if err != nil {
-		return err
-	}
-	res, err := stmt.Exec(fs...)
-	if err != nil {
-		return err
-	}
-	_, err = res.RowsAffected()
-	return err
+	return nil
 }
 
-func (field *NotifyField) _delete() (int64, error) {
+func (field *NotifyField) Delete() (int64, error) {
 	s := "DELETE FROM `notify_field` WHERE `id`=?"
 	res, err := confdb.Exec(s, field.ID)
 	if err != nil {
@@ -94,7 +86,7 @@ func (field *NotifyField) _delete() (int64, error) {
 	return res.RowsAffected()
 }
 
-func (fields NotifyFields) _delete(taskid int64) (int64, error) {
+func (fields NotifyFields) Delete(taskid int64) (int64, error) {
 	s := "DELETE FROM `notify_field` WHERE `task_id`=?"
 	res, err := confdb.Exec(s, taskid)
 	if err != nil {

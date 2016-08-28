@@ -391,7 +391,7 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	if !checkTaskUser(task, sess) {
 		return return403(ctx)
 	}
-	err := task.Delete()
+	_, err := task.Delete()
 	if err != nil {
 		resp.Error = true
 		resp.Message = "删除失败"
@@ -458,7 +458,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		}
 	}
 
-	err := task.Update()
+	_, err := task.Update()
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()

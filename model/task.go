@@ -50,7 +50,7 @@ func CreateTaskTable() {
 	confdb.MustExec(s)
 }
 
-func (task *Task) _insert() (id int64, err error) {
+func (task *Task) Insert() (id int64, err error) {
 	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
@@ -62,7 +62,7 @@ func (task *Task) _insert() (id int64, err error) {
 	return res.LastInsertId()
 }
 
-func (task *Task) _getByID() (*Task, error) {
+func (task *Task) GetByID() (*Task, error) {
 	fields := make([]*NotifyField, 0)
 	s := "SELECT * FROM `task` WHERE `id`=?"
 	err := confdb.Get(task, s, task.ID)
@@ -74,6 +74,7 @@ func (task *Task) _getByID() (*Task, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		f := new(NotifyField)
 		rows.StructScan(f)
@@ -84,19 +85,19 @@ func (task *Task) _getByID() (*Task, error) {
 	return task, nil
 }
 
-func (task *Task) _update() (int64, error) {
-	task.Fields._delete(task.ID)
+func (task *Task) Update() (int64, error) {
+	task.Fields.Delete(task.ID)
 	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=? WHERE `id`=?"
 	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal, task.ID)
 	if err != nil {
 		return 0, err
 	}
-	task.Fields._insert(task.ID)
+	task.Fields.Insert(task.ID)
 	return res.RowsAffected()
 }
 
 //delete task and its fields
-func (task *Task) _delete() (int64, error) {
+func (task *Task) Delete() (int64, error) {
 	s := "DELETE FROM `task` WHERE `id`=?"
 	res, err := confdb.Exec(s, task.ID)
 	if err != nil {
@@ -110,27 +111,14 @@ func (task *Task) _delete() (int64, error) {
 	return res.RowsAffected()
 }
 func (task *Task) Get() (*Task, error) {
-	return task._getByID()
+	return task.GetByID()
 }
 func (task *Task) SetStat() error {
-	_, err := task._update()
+	_, err := task.Update()
 	if err != nil {
 		return err
 	}
 	return nil
-}
-
-func (task *Task) Update() error {
-	_, err := task._update()
-	if err != nil {
-		return err
-	}
-	return nil
-}
-
-func (task *Task) Delete() error {
-	_, err := task._delete()
-	return err
 }
 
 func (this *Task) FieldExists(field *NotifyField) bool {
@@ -155,11 +143,11 @@ func (task *Task) GetTaskColumnsMap() map[string]map[string]NotifyFields {
 }
 
 func (task *Task) Add() (id int64, err error) {
-	id, err = task._insert()
+	id, err = task.Insert()
 	if err != nil {
 		return
 	}
-	err = task.Fields._insert(id)
+	err = task.Fields.Insert(id)
 	if err != nil {
 		return
 	}
@@ -189,7 +177,7 @@ func GetAllTask() ([]*Task, error) {
 }
 
 func (task *Task) Exists() (bool, error) {
-	t, err := task._getByID()
+	t, err := task.GetByID()
 	if t != nil {
 		return true, nil
 	} else {
