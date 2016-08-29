@@ -201,9 +201,8 @@ func startReplication() {
 				/*sysClean()
 				sysLogger.PanicErr(err)
 				os.Exit(1)*/
-				// continue anyway
 				sysLogger.LogErr(err)
-				continue
+				os.Exit(1)
 			}
 		}
 		switch e := ev.Event.(type) {
