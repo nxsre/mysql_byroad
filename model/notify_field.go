@@ -70,10 +70,11 @@ func (fields NotifyFields) Insert(taskID int64) error {
 		f.TaskID = taskID
 		_, err = stmt.Exec(f.Schema, f.Table, f.Column, f.Send, f.TaskID, time.Now())
 		if err != nil {
-			err = tx.Rollback()
+			tx.Rollback()
 			return err
 		}
 	}
+	tx.Commit()
 	return nil
 }
 
