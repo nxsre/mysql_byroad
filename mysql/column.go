@@ -1,6 +1,7 @@
 package mysql
 
 import "sync"
+import "strings"
 
 type Column struct {
 	Schema     string `db:"TABLE_SCHEMA"`
@@ -8,6 +9,10 @@ type Column struct {
 	Name       string `db:"COLUMN_NAME"`
 	DataType   string `db:"DATA_TYPE"`
 	ColumnType string `db:"COLUMN_TYPE"`
+}
+
+func (this *Column) IsUnsigned() bool {
+	return strings.Contains(this.ColumnType, "unsigned")
 }
 
 type ColumnList []*Column
@@ -47,13 +52,13 @@ func (this *ColumnMap) Schemas() []string {
 }
 
 func (this *ColumnMap) Tables(schema string) []string {
-	tables := make([]string, 0, 10)
 	this.RLock()
 	defer this.RUnlock()
 	tableMap, ok := this.columns[schema]
 	if !ok {
-		return tables
+		return nil
 	}
+	tables := make([]string, 0, 10)
 	for table, _ := range tableMap {
 		tables = append(tables, table)
 	}
@@ -70,12 +75,25 @@ func (this *ColumnMap) Columns(schema, table string) ColumnList {
 }
 
 func (this *ColumnMap) ColumNames(schema, table string) []string {
+	this.RLock()
+	defer this.RUnlock()
 	columns := this.Columns(schema, table)
+	if columns == nil {
+		return nil
+	}
 	names := make([]string, 0, 10)
-	if columns != nil {
-		for _, column := range columns {
-			names = append(names, column.Name)
-		}
+	for _, column := range columns {
+		names = append(names, column.Name)
 	}
 	return names
+}
+
+func (this *ColumnMap) GetColumn(schema, table string, index int) *Column {
+	this.RLock()
+	defer this.RUnlock()
+	columns := this.Columns(schema, table)
+	if columns != nil && index >= 0 && index < len(columns) {
+		return columns[index]
+	}
+	return nil
 }
