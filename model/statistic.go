@@ -97,6 +97,7 @@ func (this *TaskStatistics) Init() (err error) {
 	if err != nil {
 		return
 	}
+    defer rows.Close()
 	for rows.Next() {
 		statistic := Statistic{}
 		var id int64

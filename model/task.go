@@ -74,6 +74,7 @@ func (task *Task) _getByID() (*Task, error) {
 	if err != nil {
 		return nil, err
 	}
+    defer rows.Close()
 	for rows.Next() {
 		f := new(NotifyField)
 		rows.StructScan(f)

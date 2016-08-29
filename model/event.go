@@ -50,10 +50,10 @@ type NotifyFields []*NotifyField
 func (field *NotifyField) _insert() (id int64, err error) {
 	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES(?, ?, ?, ?, ?, ?)"
 	stmt, err := confdb.Prepare(s)
-	defer stmt.Close()
 	if err != nil {
 		return 0, err
 	}
+	defer stmt.Close()    
 	res, err := stmt.Exec(field.Schema, field.Table, field.Column, field.Send, field.TaskID, time.Now())
 	if err != nil {
 		return 0, err
@@ -77,6 +77,7 @@ func (fields NotifyFields) _insert(taskID int64) error {
 	if err != nil {
 		return err
 	}
+    defer stmt.Close()
 	res, err := stmt.Exec(fs...)
 	if err != nil {
 		return err

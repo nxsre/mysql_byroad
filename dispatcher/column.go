@@ -138,6 +138,7 @@ func (this *ColumnManager) getColumnsMap() {
 		log.Error("get columnsMap: ", err.Error())
 		return
 	}
+	defer stm.Close()
 	var rows *sql.Rows
 	rows, err = stm.Query()
 	if err != nil {
