@@ -11,7 +11,7 @@ rpc_port = 1234
 [rpc_server]
 host = "127.0.0.1"
 port = 0 #随机选择端口
-desc = "localhost" #该描述使用db_instance_name
+desc = "localhost"
 
 [nsq]
 # lookupd_http_address = ["127.0.0.1:4161"]

@@ -21,14 +21,16 @@ func (d *duration) UnmarshalText(text []byte) error {
 
 type Config struct {
 	Debug                   bool
-	RPCClientLookupInterval duration      `toml:"rpcclient_lookup_interval"`
-	NSQLookupdAddress       []string      `toml:"nsqlookupd_http_address"`
-	Logfile                 string        `toml:"logfile"`
-	MysqlConf               MysqlConf     `toml:"mysql"`
-	RPCServerConf           RPCServerConf `toml:"rpcserver"`
-	WebConfig               WebConfig     `toml:"web"`
-	LogLevel                string        `toml:"loglevel"`
+	RPCClientLookupInterval duration              `toml:"rpcclient_lookup_interval"`
+	NSQLookupdAddress       []string              `toml:"nsqlookupd_http_address"`
+	Logfile                 string                `toml:"logfile"`
+	MysqlConf               MysqlConf             `toml:"mysql"`
+	RPCServerConf           RPCServerConf         `toml:"rpcserver"`
+	WebConfig               WebConfig             `toml:"web"`
+	LogLevel                string                `toml:"loglevel"`
+	MysqlInstances          []MysqlInstanceConfig `toml:"mysql_instance"`
 }
+
 type MysqlConf struct {
 	Host     string
 	Port     uint16
