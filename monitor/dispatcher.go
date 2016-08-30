@@ -133,20 +133,3 @@ func (dm *DispatcherManager) StopTask(task *model.Task) {
 		}
 	}
 }
-
-func (dm *DispatcherManager) GetBinlogStatistics(desc string) (statics []*model.BinlogStatistic, err error) {
-	client, ok := dm.GetRPCClient(desc)
-	if ok {
-		return client.GetBinlogStatistics()
-	}
-	return nil, nil
-}
-
-func (dm *DispatcherManager) GetSysStatus(schema string) (status map[string]interface{}, err error) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Schema == schema {
-			return client.GetSysStatus()
-		}
-	}
-	return nil, nil
-}

@@ -35,13 +35,18 @@ func NewColumnManager(configs []*MysqlConfig) (*ColumnManager, error) {
 			errors = append(errors, err)
 			continue
 		}
-		go insp.InspectLoop()
 		cm.inspectors = append(cm.inspectors, insp)
 	}
 	if len(errors) != 0 {
 		return &cm, ErrList(errors)
 	}
 	return &cm, nil
+}
+
+func (this *ColumnManager) LookupLoop() {
+	for _, insp := range this.inspectors {
+		go insp.LookupLoop()
+	}
 }
 
 func (this *ColumnManager) GetInspector(name string) *Inspector {

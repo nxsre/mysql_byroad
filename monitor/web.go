@@ -61,8 +61,6 @@ func StartServer() {
 		CookiePath:  "/",
 		Gclifetime:  3600,
 		Maxlifetime: 3600,
-		//Provider:       "redis",
-		//ProviderConfig: fmt.Sprintf("addr=%s:%s", redisHost, redisPort),
 	}))
 	m.Use(gzip.Gziper())
 
@@ -92,7 +90,6 @@ func StartServer() {
 	m.Get("/auth/login", login)
 	m.Get("/auth/logout", logout)
 	m.Get("/", tasklist)
-	m.Get("/status", status)
 	m.Get("/addtask", addTaskHTML)
 	m.Get("/task", tasklist)
 	m.Get("/taskmodify/:taskid", modifytask)
@@ -242,27 +239,6 @@ func index(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	ctx.HTML(200, "index")
-}
-
-func status(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "admin") {
-		ctx.HTML(403, "403")
-		return
-	}
-	client := ctx.GetCookie("inspector")
-	if rpcclient, ok := dispatcherManager.GetRPCClient(client); ok {
-		status, _ := rpcclient.GetBinlogStatistics()
-		masterStatus, _ := rpcclient.GetMasterStatus()
-		currentBinlogInfo, _ := rpcclient.GetCurrentBinlogInfo()
-		st, _ := rpcclient.GetSysStatus()
-		ctx.Data["Status"] = status
-		ctx.Data["MasterStatus"] = masterStatus
-		ctx.Data["CurrentBinlogInfo"] = currentBinlogInfo
-		ctx.Data["Start"] = st["Start"]
-		ctx.Data["Duration"] = st["Duration"]
-		ctx.Data["routineNumber"] = st["routineNumber"]
-	}
-	ctx.HTML(200, "status")
 }
 
 func addTaskHTML(ctx *macaron.Context, sess session.Store) {

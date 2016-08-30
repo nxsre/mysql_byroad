@@ -2,6 +2,7 @@ package schema
 
 import (
 	"fmt"
+	"log"
 	"mysql_byroad/model"
 	"sort"
 	"strings"
@@ -52,10 +53,10 @@ func (this *Inspector) connect() (*sqlx.DB, error) {
 /*
 开始定时刷新字段信息
 */
-func (this *Inspector) InspectLoop() {
+func (this *Inspector) LookupLoop() {
 	clist, err := this.getColumns()
 	if err != nil {
-		fmt.Printf("get column error: %s", err.Error())
+		log.Printf("[ERROR] get column error: %s", err.Error())
 	}
 	this.buildColumnMap(clist)
 	ticker := time.NewTicker(this.config.Interval)
@@ -64,7 +65,7 @@ func (this *Inspector) InspectLoop() {
 		case <-ticker.C:
 			clist, err := this.getColumns()
 			if err != nil {
-				fmt.Printf("get columns error: %s", err.Error())
+				log.Printf("[ERROR] get columns error: %s", err.Error())
 				continue
 			}
 			this.buildColumnMap(clist)
