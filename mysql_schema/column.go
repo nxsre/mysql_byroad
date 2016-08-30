@@ -1,4 +1,4 @@
-package mysql
+package schema
 
 import "sync"
 import "strings"

@@ -1,4 +1,4 @@
-package mysql
+package schema
 
 import (
 	"strings"
@@ -70,4 +70,15 @@ func (this *ColumnManager) GetColumn(schema, table string, index int) *Column {
 		}
 	}
 	return nil
+}
+
+func (this *ColumnManager) Close() error {
+	var errors []error
+	for _, inspector := range this.inspectors {
+		err := inspector.Close()
+		if err != nil {
+			errors = append(errors, err)
+		}
+	}
+	return ErrList(errors)
 }

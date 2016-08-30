@@ -1,4 +1,4 @@
-package mysql
+package schema
 
 import (
 	"fmt"
@@ -100,4 +100,30 @@ func (this *Inspector) getNoDisplaySchema() string {
 		data = data + "'" + schema + "'" + ","
 	}
 	return strings.TrimRight(data, ",")
+}
+
+func (this *Inspector) Close() error {
+	return this.db.Close()
+}
+
+func (this *Inspector) GetSchemas() (schemas []string, err error) {
+	sqlStr := "SELECT DISTINCT TABLE_SCHEMA FROM columns "
+	nodisplay := this.getNoDisplaySchema()
+	if nodisplay != "" {
+		sqlStr += "WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")"
+	}
+	err = this.db.Select(&schemas, sqlStr)
+	return
+}
+
+func (this *Inspector) GetTables(schema string) (tables []string, err error) {
+	sqlStr := "SELECT DISTINCT TABLE_NAME FROM columns WHERE TABLE_SCHEMA=? "
+	err = this.db.Select(&tables, sqlStr, schema)
+	return
+}
+
+func (this *Inspector) GetColumns(schema, table string) (columns []string, err error) {
+	sqlStr := "SELECT DISTINCT COLUMN_NAME FROM columns WHERE TABLE_SCHEMA=? AND TABLE_NAME=?"
+	err = this.db.Select(&columns, sqlStr, schema, table)
+	return
 }
