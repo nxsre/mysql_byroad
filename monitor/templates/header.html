@@ -34,9 +34,9 @@
                     </li>
                 </ul>
                 <div class="form-group navbar-form navbar-right">
-                    <select class="form-control" id="client">
-                        {%for client in clients%}
-                            <option value="{{client.Schema}}">{{client.Desc}}</option>
+                    <select class="form-control" id="inspector">
+                        {%for inspector in inspectors%}
+                            <option value="{{inspector}}">{{inspector}}</option>
                         {%endfor%}
                     </select>
                 </div>
@@ -44,26 +44,26 @@
         </div>
     </nav>
     <script>
-        var client = $.cookie('client');
-        if (!client) {
-            $("#client option:first").attr('selected', true);
-            $.cookie('client', $('#client').val(), { path: '/'});
+        var inspector = $.cookie('inspector');
+        if (!inspector) {
+            $("#inspector option:first").attr('selected', true);
+            $.cookie('inspector', $('#inspector').val(), { path: '/'});
         } else {
             var flag = false;
-            $('#client option').each(function(){
-                if( $(this).val() == client){
+            $('#inspector option').each(function(){
+                if( $(this).val() == inspector){
                     $(this).attr('selected', true);
                     flag = true;
                     return false;
                 }
             });
             if(!flag) {
-                $("#client option:first").attr('selected', true);
-                $.cookie('client', $('#client').val(), { path: '/'});
+                $("#inspector option:first").attr('selected', true);
+                $.cookie('inspector', $('#inspector').val(), { path: '/'});
             }
         }
-        $('#client').change(function() {
-            $.cookie('client', $(this).val(), { path: '/'});
+        $('#inspector').change(function() {
+            $.cookie('inspector', $(this).val(), { path: '/'});
             location.reload();
         });
     </script>

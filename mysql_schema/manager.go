@@ -53,6 +53,18 @@ func (this *ColumnManager) GetInspector(name string) *Inspector {
 	return nil
 }
 
+func (this *ColumnManager) Inspectors() []*Inspector {
+	return this.inspectors
+}
+
+func (this *ColumnManager) InspectorNames() []string {
+	names := []string{}
+	for _, inspector := range this.inspectors {
+		names = append(names, inspector.config.Name)
+	}
+	return names
+}
+
 func (this *ColumnManager) GetColumns(schema, table string) ColumnList {
 	for _, inspector := range this.inspectors {
 		cl := inspector.GetColumnMap().Columns(schema, table)

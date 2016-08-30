@@ -45,132 +45,99 @@ func (dm *DispatcherManager) GetRPCClients() []*RPCClient {
 	return clients
 }
 
-func (dm *DispatcherManager) GetRPCClient(schema string) (*RPCClient, bool) {
-	return dm.rpcclients.Get(schema)
+func (dm *DispatcherManager) GetRPCClient(desc string) (*RPCClient, bool) {
+	return dm.rpcclients.Get(desc)
 }
 
 func (dm *DispatcherManager) AddDispatchClient(schema, desc string) {
-	if _, ok := dm.rpcclients.Get(schema); !ok {
+	if _, ok := dm.rpcclients.Get(desc); !ok {
 		client := NewRPCClient("tcp", schema, desc)
-		dm.rpcclients.Set(schema, client)
+		dm.rpcclients.Set(desc, client)
 		timer := time.NewTimer(Conf.RPCClientLookupInterval.Duration)
-		dm.timers.Set(schema, timer)
+		dm.timers.Set(desc, timer)
 		go func() {
 			for {
 				<-timer.C
-				dm.DeleteDispatchClient(schema)
+				dm.DeleteDispatchClient(desc)
 			}
 		}()
-		log.Infof("add dispatch client %s, length: %d", schema, dm.rpcclients.Length())
+		log.Infof("add dispatch client %s, length: %d", desc, dm.rpcclients.Length())
 	}
 }
 
-func (dm *DispatcherManager) DeleteDispatchClient(schema string) {
-	dm.rpcclients.Delete(schema)
-	if timer, ok := dm.timers.Get(schema); ok {
+func (dm *DispatcherManager) DeleteDispatchClient(desc string) {
+	dm.rpcclients.Delete(desc)
+	if timer, ok := dm.timers.Get(desc); ok {
 		timer.Stop()
 	}
-	dm.timers.Delete(schema)
-	log.Infof("delete dispatch client %s, length: %d", schema, dm.rpcclients.Length())
+	dm.timers.Delete(desc)
+	log.Infof("delete dispatch client %s, length: %d", desc, dm.rpcclients.Length())
 }
 
 func (dm *DispatcherManager) UpdateDispatchClient(schema, desc string) {
-	if timer, ok := dm.timers.Get(schema); ok {
+	if timer, ok := dm.timers.Get(desc); ok {
 		timer.Reset(Conf.RPCClientLookupInterval.Duration)
 	}
-	if _, ok := dm.rpcclients.Get(schema); !ok {
+	if _, ok := dm.rpcclients.Get(desc); !ok {
 		dm.AddDispatchClient(schema, desc)
 	}
 	log.Debugf("dispatcher manager update client %s: %s", schema, desc)
 }
 
 func (dm *DispatcherManager) AddTask(task *model.Task) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Desc == task.DBInstanceName {
-			status, err := client.AddTask(task)
-			if err != nil {
-				log.Errorf("dispatch manager add task status: %s, error: %s", status, err.Error())
-			}
+	client, ok := dm.GetRPCClient(task.DBInstanceName)
+	if ok {
+		status, err := client.AddTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager add task status: %s, error: %s", status, err.Error())
 		}
 	}
 }
 
 func (dm *DispatcherManager) DeleteTask(task *model.Task) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Desc == task.DBInstanceName {
-			status, err := client.DeleteTask(task)
-			if err != nil {
-				log.Errorf("dispatch manager delete task status: %s, error: %s", status, err.Error())
-			}
+	client, ok := dm.GetRPCClient(task.DBInstanceName)
+	if ok {
+		status, err := client.DeleteTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager delete task status: %s, error: %s", status, err.Error())
 		}
 	}
 }
 
 func (dm *DispatcherManager) UpdateTask(task *model.Task) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Desc == task.DBInstanceName {
-			status, err := client.UpdateTask(task)
-			if err != nil {
-				log.Errorf("dispatch manager update task status: %s, error: %s", status, err.Error())
-			}
+	client, ok := dm.GetRPCClient(task.DBInstanceName)
+	if ok {
+		status, err := client.UpdateTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager update task status: %s, error: %s", status, err.Error())
 		}
 	}
 }
 
 func (dm *DispatcherManager) StartTask(task *model.Task) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Desc == task.DBInstanceName {
-			status, err := client.StartTask(task)
-			if err != nil {
-				log.Errorf("dispatch manager start task status: %s, error: %s", status, err.Error())
-			}
+	client, ok := dm.GetRPCClient(task.DBInstanceName)
+	if ok {
+		status, err := client.StartTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager start task status: %s, error: %s", status, err.Error())
 		}
 	}
 }
 
 func (dm *DispatcherManager) StopTask(task *model.Task) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Desc == task.DBInstanceName {
-			status, err := client.StopTask(task)
-			if err != nil {
-				log.Errorf("dispatch manager stop task status: %s, error: %s", status, err.Error())
-			}
+	client, ok := dm.GetRPCClient(task.DBInstanceName)
+	if ok {
+		status, err := client.StopTask(task)
+		if err != nil {
+			log.Errorf("dispatch manager stop task status: %s, error: %s", status, err.Error())
 		}
 	}
 }
 
-func (dm *DispatcherManager) GetColumns(schema string) (dbmap model.OrderedSchemas, err error) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Schema == schema {
-			return client.GetAllColumns()
-		}
-	}
-	return nil, nil
-}
-
-func (dm *DispatcherManager) GetBinlogStatistics(schema string) (statics []*model.BinlogStatistic, err error) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Schema == schema {
-			return client.GetBinlogStatistics()
-		}
-	}
-	return nil, nil
-}
-
-func (dm *DispatcherManager) GetMasterStatus(schema string) (binfo *model.BinlogInfo, err error) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Schema == schema {
-			return client.GetMasterStatus()
-		}
-	}
-	return nil, nil
-}
-
-func (dm *DispatcherManager) GetCurrentBinlogInfo(schema string) (binfo *model.BinlogInfo, err error) {
-	for client := range dm.rpcclients.Iter() {
-		if client.Schema == schema {
-			return client.GetCurrentBinlogInfo()
-		}
+func (dm *DispatcherManager) GetBinlogStatistics(desc string) (statics []*model.BinlogStatistic, err error) {
+	client, ok := dm.GetRPCClient(desc)
+	if ok {
+		return client.GetBinlogStatistics()
 	}
 	return nil, nil
 }

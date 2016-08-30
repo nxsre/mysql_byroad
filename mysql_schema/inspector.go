@@ -2,6 +2,8 @@ package schema
 
 import (
 	"fmt"
+	"mysql_byroad/model"
+	"sort"
 	"strings"
 	"sync"
 	"time"
@@ -126,4 +128,32 @@ func (this *Inspector) GetColumns(schema, table string) (columns []string, err e
 	sqlStr := "SELECT DISTINCT COLUMN_NAME FROM columns WHERE TABLE_SCHEMA=? AND TABLE_NAME=?"
 	err = this.db.Select(&columns, sqlStr, schema, table)
 	return
+}
+
+func getOrderedColumnsList(columnMap *ColumnMap) model.OrderedSchemas {
+	colslist := make(model.OrderedSchemas, 0, 10)
+	for schema, tables := range columnMap.columns {
+		os := new(model.OrderedSchema)
+		os.Schema = schema
+		os.OrderedTables = make([]*model.OrderedTable, 0, 10)
+		for table, columns := range tables {
+			ot := new(model.OrderedTable)
+			ot.Table = table
+			ot.Columns = make([]string, 0, 10)
+			for _, column := range columns {
+				ot.Columns = append(ot.Columns, column.Name)
+			}
+			os.OrderedTables = append(os.OrderedTables, ot)
+		}
+		colslist = append(colslist, os)
+	}
+	sort.Sort(colslist)
+	for _, tab := range colslist {
+		sort.Sort(model.OrderedTables(tab.OrderedTables))
+	}
+	return colslist
+}
+
+func (this *Inspector) GetOrderedSchemas() model.OrderedSchemas {
+	return getOrderedColumnsList(this.GetColumnMap())
 }

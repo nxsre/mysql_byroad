@@ -3,12 +3,12 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
+	"mysql_byroad/mysql_schema"
+	"mysql_byroad/nsq"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
-
-	"mysql_byroad/nsq"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
@@ -19,6 +19,7 @@ var (
 	dispatcherManager *DispatcherManager
 	rpcServer         *Monitor
 	nsqManager        *nsqm.NSQManager
+	columnManager     *schema.ColumnManager
 )
 
 func main() {
@@ -43,6 +44,21 @@ func main() {
 		panic(err)
 	}
 	model.Init(confdb)
+	configs := []*schema.MysqlConfig{}
+	for _, config := range Conf.MysqlInstances {
+		myconf := schema.MysqlConfig{
+			Name:     config.Name,
+			Host:     config.Host,
+			Port:     config.Port,
+			Username: config.Username,
+			Password: config.Password,
+			Exclude:  config.Exclude,
+			Interval: time.Second * 10,
+		}
+		configs = append(configs, &myconf)
+	}
+	columnManager, err = schema.NewColumnManager(configs)
+
 	go StartServer()
 	HandleSignal()
 }

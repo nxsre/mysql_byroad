@@ -79,13 +79,13 @@ func StartServer() {
 					ctx.Data["isAdmin"] = true
 				}
 				ctx.Data["username"] = username.(string)
-				ctx.Data["clients"] = dispatcherManager.GetRPCClients()
+				ctx.Data["inspectors"] = columnManager.InspectorNames()
 			}
 		} else {
 			sess.Set("user", "test")
 			ctx.Data["isAdmin"] = true
 			ctx.Data["username"] = "test"
-			ctx.Data["clients"] = dispatcherManager.GetRPCClients()
+			ctx.Data["inspectors"] = columnManager.InspectorNames()
 		}
 	})
 
@@ -249,7 +249,7 @@ func status(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	client := ctx.GetCookie("client")
+	client := ctx.GetCookie("inspector")
 	if rpcclient, ok := dispatcherManager.GetRPCClient(client); ok {
 		status, _ := rpcclient.GetBinlogStatistics()
 		masterStatus, _ := rpcclient.GetMasterStatus()
@@ -270,10 +270,9 @@ func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
-	client := ctx.GetCookie("client")
-	colslist, _ := dispatcherManager.GetColumns(client)
+	inspector := ctx.GetCookie("inspector")
+	colslist := columnManager.GetInspector(inspector).GetOrderedSchemas()
 	ctx.Data["colslist"] = colslist
-
 	ctx.HTML(200, "addtask")
 }
 
@@ -297,8 +296,8 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	}
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
-	client := ctx.GetCookie("client")
-	colslist, _ := dispatcherManager.GetColumns(client)
+	inspector := ctx.GetCookie("inspector")
+	colslist := columnManager.GetInspector(inspector).GetOrderedSchemas()
 	ctx.Data["colslist"] = colslist
 
 	ctx.HTML(200, "modifytask")
@@ -320,8 +319,8 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	task := new(model.Task)
 	copyTask(&t, task)
 	task.CreateUser = sess.Get("user").(string)
-	schema := ctx.GetCookie("client")
-	rpcclient, ok := dispatcherManager.GetRPCClient(schema)
+	desc := ctx.GetCookie("inspector")
+	rpcclient, ok := dispatcherManager.GetRPCClient(desc)
 	if !ok {
 		resp.Error = true
 		resp.Message = "没有相应的数据库实例"
@@ -480,22 +479,17 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	var sortTasks []*model.Task
-	schema := ctx.GetCookie("client")
-	client, ok := dispatcherManager.GetRPCClient(schema)
+	inspector := ctx.GetCookie("inspector")
 	var err error
 	if checkAuth(ctx, sess, "admin") {
-		if ok {
-			sortTasks, err = model.GetTaskByInstanceName(client.Desc)
-			if err != nil {
-				log.Error("get task by instance name: ", err.Error())
-			}
+		sortTasks, err = model.GetTaskByInstanceName(inspector)
+		if err != nil {
+			log.Error("get task by instance name: ", err.Error())
 		}
 	} else {
-		if ok {
-			sortTasks, err = model.GetTasksByUserAndInstance(sess.Get("user").(string), client.Desc)
-			if err != nil {
-				log.Error("get tasks by user and instance: ", err.Error())
-			}
+		sortTasks, err = model.GetTasksByUserAndInstance(sess.Get("user").(string), inspector)
+		if err != nil {
+			log.Error("get tasks by user and instance: ", err.Error())
 		}
 	}
 	sort.Sort(TaskSlice(sortTasks))
