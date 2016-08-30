@@ -91,13 +91,13 @@ func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 
 func (rs *RPCServer) GetColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Info("rpc get db columns")
-	*os = rs.dispatcher.replicationClient.columnManager.GetOrderedColumns()
+	*os = rs.dispatcher.replicationClient.columnManager.Inspectors()[0].GetOrderedColumns()
 	return nil
 }
 
 func (rs *RPCServer) GetAllColumns(dbname string, os *model.OrderedSchemas) error {
 	log.Info("rpc get all columns")
-	*os = rs.dispatcher.replicationClient.columnManager.GetOrderedColumns()
+	*os = rs.dispatcher.replicationClient.columnManager.Inspectors()[0].GetOrderedColumns()
 	return nil
 }
 

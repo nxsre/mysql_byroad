@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
+	"mysql_byroad/mysql_schema"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -27,7 +28,7 @@ type ReplicationClient struct {
 	confdb         *ConfigDB
 
 	binlogInfo         *model.BinlogInfo
-	columnManager      *ColumnManager
+	columnManager      *schema.ColumnManager
 	saveBinlogInterval time.Duration
 }
 
@@ -59,7 +60,21 @@ func NewReplicationClient(ctx context.Context) *ReplicationClient {
 	replicationClient.confdb = confdb
 	binlogInfo := &model.BinlogInfo{}
 	replicationClient.binlogInfo = binlogInfo
-	columnManager := NewColumnManager(conf.MysqlConf)
+	columnManager, err := schema.NewColumnManager([]*schema.MysqlConfig{
+		&schema.MysqlConfig{
+			Host:     conf.MysqlConf.Host,
+			Port:     conf.MysqlConf.Port,
+			Username: conf.MysqlConf.Username,
+			Password: conf.MysqlConf.Password,
+			Exclude:  conf.MysqlConf.Exclude,
+			Interval: time.Second * 10,
+			Name:     conf.MysqlConf.Name,
+		},
+	})
+	if err != nil {
+		log.Fatalf("new column manager error: %s", err.Error())
+	}
+
 	replicationClient.columnManager = columnManager
 	return replicationClient
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
+	"mysql_byroad/mysql_schema"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/siddontang/go-mysql/replication"
@@ -61,16 +62,9 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		eh.dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
-			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
-			if eh.taskManager.InNotifyField(schema, table, column) {
-				c := new(model.ColumnValue)
-				c.ColunmName = column
-				switch t := r.(type) {
-				case int, int16, int32, int64:
-					c.Value = fmt.Sprintf("%v", t)
-				default:
-					c.Value = r
-				}
+			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
+			if eh.taskManager.InNotifyField(schema, table, column.Name) {
+				c := getColumnValue(r, nil, column)
 				columns = append(columns, c)
 			}
 		}
@@ -89,16 +83,9 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 		columns := []*model.ColumnValue{}
 		eh.dispatcher.IncStatistic(schema, table, event)
 		for j, r := range row {
-			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
-			if eh.taskManager.InNotifyField(schema, table, column) {
-				c := new(model.ColumnValue)
-				c.ColunmName = column
-				switch t := r.(type) {
-				case int, int16, int32, int64:
-					c.Value = fmt.Sprintf("%v", t)
-				default:
-					c.Value = r
-				}
+			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
+			if eh.taskManager.InNotifyField(schema, table, column.Name) {
+				c := getColumnValue(r, nil, column)
 				columns = append(columns, c)
 			}
 		}
@@ -120,22 +107,9 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		newRow := newRows[i]
 		eh.dispatcher.IncStatistic(schema, table, event)
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
-			column := eh.replicationClient.columnManager.GetColumnName(schema, table, j)
-			if eh.taskManager.InNotifyField(schema, table, column) {
-				c := new(model.ColumnValue)
-				c.ColunmName = column
-				switch t := newRow[j].(type) {
-				case int, int16, int32, int64:
-					c.Value = fmt.Sprintf("%v", t)
-				default:
-					c.Value = newRow[j]
-				}
-				switch t := oldRow[j].(type) {
-				case int, int16, int32, int64:
-					c.OldValue = fmt.Sprintf("%v", t)
-				default:
-					c.OldValue = oldRow[j]
-				}
+			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
+			if eh.taskManager.InNotifyField(schema, table, column.Name) {
+				c := getColumnValue(oldRow[j], newRow[j], column)
 				columns = append(columns, c)
 			}
 		}
@@ -170,4 +144,56 @@ func (eh *RowsEventHandler) genNotifyEvents(schema, table string, columns []*mod
 	}
 	log.Debugf("task field map: %v", taskFieldMap)
 	eh.Enqueue(schema, table, event, taskFieldMap)
+}
+
+func getColumnValue(old interface{}, newv interface{}, column *schema.Column) *model.ColumnValue {
+	c := &model.ColumnValue{}
+	c.ColunmName = column.Name
+	if old != nil {
+		c.OldValue = getValue(old, column)
+	}
+	if newv != nil {
+		c.Value = getValue(newv, column)
+	}
+	return c
+}
+
+/*
+根据字段的类型得到相应的值，需要对整型的数据进行转换
+*/
+func getValue(v interface{}, column *schema.Column) interface{} {
+	var value interface{}
+	switch t := v.(type) {
+	case int8:
+		if column.IsUnsigned() {
+			v := uint8(t)
+			value = fmt.Sprintf("%d", v)
+		} else {
+			value = fmt.Sprintf("%d", t)
+		}
+	case int16:
+		if column.IsUnsigned() {
+			v := uint16(t)
+			value = fmt.Sprintf("%d", v)
+		} else {
+			value = fmt.Sprintf("%d", t)
+		}
+	case int32:
+		if column.IsUnsigned() {
+			v := uint32(t)
+			value = fmt.Sprintf("%d", v)
+		} else {
+			value = fmt.Sprintf("%d", t)
+		}
+	case int64:
+		if column.IsUnsigned() {
+			v := uint64(t)
+			value = fmt.Sprintf("%d", v)
+		} else {
+			value = fmt.Sprintf("%d", t)
+		}
+	default:
+		value = t
+	}
+	return value
 }
