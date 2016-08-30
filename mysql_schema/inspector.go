@@ -53,7 +53,7 @@ func (this *Inspector) connect() (*sqlx.DB, error) {
 /*
 开始定时刷新字段信息
 */
-func (this *Inspector) InspectLoop() {
+func (this *Inspector) LoopupLoop() {
 	clist, err := this.getColumns()
 	if err != nil {
 		fmt.Printf("get column error: %s", err.Error())

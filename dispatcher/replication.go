@@ -67,7 +67,7 @@ func NewReplicationClient(ctx context.Context) *ReplicationClient {
 			Username: conf.MysqlConf.Username,
 			Password: conf.MysqlConf.Password,
 			Exclude:  conf.MysqlConf.Exclude,
-			Interval: time.Second * 10,
+			Interval: conf.MysqlConf.Interval.Duration,
 			Name:     conf.MysqlConf.Name,
 		},
 	})
