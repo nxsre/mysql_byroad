@@ -156,7 +156,5 @@ func getOrderedColumnsList(columnMap *ColumnMap) model.OrderedSchemas {
 }
 
 func (this *Inspector) GetOrderedColumns() model.OrderedSchemas {
-	this.RLock()
-	defer this.RUnlock()
 	return getOrderedColumnsList(this.GetColumnMap())
 }
