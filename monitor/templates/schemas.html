@@ -2,7 +2,7 @@
 <ul class="nav nav-sidebar" id="column-list">
 	{% for schema in schemas %}
 	<li>
-		<a id="{{schema}}" data-toggle="collapse" aria-expanded="false" aria-controls="{{schema}}" href="#" onclick="getTables('{{schema}}')"><span style="color:#666;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{schema}}</a>
+		<a id="{{schema}}" class="schema-for-search" data-toggle="collapse" aria-expanded="false" aria-controls="{{schema}}" href="#" onclick="getTables('{{schema}}')"><span style="color:#666;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{schema}}</a>
 	</li>
 	{% endfor %}
 </ul>

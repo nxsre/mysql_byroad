@@ -199,16 +199,16 @@ $(function () {
 
   $('#search').jSearch({
     selector: '#column-list',
-    child: 'li>a',
+    child: 'li .schema-for-search',
     minValLength: 0,
     Found: function (elem) {
-      $(elem).parent().show();
+      $(elem).next().children().show();
     },
     NotFound: function (elem) {
       $(elem).parent().hide();
     },
     After: function (t) {
-      if (!t.val().length) $('#column-list ul>li').show();
+      if (!t.val().length) $('#column-list>li').show();
     }
   });
 
