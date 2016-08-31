@@ -2,68 +2,41 @@
 <html lang="zh_CN">
 
 <head>
-    <meta charset="utf-8">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>旁路系统</title>
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/main.css">
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/jquery.cookie.js"></script>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>旁路系统</title>
+  <link rel="stylesheet" href="/css/bootstrap.min.css">
+  <link rel="stylesheet" href="/css/main.css">
 </head>
 
 <body>
-    <nav class="navbar navbar-default navbar-fixed-top">
-        <div class="container">
-            <div class="navbar-header">
-                <a href="/" class="navbar-brand">MySQL ByRoad</a>
-            </div>
-            <div class="navbar-collpase collpase">
-                <ul class="nav navbar-nav navbar-center">
-                    <li><a href="/addtask">任务添加</a></li>
-                    <li><a href="/task">任务管理</a></li>
-                    {% if (isAdmin)%}
-                    <li><a href="/status">状态</a></li>
-                    {% endif %}
-                    <li><a href="/help">帮助</a></li>
-                </ul>
-                <ul class="nav navbar-nav navbar-right">
-                    <li class="">
-                       <a href="/auth/logout">退出 ({{username}})</a>
-                    </li>
-                </ul>
-                <div class="form-group navbar-form navbar-right">
-                    <select class="form-control" id="client">
-                        {%for client in clients%}
-                            <option value="{{client.Schema}}">{{client.Desc}}</option>
-                        {%endfor%}
-                    </select>
-                </div>
-            </div>
+  <nav class="navbar navbar-default navbar-fixed-top">
+    <div class="container">
+      <div class="navbar-header">
+        <a href="/" class="navbar-brand">MySQL ByRoad</a>
+      </div>
+      <div class="navbar-collpase collpase">
+        <ul class="nav navbar-nav navbar-center">
+          <li><a href="/addtask">任务添加</a></li>
+          <li><a href="/task">任务管理</a></li>
+          {% if (isAdmin)%}
+          <li><a href="/status">状态</a></li>
+          {% endif %}
+          <li><a href="/help">帮助</a></li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <li class="">
+            <a href="/auth/logout">退出 ({{username}})</a>
+          </li>
+        </ul>
+        <div class="form-group navbar-form navbar-right">
+          <select class="form-control" id="client">
+          {%for client in clients%}
+            <option value="{{client.Schema}}">{{client.Desc}}</option>
+          {%endfor%}
+          </select>
         </div>
-    </nav>
-    <script>
-        var client = $.cookie('client');
-        if (!client) {
-            $("#client option:first").attr('selected', true);
-            $.cookie('client', $('#client').val(), { path: '/'});
-        } else {
-            var flag = false;
-            $('#client option').each(function(){
-                if( $(this).val() == client){
-                    $(this).attr('selected', true);
-                    flag = true;
-                    return false;
-                }
-            });
-            if(!flag) {
-                $("#client option:first").attr('selected', true);
-                $.cookie('client', $('#client').val(), { path: '/'});
-            }
-        }
-        $('#client').change(function() {
-            $.cookie('client', $(this).val(), { path: '/'});
-            location.reload();
-        });
-    </script>
+      </div>
+    </div>
+  </nav>

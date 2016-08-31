@@ -9,21 +9,21 @@
       <th width="30%">消息</th>
     </tr>
     {% for log in logs %}
-      <tr>
-        <td><div class="click-show">{{forloop.Counter}}</div></td>
-        <td><div class="click-show">{{log.CreateTime}}</div></td>
-        <td><div class="click-show"> {{log.Reason}}</div></td>
-        <td><div class="click-show"> {{log.Message}}</div></td>
-      </tr>
+    <tr>
+      <td>
+        <div class="click-show">{{forloop.Counter}}</div>
+      </td>
+      <td>
+        <div class="click-show">{{log.CreateTime}}</div>
+      </td>
+      <td>
+        <div class="click-show"> {{log.Reason}}</div>
+      </td>
+      <td>
+        <div class="click-show"> {{log.Message}}</div>
+      </td>
+    </tr>
     {% endfor %}
   </table>
 </div>
-<script>
-  $(function() {
-    $('.click-show').click(function(){
-      $(this).toggleClass('click-show');
-      $(this).parent().siblings().children().toggleClass('click-show');
-    });
-  });
-</script>
 {% include "footer.html" %}
