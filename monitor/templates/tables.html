@@ -5,20 +5,3 @@
   </li>
   {% endfor %}
 </ul>
-
-<script>
-  function getColumns(schema, table) {
-    var aid = '#'+schema+table;
-    $(aid).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
-    if(columnMap[schema][table]) {
-      $(aid).next().collapse('toggle');
-    }else{
-      $.get('/columns', {schema: schema, table: table}, function(response){
-        $(aid).after(response);
-        $(aid).next().collapse('toggle');
-        columnMap[schema] = {};
-        columnMap[schema][table] = response;
-      });
-    }
-  }
-</script>

@@ -1,3 +1,4 @@
+<input type="text" class="form-control" id="search" placeholder="search">
 <ul class="nav nav-sidebar" id="column-list">
 	{% for schema in schemas %}
 	<li>
@@ -5,20 +6,3 @@
 	</li>
 	{% endfor %}
 </ul>
-
-<script>
-  var columnMap = {};
-  function getTables(schema) {
-    $('#'+schema).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
-    if(columnMap[schema]) {
-      $('#'+schema).next().collapse('toggle');
-      return
-    } else {
-      $.get('/tables', {schema: schema}, function(response) {
-        columnMap[schema] = response;
-        $('#'+schema).after(response);
-        $('#'+schema).next().collapse('toggle');
-      });
-    }
-  }
-</script>

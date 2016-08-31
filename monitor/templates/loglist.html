@@ -18,12 +18,4 @@
     {% endfor %}
   </table>
 </div>
-<script>
-  $(function() {
-    $('.click-show').click(function(){
-      $(this).toggleClass('click-show');
-      $(this).parent().siblings().children().toggleClass('click-show');
-    });
-  });
-</script>
 {% include "footer.html" %}

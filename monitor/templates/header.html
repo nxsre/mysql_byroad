@@ -8,9 +8,6 @@
     <title>旁路系统</title>
     <link rel="stylesheet" href="/css/bootstrap.min.css">
     <link rel="stylesheet" href="/css/main.css">
-    <script src="/js/jquery.min.js"></script>
-    <script src="/js/bootstrap.min.js"></script>
-    <script src="/js/jquery.cookie.js"></script>
 </head>
 
 <body>
@@ -40,27 +37,3 @@
             </div>
         </div>
     </nav>
-    <script>
-        var inspector = $.cookie('inspector');
-        if (!inspector) {
-            $("#inspector option:first").attr('selected', true);
-            $.cookie('inspector', $('#inspector').val(), { path: '/'});
-        } else {
-            var flag = false;
-            $('#inspector option').each(function(){
-                if( $(this).val() == inspector){
-                    $(this).attr('selected', true);
-                    flag = true;
-                    return false;
-                }
-            });
-            if(!flag) {
-                $("#inspector option:first").attr('selected', true);
-                $.cookie('inspector', $('#inspector').val(), { path: '/'});
-            }
-        }
-        $('#inspector').change(function() {
-            $.cookie('inspector', $(this).val(), { path: '/'});
-            location.reload();
-        });
-    </script>
