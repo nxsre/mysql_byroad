@@ -58,7 +58,9 @@ func main() {
 		configs = append(configs, &myconf)
 	}
 	columnManager, err = schema.NewColumnManager(configs)
-
+	if err != nil {
+		log.Errorf("new column manager error: %s", err.Error())
+	}
 	go StartServer()
 	HandleSignal()
 }

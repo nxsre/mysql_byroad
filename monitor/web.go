@@ -96,6 +96,9 @@ func StartServer() {
 	m.Get("/task/detail/:taskid", getTaskStatistic)
 	m.Get("/task/log/:taskid", loglist)
 	m.Get("/help", help)
+	m.Get("/schemas", getSchemas)
+	m.Get("/tables", getTables)
+	m.Get("/columns", getColumns)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
@@ -247,8 +250,11 @@ func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	inspector := ctx.GetCookie("inspector")
-	colslist := columnManager.GetInspector(inspector).GetOrderedSchemas()
-	ctx.Data["colslist"] = colslist
+	schemas, err := columnManager.GetInspector(inspector).GetSchemas()
+	log.Debugf("inspector: %s, schemas :%+v, err: %v", inspector, schemas, err)
+	if err == nil {
+		ctx.Data["schemas"] = schemas
+	}
 	ctx.HTML(200, "addtask")
 }
 
@@ -273,8 +279,11 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
 	inspector := ctx.GetCookie("inspector")
-	colslist := columnManager.GetInspector(inspector).GetOrderedSchemas()
-	ctx.Data["colslist"] = colslist
+	schemas, err := columnManager.GetInspector(inspector).GetSchemas()
+	log.Debugf("schemas :%+v", schemas)
+	if err == nil {
+		ctx.Data["schemas"] = schemas
+	}
 
 	ctx.HTML(200, "modifytask")
 }
@@ -296,14 +305,14 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	copyTask(&t, task)
 	task.CreateUser = sess.Get("user").(string)
 	desc := ctx.GetCookie("inspector")
-	rpcclient, ok := dispatcherManager.GetRPCClient(desc)
-	if !ok {
+	inspector := columnManager.GetInspector(desc)
+	if inspector == nil {
 		resp.Error = true
 		resp.Message = "没有相应的数据库实例"
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
-	task.DBInstanceName = rpcclient.Desc
+	task.DBInstanceName = desc
 	task.Fields = *new(model.NotifyFields)
 	for _, c := range fields {
 		send := ctx.QueryInt(c)
@@ -592,5 +601,64 @@ func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
 }
 
 func help(ctx *macaron.Context, sess session.Store) {
+	if !checkAuth(ctx, sess, "all") {
+		ctx.HTML(403, "403")
+		return
+	}
 	ctx.HTML(200, "help")
+}
+
+func getSchemas(ctx *macaron.Context, sess session.Store) {
+	if !checkAuth(ctx, sess, "all") {
+		ctx.HTML(403, "403")
+		return
+	}
+	inspector := ctx.GetCookie("inspector")
+	schemas, err := columnManager.GetInspector(inspector).GetSchemas()
+	if err != nil {
+		return
+	} else {
+		ctx.Data["schemas"] = schemas
+	}
+	ctx.HTML(200, "schemas")
+}
+
+func getTables(ctx *macaron.Context, sess session.Store) {
+	if !checkAuth(ctx, sess, "all") {
+		ctx.HTML(403, "403")
+		return
+	}
+	inspector := ctx.GetCookie("inspector")
+	schema := ctx.Query("schema")
+	tables, err := columnManager.GetInspector(inspector).GetTables(schema)
+	log.Debugf("schema: %s, tables: %+v", schema, tables)
+	if err != nil {
+		log.Errorf("get %s tables error: %s", schema, err.Error())
+		return
+	} else {
+		ctx.Data["schema"] = schema
+		ctx.Data["tables"] = tables
+	}
+	ctx.HTML(200, "tables")
+}
+
+func getColumns(ctx *macaron.Context, sess session.Store) {
+	if !checkAuth(ctx, sess, "all") {
+		ctx.HTML(403, "403")
+		return
+	}
+	inspector := ctx.GetCookie("inspector")
+	schema := ctx.Query("schema")
+	table := ctx.Query("table")
+	columns, err := columnManager.GetInspector(inspector).GetColumns(schema, table)
+	log.Debugf("schema: %s, table: %s, columns: %+v,err: %v", schema, table, columns, err)
+	if err != nil {
+		return
+	} else {
+		ctx.Data["schema"] = schema
+		ctx.Data["table"] = table
+		ctx.Data["columns"] = columns
+	}
+	ctx.HTML(200, "columns")
+
 }

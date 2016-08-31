@@ -73,6 +73,15 @@ func (this *Inspector) LookupLoop() {
 	}
 }
 
+func (this *Inspector) BuildColumnMap() error {
+	clist, err := this.getColumns()
+	if err != nil {
+		return err
+	}
+	this.buildColumnMap(clist)
+	return nil
+}
+
 func (this *Inspector) buildColumnMap(columnList ColumnList) {
 	cm := BuildColumnMap(columnList)
 	this.Lock()
@@ -113,20 +122,21 @@ func (this *Inspector) GetSchemas() (schemas []string, err error) {
 	sqlStr := "SELECT DISTINCT TABLE_SCHEMA FROM columns "
 	nodisplay := this.getNoDisplaySchema()
 	if nodisplay != "" {
-		sqlStr += "WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")"
+		sqlStr += "WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ") "
 	}
+	sqlStr += "ORDER BY TABLE_SCHEMA"
 	err = this.db.Select(&schemas, sqlStr)
 	return
 }
 
 func (this *Inspector) GetTables(schema string) (tables []string, err error) {
-	sqlStr := "SELECT DISTINCT TABLE_NAME FROM columns WHERE TABLE_SCHEMA=? "
+	sqlStr := "SELECT DISTINCT TABLE_NAME FROM columns WHERE TABLE_SCHEMA=? ORDER BY TABLE_NAME"
 	err = this.db.Select(&tables, sqlStr, schema)
 	return
 }
 
 func (this *Inspector) GetColumns(schema, table string) (columns []string, err error) {
-	sqlStr := "SELECT DISTINCT COLUMN_NAME FROM columns WHERE TABLE_SCHEMA=? AND TABLE_NAME=?"
+	sqlStr := "SELECT DISTINCT COLUMN_NAME FROM columns WHERE TABLE_SCHEMA=? AND TABLE_NAME=? ORDER BY COLUMN_NAME"
 	err = this.db.Select(&columns, sqlStr, schema, table)
 	return
 }

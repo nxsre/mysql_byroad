@@ -35,6 +35,7 @@ func NewColumnManager(configs []*MysqlConfig) (*ColumnManager, error) {
 			errors = append(errors, err)
 			continue
 		}
+		//insp.BuildColumnMap()
 		cm.inspectors = append(cm.inspectors, insp)
 	}
 	if len(errors) != 0 {
@@ -46,6 +47,12 @@ func NewColumnManager(configs []*MysqlConfig) (*ColumnManager, error) {
 func (this *ColumnManager) LookupLoop() {
 	for _, insp := range this.inspectors {
 		go insp.LookupLoop()
+	}
+}
+
+func (this *ColumnManager) BuildColumnMap() {
+	for _, insp := range this.inspectors {
+		insp.BuildColumnMap()
 	}
 }
 

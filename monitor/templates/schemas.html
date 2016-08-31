@@ -1,0 +1,24 @@
+<ul class="nav nav-sidebar" id="column-list">
+	{% for schema in schemas %}
+	<li>
+		<a id="{{schema}}" data-toggle="collapse" aria-expanded="false" aria-controls="{{schema}}" href="#" onclick="getTables('{{schema}}')"><span style="color:#666;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{schema}}</a>
+	</li>
+	{% endfor %}
+</ul>
+
+<script>
+  var columnMap = {};
+  function getTables(schema) {
+    $('#'+schema).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
+    if(columnMap[schema]) {
+      $('#'+schema).next().collapse('toggle');
+      return
+    } else {
+      $.get('/tables', {schema: schema}, function(response) {
+        columnMap[schema] = response;
+        $('#'+schema).after(response);
+        $('#'+schema).next().collapse('toggle');
+      });
+    }
+  }
+</script>

@@ -1,0 +1,24 @@
+<ul class="collapse">
+  {% for table in tables %}
+  <li>
+    <a id="{{schema}}{{table}}" data-toggle="collapse" aria-expanded="true" aria-contr{{table}}" href="#" onclick="getColumns('{{schema}}', '{{table}}')"><span style="color:#555;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{table}}</a>
+  </li>
+  {% endfor %}
+</ul>
+
+<script>
+  function getColumns(schema, table) {
+    var aid = '#'+schema+table;
+    $(aid).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
+    if(columnMap[schema][table]) {
+      $(aid).next().collapse('toggle');
+    }else{
+      $.get('/columns', {schema: schema, table: table}, function(response){
+        $(aid).after(response);
+        $(aid).next().collapse('toggle');
+        columnMap[schema] = {};
+        columnMap[schema][table] = response;
+      });
+    }
+  }
+</script>
