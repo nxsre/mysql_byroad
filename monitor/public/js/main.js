@@ -67,11 +67,16 @@ function checkRightField(schema, table, column) {
 
 function changeFieldValue(obj) {
   var newVal = $(obj).val();
-  var pardiv = $(obj).parents(".right-field-div")[0];
-  var hiddenobj = $(pardiv).find(":hidden");
+  var pardiv = $(obj).parents('.right-field-div')[0];
+  var hiddenobj = $(pardiv).find(':hidden');
+  var checkboxs = $(pardiv).find(':checkbox')
   $(hiddenobj).each(function(){
     var fieldVal = $(this).prev().val();
-    $(this).val(newVal + "." + fieldVal);
+    $(this).val(newVal + '.' + fieldVal);
+  });
+  $(checkboxs).each(function() {
+    var fieldVal = $(this).attr('name').split('.')[2];
+    $(this).attr('name', newVal + '.' + fieldVal)
   });
 }
 
