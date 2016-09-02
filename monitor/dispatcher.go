@@ -58,14 +58,14 @@ func (dm *DispatcherManager) AddDispatchClient(schema, desc string) {
 		go func() {
 			for {
 				<-timer.C
-				dm.DeleteDispatchClient(desc)
+				dm.DeleteDispatchClient(schema, desc)
 			}
 		}()
 		log.Infof("add dispatch client %s, length: %d", desc, dm.rpcclients.Length())
 	}
 }
 
-func (dm *DispatcherManager) DeleteDispatchClient(desc string) {
+func (dm *DispatcherManager) DeleteDispatchClient(schema, desc string) {
 	dm.rpcclients.Delete(desc)
 	if timer, ok := dm.timers.Get(desc); ok {
 		timer.Stop()

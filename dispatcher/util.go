@@ -68,3 +68,7 @@ func (w *WaitGroupWrapper) Wrap(cb func()) {
 		w.Done()
 	}()
 }
+
+func toTitle(s string) string {
+	return strings.Title(strings.ToLower(s))
+}

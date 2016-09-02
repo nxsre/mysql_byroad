@@ -101,6 +101,7 @@ func (keh *KafkaEventHandler) Enqueue(database, table, event string, taskFieldMa
 }
 
 func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int64, fields []*UpdateColumn) {
+	event = toTitle(event)
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
 	ntyevt.Fields = make([]*model.ColumnValue, 0)

@@ -24,7 +24,7 @@ type Columns []*Column
 
 type Column struct {
 	Name    string `json:"name"`
-	Value   string `json:"string"`
+	Value   string `json:"value"`
 	SqlType int    `json:"sqlType"`
 	IsKey   bool   `json:"isKey"`
 	IsNull  bool   `json:"isNull"`
