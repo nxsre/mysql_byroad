@@ -469,7 +469,6 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	dispatcherManager.UpdateTask(task)
 	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
-	ctx.Resp.WriteHeader(201)
 	log.Printf("%s: update task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }

@@ -28,14 +28,14 @@
           </div>
           <div class="form-group col-md-6">
             <div class="form-inline">
-                <label for="apiurl">数据封装协议</label>
-                <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
+              <label for="apiurl">数据封装协议</label>
+              <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
             </div>
             <div class="form-control-static">
-              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer != 1) %} checked {%endif%}>
-            默认
-                <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer == 1) %} checked {%endif%}>
-            消息中心推送协议
+              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer !=1 ) %} checked
+                {%endif%}> 默认
+              <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer==1 ) %}
+                checked {%endif%}> 消息中心推送协议
             </div>
           </div>
           <div class="form-group col-md-6">
@@ -85,29 +85,28 @@
                 </label>
               </div>
             </div>
-          </div>         
+          </div>
           <div class="form-group col-md-12">
             <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新</button>
           </div>
         </div>
         <div id="rightdiv" class="form-inline">
-            {% for schema, tables in taskColumnsMap %} 
-            {% for table, fields in tables %}
-            <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
+          {% for schema, tables in taskColumnsMap %} {% for table, fields in tables %}
+          <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
             <h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="{{schema}}.{{table}}"></input>
-                <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
-                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                </a>
+              <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+              </a>
             </h3>
             <div class="row rowCont">
-            {% for f in fields %}
-            <div class="col-md-4" style="margin-bottom:5px;">
-              <div class="form-group">
-                <div class="input-group">
-                  <input value="{{f.Column}}" readonly type="text" class="form-control">
-                  <input name="fields" value="{{schema}}.{{table}}.{{f.Column}}" type="hidden">
-                </div>
-                <div class="checkbox"><label><input type="checkbox" name="{{schema}}.{{table}}.{{f.Column}}" value="1" {%if f.Send%}checked{%endif%}></input>是否推送值<label>
+              {% for f in fields %}
+              <div class="col-md-4" style="margin-bottom:5px;">
+                <div class="form-group">
+                  <div class="input-group">
+                    <input value="{{f.Column}}" readonly type="text" class="form-control">
+                    <input name="fields" value="{{schema}}.{{table}}.{{f.Column}}" type="hidden">
+                  </div>
+                  <div class="checkbox"><label><input type="checkbox" name="{{schema}}.{{table}}.{{f.Column}}" value="1" {%if f.Send%}checked{%endif%}></input>是否推送值<label>
                 </div>
                 <a href="#" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
               </div>
@@ -119,88 +118,6 @@
         {% endfor%}
         </div>
       </form>
-    <script>
-    function removeField(obj) {
-      $(obj).closest('.form-group').parent().remove();
-    }
-    function removeFieldDiv(obj) {
-      $(obj).parent().parent().remove();
-    }
-    function addRightField(schema, table, column) {
-      var field = schema + '.' + table + '.' + column;
-      var divid = schema + '-' +table;
-    
-      var data = '<div class="col-md-4" style="margin-bottom:5px;">\
-      <div class="form-group">\
-      <div class="input-group">\
-      <input value="'+ column + '" readonly type="text" class="form-control">\
-      <input name="fields" type="hidden" value="'+ field + '">\
-      </div>\
-      <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div>\
-      <a href="javascript:void(0)" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>\
-      </div>\
-      </div>';
-      addRightDiv(schema, table);    
-      if(!checkRightField(schema, table, column)) {
-        $('#'+divid).find('.rowCont').append(data);
-      }
-    }
-    function addRightDiv(schema, table) {
-      var field = schema + '-' + table;
-      var data = '<div class="col-md-12 right-field-div" id="' + field + '"><h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="' + schema + '.' + table + '"></input><a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a></h3><div class="row rowCont"></div></div>';
-      var d = document.getElementById(field);
-      if(!d){
-        $('#rightdiv').append(data);
-      }
-    }
-    function checkRightField(schema, table, column) {
-        var field = schema + '-' + table;
-        var d = document.getElementById(field);
-        return $(d).find(':text').is($(':text[value=' + column + ']'));
-    }
-    function changeFieldValue(obj) {
-      var newVal = $(obj).val();
-      var pardiv = $(obj).parents(".right-field-div")[0];
-      var hiddenobj = $(pardiv).find(":hidden");
-      $(hiddenobj).each(function(){
-        var fieldVal = $(this).prev().val();
-        $(this).val(newVal + "." + fieldVal);
-      });
-
-    }
-    function modifyTask() {
-      if(confirm('确认修改？')){
-        var options = {
-          url: '/task',
-          type: 'put',
-          dataType: 'json',
-          data: $('#form').serialize(),
-          success: function(data) {
-            alert(data.Message);
-          },
-          error: function(data) {
-              if(data.status == 422) {
-                alert("任务数据格式错误");
-              }else {
-                alert('修改失败');
-              }
-          }
-        };
-        $.ajax(options);
-        return false;
-      }
-    }
-    $(function () {
-        $("#pack-help").popover(
-                {
-                    trigger: 'hover',
-                    title: '数据封装协议',
-                    html: true,
-                    content: '<dd><dt>默认</dt><dl>旁路系统原有格式: 消息内容从post请求的body中读取。</dl><dl>消费方处理完成后返回 success</dl><dt>消息中心推送协议</dt><dl>使用消息中心的推送协议进行数据封装: message=POST["message"], jobid=GET["jobid"], retry_times=GET["retry_times"]</dl><dl>消费方处理完成后返回{"status": 1}</dl></dd>',
-                }
-        );
-    });
-   </script>
       <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
         {% include "taskleft.html" %}
       </div>

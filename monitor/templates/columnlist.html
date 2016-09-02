@@ -1,29 +1,22 @@
+<input type="text" class="form-control" id="schema-search" placeholder="search">
 <ul class="nav nav-sidebar" id="column-list">
-	{% for key in colslist %}
-	<li>
-		<a data-toggle="collapse" aria-expanded="false" aria-controls="{{key.Schema}}" href="#"><span style="color:#666;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{key.Schema}}</a>
-		<ul class="collapse" id="{{key.Schema}}">
-			{% for t in key.OrderedTables %}
-			<li>
-				<a data-toggle="collapse" aria-expanded="true" aria-controls="{{key.Schema}}{{t.Table}}" href="#"><span style="color:#555;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{t.Table}}</a>
-				<ul class="collapse" id="{{key.Schema}}{{t.Table}}">
-					{% for c in t.Columns %}
-					<li style="list-style-type: disc">
-						<a href="javascript:void(0)" onclick="addRightField('{{key.Schema}}','{{t.Table}}','{{c}}')">{{c}}</a>
-					</li>
-					{% endfor %}
-				</ul>
-			</li>
-			{% endfor %}
-		</ul>
-	</li>
-	{% endfor %}
+  {% for key in colslist %}
+  <li>
+    <a data-toggle="collapse" aria-expanded="false" aria-controls="{{key.Schema}}" href="#" class="schema-for-search"><span style="color:#666;" class=" glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{key.Schema}}</a>
+    <ul class="collapse" id="{{key.Schema}}">
+      {% for t in key.OrderedTables %}
+      <li>
+        <a data-toggle="collapse" aria-expanded="true" aria-controls="{{key.Schema}}{{t.Table}}" href="#" class="table-for-search"><span style="color:#555;" class="glyphicon glyphicon-triangle-right" aria-hidden="true"></span> {{t.Table}}</a>
+        <ul class="collapse" id="{{key.Schema}}{{t.Table}}">
+          {% for c in t.Columns %}
+          <li style="list-style-type: disc">
+            <a href="javascript:void(0)" onclick="addRightField('{{key.Schema}}','{{t.Table}}','{{c}}')" class="column-for-search">{{c}}</a>
+          </li>
+          {% endfor %}
+        </ul>
+      </li>
+      {% endfor %}
+    </ul>
+  </li>
+  {% endfor %}
 </ul>
-<script>
-	$(function() {
-		$('a[data-toggle="collapse"]').click(function(){
-			$(this).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
-			$(this).next().collapse('toggle');
-		});
-	});
-</script>
