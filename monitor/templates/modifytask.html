@@ -77,12 +77,16 @@
             <div class="form-inline">
               <label for="state">状态：</label>
               <div class="radio">
+                {%if (task.Stat=="正常")%}
                 <label>
-                    <input type="radio" name="state" id="state" value="正常" {%if (task.Stat=="正常")%}checked {%endif%}> 正常
+                    <input type="radio" name="state" id="state" value="正常" checked > 正常
                 </label>
+                {%endif%}
+                {%if (task.Stat=="停止")%}
                 <label>
-                    <input type="radio" name="state" id="state" value="停止" {%if (task.Stat=="停止")%}checked {%endif%}> 停止
+                    <input type="radio" name="state" id="state" value="停止" checked > 停止
                 </label>
+                {%endif%}
               </div>
             </div>
           </div>         
