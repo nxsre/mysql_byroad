@@ -40,6 +40,7 @@ func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 	evt.LastSendTime = time.Now()
 	msg, _ := json.Marshal(evt)
 	timeout := time.Millisecond * time.Duration(task.Timeout)
+	sendClient.Timeout = timeout
 	if task.PackProtocal == model.PackProtocalEventCenter {
 		idStr := strconv.FormatInt(task.ID, 10)
 		retryCountStr := strconv.Itoa(evt.RetryCount)
@@ -54,7 +55,6 @@ func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 		return string(retStat), err
 	} else {
 		body := bytes.NewBuffer(msg)
-		sendClient.Timeout = timeout
 		resp, err := sendClient.Post(task.Apiurl, "application/json", body)
 		if err != nil {
 			return "fail", err
@@ -63,7 +63,6 @@ func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 		retStat, err := ioutil.ReadAll(resp.Body)
 		return string(retStat), err
 	}
-	return "success", nil
 }
 
 func isSuccessSend(msg string) bool {
