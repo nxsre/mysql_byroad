@@ -64,7 +64,7 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 		for j, r := range row {
 			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
-				c := getColumnValue(r, nil, column)
+				c := getColumnValue(nil, r, column)
 				columns = append(columns, c)
 			}
 		}
@@ -85,7 +85,7 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 		for j, r := range row {
 			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
-				c := getColumnValue(r, nil, column)
+				c := getColumnValue(nil, r, column)
 				columns = append(columns, c)
 			}
 		}
