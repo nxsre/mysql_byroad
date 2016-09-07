@@ -60,17 +60,19 @@ func (this *Inspector) LoopupLoop() {
 	}
 	this.buildColumnMap(clist)
 	ticker := time.NewTicker(this.config.Interval)
-	for {
-		select {
-		case <-ticker.C:
-			clist, err := this.getColumns()
-			if err != nil {
-				log.Printf("[ERROR] get columns error: %s", err.Error())
-				continue
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				clist, err := this.getColumns()
+				if err != nil {
+					log.Printf("[ERROR] get columns error: %s", err.Error())
+					continue
+				}
+				this.buildColumnMap(clist)
 			}
-			this.buildColumnMap(clist)
 		}
-	}
+	}()
 }
 
 func (this *Inspector) buildColumnMap(columnList ColumnList) {

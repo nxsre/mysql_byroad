@@ -35,7 +35,7 @@ func NewColumnManager(configs []*MysqlConfig) (*ColumnManager, error) {
 			errors = append(errors, err)
 			continue
 		}
-		go insp.LoopupLoop()
+		insp.LoopupLoop()
 		cm.inspectors = append(cm.inspectors, insp)
 	}
 	if len(errors) != 0 {
