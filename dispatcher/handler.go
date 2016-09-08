@@ -64,7 +64,7 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 		for j, r := range row {
 			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
 			if column == nil {
-				log.Error("column not exists: %s.%s.%d", schema, table, j)
+				log.Errorf("column not exists: %s.%s.%d", schema, table, j)
 				continue
 			}
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
@@ -89,7 +89,7 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 		for j, r := range row {
 			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
 			if column == nil {
-				log.Error("column not exists: %s.%s.%d", schema, table, j)
+				log.Errorf("column not exists: %s.%s.%d", schema, table, j)
 				continue
 			}
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
@@ -117,7 +117,7 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 		for j := 0; j < len(oldRow) && j < len(newRow); j++ {
 			column := eh.replicationClient.columnManager.GetColumn(schema, table, j)
 			if column == nil {
-				log.Error("column not exists: %s.%s.%d", schema, table, j)
+				log.Errorf("column not exists: %s.%s.%d", schema, table, j)
 				continue
 			}
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
