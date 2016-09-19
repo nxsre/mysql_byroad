@@ -34,9 +34,11 @@ type BinlogInfo struct {
 }
 
 type ColumnValue struct {
-	ColunmName string      `json:"columnName"`
-	Value      interface{} `json:"value"`
-	OldValue   interface{} `json:"oldValue"`
+	ColunmName   string      `json:"columnName"`
+	Value        interface{} `json:"value"`
+	OldValue     interface{} `json:"oldValue"`
+	EnumValue    string      `json:"enumValue,omitempty"`
+	OldEnumValue string      `json:"oldEnumValue,omitempty"`
 }
 
 func (cv *ColumnValue) String() string {

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"mysql_byroad/mysql_schema"
+	"strconv"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/siddontang/go-mysql/replication"
@@ -69,6 +70,15 @@ func (eh *RowsEventHandler) HandleWriteEvent(e *replication.RowsEvent) {
 			}
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
 				c := getColumnValue(nil, r, column)
+				if column.IsEnum() {
+					if c.Value != nil {
+						index, err := strconv.Atoi(c.Value.(string))
+						if err != nil {
+							continue
+						}
+						c.EnumValue = column.GetEnumValue(index - 1)
+					}
+				}
 				columns = append(columns, c)
 			}
 		}
@@ -94,6 +104,15 @@ func (eh *RowsEventHandler) HandleDeleteEvent(e *replication.RowsEvent) {
 			}
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
 				c := getColumnValue(nil, r, column)
+				if column.IsEnum() {
+					if c.Value != nil {
+						index, err := strconv.Atoi(c.Value.(string))
+						if err != nil {
+							continue
+						}
+						c.EnumValue = column.GetEnumValue(index - 1)
+					}
+				}
 				columns = append(columns, c)
 			}
 		}
@@ -122,6 +141,22 @@ func (eh *RowsEventHandler) HandleUpdateEvent(e *replication.RowsEvent) {
 			}
 			if eh.taskManager.InNotifyField(schema, table, column.Name) {
 				c := getColumnValue(oldRow[j], newRow[j], column)
+				if column.IsEnum() {
+					if c.Value != nil {
+						index, err := strconv.Atoi(c.Value.(string))
+						if err != nil {
+							continue
+						}
+						c.EnumValue = column.GetEnumValue(index - 1)
+					}
+					if c.OldValue != nil {
+						index, err := strconv.Atoi(c.OldValue.(string))
+						if err != nil {
+							continue
+						}
+						c.OldEnumValue = column.GetEnumValue(index - 1)
+					}
+				}
 				columns = append(columns, c)
 			}
 		}

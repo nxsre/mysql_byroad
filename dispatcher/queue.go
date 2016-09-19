@@ -14,7 +14,7 @@ type Enqueuer interface {
 }
 type EventEnqueuer struct {
 	queueManager Enqueuer
-	taskManager *TaskManager
+	taskManager  *TaskManager
 	sync.WaitGroup
 }
 
@@ -96,5 +96,8 @@ func (this *RowsEventHandler) enqueue(schema, table, event string, taskid int64,
 	ntyevt.TaskID = task.ID
 	name := genTaskQueueName(task)
 	this.eventEnqueuer.queueManager.Enqueue(name, ntyevt)
+	for _, c := range ntyevt.Fields {
+		log.Debugf("nsq enqueue: %+v", c)
+	}
 	this.eventEnqueuer.Done()
 }
