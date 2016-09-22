@@ -31,7 +31,7 @@ func NewDispatcher(config *Config) *Dispatcher {
 
 	rpcClientSchema := fmt.Sprintf("%s:%d", config.MonitorConf.Host, config.MonitorConf.RpcPort)
 	rpcServerSchema := fmt.Sprintf("%s:%d", config.RPCServerConf.Host, config.RPCServerConf.Port)
-	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.DBInstanceName)
+	rpcServer := NewRPCServer(ctx, "tcp", rpcServerSchema, config.DBInstanceNames)
 	rpcClient := NewRPCClient("tcp", rpcClientSchema, "", config.RPCPingInterval.Duration)
 	dispatcher.rpcClient = rpcClient
 	dispatcher.rpcServer = rpcServer
@@ -52,7 +52,9 @@ func NewDispatcher(config *Config) *Dispatcher {
 
 func (d *Dispatcher) Start() {
 	d.rpcServer.startRpcServer()
-	d.rpcClient.RegisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
+	for _, desc := range d.rpcServer.descs {
+		d.rpcClient.RegisterClient(d.rpcServer.getSchema(), desc)
+	}
 	d.replicationClient.Start()
 }
 
@@ -61,7 +63,9 @@ func (d *Dispatcher) IncStatistic(schema, table, event string) {
 }
 
 func (d *Dispatcher) Stop() {
-	d.rpcClient.DeregisterClient(d.rpcServer.getSchema(), d.rpcServer.desc)
+	for _, desc := range d.rpcServer.descs {
+		d.rpcClient.DeregisterClient(d.rpcServer.getSchema(), desc)
+	}
 	d.replicationClient.Stop()
 	<-d.replicationClient.StopChan
 	d.replicationClient.SaveBinlog()

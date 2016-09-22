@@ -15,17 +15,17 @@ import (
 type RPCServer struct {
 	protocol   string
 	schema     string
-	desc       string
+	descs      []string
 	listener   net.Listener
 	dispatcher *Dispatcher
 }
 
-func NewRPCServer(ctx context.Context, protocol, schema, desc string) *RPCServer {
+func NewRPCServer(ctx context.Context, protocol, schema string, descs []string) *RPCServer {
 	disp := ctx.Value("dispatcher").(*Dispatcher)
 	server := RPCServer{
 		protocol:   protocol,
 		schema:     schema,
-		desc:       desc,
+		descs:      descs,
 		dispatcher: disp,
 	}
 	return &server

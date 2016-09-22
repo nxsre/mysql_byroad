@@ -78,7 +78,7 @@ func (m *Monitor) HandleDispatchClientSignal(ss *ServiceSignal, status *string) 
 	if ss.Code == "1" {
 		dispatcherManager.AddDispatchClient(ss.Schema, ss.Desc)
 	} else if ss.Code == "0" {
-		dispatcherManager.DeleteDispatchClient(ss.Schema)
+		dispatcherManager.DeleteDispatchClient(ss.Desc)
 	} else if ss.Code == "2" {
 		dispatcherManager.UpdateDispatchClient(ss.Schema, ss.Desc)
 	}

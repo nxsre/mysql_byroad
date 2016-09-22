@@ -24,9 +24,13 @@ func NewTaskManager(ctx context.Context) *TaskManager {
 func (tm *TaskManager) initTasks() {
 	rpcClient := tm.ctx.Value("dispatcher").(*Dispatcher).rpcClient
 	conf := tm.ctx.Value("dispatcher").(*Dispatcher).Config
-	tasks, err := rpcClient.GetTasks(conf.DBInstanceName)
-	if err != nil {
-		log.Error("get all tasks: ", err.Error())
+	tasks := make([]*model.Task, 0, 10)
+	for _, name := range conf.DBInstanceNames {
+		ts, err := rpcClient.GetTasks(name)
+		if err != nil {
+			log.Error("get all tasks: ", err.Error())
+		}
+		tasks = append(tasks, ts...)
 	}
 	tm.taskIdMap = NewTaskIdMap(100)
 	for _, t := range tasks {

@@ -59,47 +59,57 @@ func (pm *PusherManager) UpdatePushClient(schema, desc string) {
 	}
 }
 
-func (pm *PusherManager) AddTask(task *model.Task) {
+func (pm *PusherManager) AddTask(task *model.Task) error {
 	for client := range pm.rpcclients.Iter() {
 		status, err := client.AddTask(task)
 		if err != nil {
 			log.Errorf("pusher manager add task status: %s, error: %s", status, err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
-func (pm *PusherManager) DeleteTask(task *model.Task) {
+func (pm *PusherManager) DeleteTask(task *model.Task) error {
 	for client := range pm.rpcclients.Iter() {
 		status, err := client.DeleteTask(task)
 		if err != nil {
 			log.Errorf("pusher manager delete task status: %s, error: %s", status, err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
-func (pm *PusherManager) UpdateTask(task *model.Task) {
+func (pm *PusherManager) UpdateTask(task *model.Task) error {
 	for client := range pm.rpcclients.Iter() {
 		status, err := client.UpdateTask(task)
 		if err != nil {
 			log.Errorf("pusher manager update task status: %s, error: %s", status, err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
-func (pm *PusherManager) StartTask(task *model.Task) {
+func (pm *PusherManager) StartTask(task *model.Task) error {
 	for client := range pm.rpcclients.Iter() {
 		status, err := client.StartTask(task)
 		if err != nil {
 			log.Errorf("pusher manager start task status: %s, error: %s", status, err.Error())
+			return err
 		}
 	}
+	return nil
 }
 
-func (pm *PusherManager) StopTask(task *model.Task) {
+func (pm *PusherManager) StopTask(task *model.Task) error {
 	for client := range pm.rpcclients.Iter() {
 		status, err := client.StopTask(task)
 		if err != nil {
 			log.Errorf("pusher manager stop task status: %s, error: %s", status, err.Error())
+			return err
 		}
 	}
+	return nil
 }
