@@ -14,6 +14,7 @@ password = "toor"
 binlog_filename = ""
 binlog_position = 0
 exclude = ["information_schema", "performance_schema", "mysql"]
+include = ["test"]
 interval = "60s" # interval to update information schema
 
 # monitor的地址和rpc信息，用于获取任务信息
@@ -39,4 +40,3 @@ port = 3306
 username = "root"
 password = "toor"
 dbname = "byroad"
-

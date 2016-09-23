@@ -91,10 +91,15 @@ func (this *Inspector) GetColumnMap() *ColumnMap {
 func (this *Inspector) getColumns() (ColumnList, error) {
 	sqlStr := "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM columns "
 	nodisplay := this.getNoDisplaySchema()
-	if nodisplay != "" {
-		sqlStr += "WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")"
+	display := this.getDisplaySchema()
+	if nodisplay != "" && display != "" {
+		sqlStr += "WHERE " + nodisplay + " AND " + display
+	} else if nodisplay != "" || display != "" {
+		sqlStr += "WHERE " + nodisplay + display
+	} else {
 	}
 	var columnList = make([]*Column, 0, 10)
+	fmt.Println(sqlStr)
 	err := this.db.Select(&columnList, sqlStr)
 	return columnList, err
 }
@@ -104,7 +109,23 @@ func (this *Inspector) getNoDisplaySchema() string {
 	for _, schema := range this.config.Exclude {
 		data = data + "'" + schema + "'" + ","
 	}
-	return strings.TrimRight(data, ",")
+	if data != "" {
+		data = strings.TrimRight(data, ",")
+		return "TABLE_SCHEMA NOT IN (" + data + ")"
+	}
+	return ""
+}
+
+func (this *Inspector) getDisplaySchema() string {
+	var data string
+	for _, schema := range this.config.Include {
+		data = data + "'" + schema + "'" + ","
+	}
+	if data != "" {
+		data = strings.TrimRight(data, ",")
+		return "TABLE_SCHEMA IN (" + data + ")"
+	}
+	return ""
 }
 
 func (this *Inspector) Close() error {

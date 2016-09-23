@@ -44,6 +44,7 @@ type MysqlConf struct {
 	BinlogFilename string `toml:"binlog_filename"`
 	BinlogPosition uint32 `toml:"binlog_position"`
 	Exclude        []string
+	Include        []string
 	Interval       duration
 }
 
