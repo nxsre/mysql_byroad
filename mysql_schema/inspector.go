@@ -99,7 +99,6 @@ func (this *Inspector) getColumns() (ColumnList, error) {
 	} else {
 	}
 	var columnList = make([]*Column, 0, 10)
-	fmt.Println(sqlStr)
 	err := this.db.Select(&columnList, sqlStr)
 	return columnList, err
 }

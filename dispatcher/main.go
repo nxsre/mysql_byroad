@@ -2,7 +2,6 @@ package main
 
 import (
 	log "github.com/Sirupsen/logrus"
-	_ "github.com/go-sql-driver/mysql"
 )
 
 func main() {

@@ -3,14 +3,14 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
+	"mysql_byroad/nsq"
 	"os"
 	"os/signal"
 	"syscall"
 	"time"
 
-	"mysql_byroad/nsq"
-
 	log "github.com/Sirupsen/logrus"
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/jmoiron/sqlx"
 )
 
