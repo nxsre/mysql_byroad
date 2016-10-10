@@ -102,7 +102,6 @@ func NewConfigDB(dsn string) (*ConfigDB, error) {
 		return nil, err
 	}
 	model.Init(db)
-	model.CreateConfigTable()
 	confdb.db = db
 	confdb.dsn = dsn
 	return confdb, nil
