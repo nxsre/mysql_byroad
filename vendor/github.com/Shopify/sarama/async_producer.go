@@ -105,7 +105,8 @@ func NewAsyncProducerFromClient(client Client) (AsyncProducer, error) {
 type flagSet int8
 
 const (
-	chaser   flagSet = 1 << iota // message is last in a group that failed
+	syn      flagSet = 1 << iota // first message from partitionProducer to brokerProducer
+	fin                          // final message from partitionProducer to brokerProducer and back
 	shutdown                     // start the shutdown process
 )
 
@@ -134,6 +135,11 @@ type ProducerMessage struct {
 	// Partition is the partition that the message was sent to. This is only
 	// guaranteed to be defined if the message was successfully delivered.
 	Partition int32
+	// Timestamp is the timestamp assigned to the message by the broker. This
+	// is only guaranteed to be defined if the message was successfully
+	// delivered, RequiredAcks is not NoResponse, and the Kafka broker is at
+	// least version 0.10.0.
+	Timestamp time.Time
 
 	retries int
 	flags   flagSet
@@ -365,7 +371,7 @@ type partitionProducer struct {
 
 	// highWatermark tracks the "current" retry level, which is the only one where we actually let messages through,
 	// all other messages get buffered in retryState[msg.retries].buf to preserve ordering
-	// retryState[msg.retries].expectChaser simply tracks whether we've seen a chaser message for a given level (and
+	// retryState[msg.retries].expectChaser simply tracks whether we've seen a fin message for a given level (and
 	// therefore whether our buffer is complete and safe to flush)
 	highWatermark int
 	retryState    []partitionRetryState
@@ -397,6 +403,8 @@ func (pp *partitionProducer) dispatch() {
 	pp.leader, _ = pp.parent.client.Leader(pp.topic, pp.partition)
 	if pp.leader != nil {
 		pp.output = pp.parent.getBrokerProducer(pp.leader)
+		pp.parent.inFlight.Add(1) // we're generating a syn message; track it so we don't shut down while it's still inflight
+		pp.output <- &ProducerMessage{Topic: pp.topic, Partition: pp.partition, flags: syn}
 	}
 
 	for msg := range pp.input {
@@ -407,20 +415,20 @@ func (pp *partitionProducer) dispatch() {
 		} else if pp.highWatermark > 0 {
 			// we are retrying something (else highWatermark would be 0) but this message is not a *new* retry level
 			if msg.retries < pp.highWatermark {
-				// in fact this message is not even the current retry level, so buffer it for now (unless it's a just a chaser)
-				if msg.flags&chaser == chaser {
+				// in fact this message is not even the current retry level, so buffer it for now (unless it's a just a fin)
+				if msg.flags&fin == fin {
 					pp.retryState[msg.retries].expectChaser = false
-					pp.parent.inFlight.Done() // this chaser is now handled and will be garbage collected
+					pp.parent.inFlight.Done() // this fin is now handled and will be garbage collected
 				} else {
 					pp.retryState[msg.retries].buf = append(pp.retryState[msg.retries].buf, msg)
 				}
 				continue
-			} else if msg.flags&chaser == chaser {
-				// this message is of the current retry level (msg.retries == highWatermark) and the chaser flag is set,
+			} else if msg.flags&fin == fin {
+				// this message is of the current retry level (msg.retries == highWatermark) and the fin flag is set,
 				// meaning this retry level is done and we can go down (at least) one level and flush that
 				pp.retryState[pp.highWatermark].expectChaser = false
 				pp.flushRetryBuffers()
-				pp.parent.inFlight.Done() // this chaser is now handled and will be garbage collected
+				pp.parent.inFlight.Done() // this fin is now handled and will be garbage collected
 				continue
 			}
 		}
@@ -449,11 +457,11 @@ func (pp *partitionProducer) newHighWatermark(hwm int) {
 	Logger.Printf("producer/leader/%s/%d state change to [retrying-%d]\n", pp.topic, pp.partition, hwm)
 	pp.highWatermark = hwm
 
-	// send off a chaser so that we know when everything "in between" has made it
+	// send off a fin so that we know when everything "in between" has made it
 	// back to us and we can safely flush the backlog (otherwise we risk re-ordering messages)
 	pp.retryState[pp.highWatermark].expectChaser = true
-	pp.parent.inFlight.Add(1) // we're generating a chaser message; track it so we don't shut down while it's still inflight
-	pp.output <- &ProducerMessage{Topic: pp.topic, Partition: pp.partition, flags: chaser, retries: pp.highWatermark - 1}
+	pp.parent.inFlight.Add(1) // we're generating a fin message; track it so we don't shut down while it's still inflight
+	pp.output <- &ProducerMessage{Topic: pp.topic, Partition: pp.partition, flags: fin, retries: pp.highWatermark - 1}
 
 	// a new HWM means that our current broker selection is out of date
 	Logger.Printf("producer/leader/%s/%d abandoning broker %d\n", pp.topic, pp.partition, pp.leader.ID())
@@ -501,6 +509,9 @@ func (pp *partitionProducer) updateLeader() error {
 		}
 
 		pp.output = pp.parent.getBrokerProducer(pp.leader)
+		pp.parent.inFlight.Add(1) // we're generating a syn message; track it so we don't shut down while it's still inflight
+		pp.output <- &ProducerMessage{Topic: pp.topic, Partition: pp.partition, flags: syn}
+
 		return nil
 	})
 }
@@ -575,16 +586,28 @@ func (bp *brokerProducer) run() {
 		select {
 		case msg := <-bp.input:
 			if msg == nil {
-				goto shutdown
+				bp.shutdown()
+				return
+			}
+
+			if msg.flags&syn == syn {
+				Logger.Printf("producer/broker/%d state change to [open] on %s/%d\n",
+					bp.broker.ID(), msg.Topic, msg.Partition)
+				if bp.currentRetries[msg.Topic] == nil {
+					bp.currentRetries[msg.Topic] = make(map[int32]error)
+				}
+				bp.currentRetries[msg.Topic][msg.Partition] = nil
+				bp.parent.inFlight.Done()
+				continue
 			}
 
 			if reason := bp.needsRetry(msg); reason != nil {
 				bp.parent.retryMessage(msg, reason)
 
-				if bp.closing == nil && msg.flags&chaser == chaser {
+				if bp.closing == nil && msg.flags&fin == fin {
 					// we were retrying this partition but we can start processing again
 					delete(bp.currentRetries[msg.Topic], msg.Partition)
-					Logger.Printf("producer/broker/%d state change to [normal] on %s/%d\n",
+					Logger.Printf("producer/broker/%d state change to [closed] on %s/%d\n",
 						bp.broker.ID(), msg.Topic, msg.Partition)
 				}
 
@@ -620,8 +643,9 @@ func (bp *brokerProducer) run() {
 			output = nil
 		}
 	}
+}
 
-shutdown:
+func (bp *brokerProducer) shutdown() {
 	for !bp.buffer.empty() {
 		select {
 		case response := <-bp.responses:
@@ -641,10 +665,6 @@ shutdown:
 func (bp *brokerProducer) needsRetry(msg *ProducerMessage) error {
 	if bp.closing != nil {
 		return bp.closing
-	}
-
-	if bp.currentRetries[msg.Topic] == nil {
-		return nil
 	}
 
 	return bp.currentRetries[msg.Topic][msg.Partition]
@@ -707,18 +727,20 @@ func (bp *brokerProducer) handleSuccess(sent *produceSet, response *ProduceRespo
 		switch block.Err {
 		// Success
 		case ErrNoError:
+			if bp.parent.conf.Version.IsAtLeast(V0_10_0_0) && !block.Timestamp.IsZero() {
+				for _, msg := range msgs {
+					msg.Timestamp = block.Timestamp
+				}
+			}
 			for i, msg := range msgs {
 				msg.Offset = block.Offset + int64(i)
 			}
 			bp.parent.returnSuccesses(msgs)
 		// Retriable errors
-		case ErrUnknownTopicOrPartition, ErrNotLeaderForPartition, ErrLeaderNotAvailable,
+		case ErrInvalidMessage, ErrUnknownTopicOrPartition, ErrLeaderNotAvailable, ErrNotLeaderForPartition,
 			ErrRequestTimedOut, ErrNotEnoughReplicas, ErrNotEnoughReplicasAfterAppend:
 			Logger.Printf("producer/broker/%d state change to [retrying] on %s/%d because %v\n",
 				bp.broker.ID(), topic, partition, block.Err)
-			if bp.currentRetries[topic] == nil {
-				bp.currentRetries[topic] = make(map[int32]error)
-			}
 			bp.currentRetries[topic][partition] = block.Err
 			bp.parent.retryMessages(msgs, block.Err)
 			bp.parent.retryMessages(bp.buffer.dropPartition(topic, partition), block.Err)
@@ -775,163 +797,6 @@ func (p *asyncProducer) retryHandler() {
 
 		buf.Add(msg)
 	}
-}
-
-// produceSet
-
-type partitionSet struct {
-	msgs        []*ProducerMessage
-	setToSend   *MessageSet
-	bufferBytes int
-}
-
-type produceSet struct {
-	parent *asyncProducer
-	msgs   map[string]map[int32]*partitionSet
-
-	bufferBytes int
-	bufferCount int
-}
-
-func newProduceSet(parent *asyncProducer) *produceSet {
-	return &produceSet{
-		msgs:   make(map[string]map[int32]*partitionSet),
-		parent: parent,
-	}
-}
-
-func (ps *produceSet) add(msg *ProducerMessage) error {
-	var err error
-	var key, val []byte
-
-	if msg.Key != nil {
-		if key, err = msg.Key.Encode(); err != nil {
-			return err
-		}
-	}
-
-	if msg.Value != nil {
-		if val, err = msg.Value.Encode(); err != nil {
-			return err
-		}
-	}
-
-	partitions := ps.msgs[msg.Topic]
-	if partitions == nil {
-		partitions = make(map[int32]*partitionSet)
-		ps.msgs[msg.Topic] = partitions
-	}
-
-	set := partitions[msg.Partition]
-	if set == nil {
-		set = &partitionSet{setToSend: new(MessageSet)}
-		partitions[msg.Partition] = set
-	}
-
-	set.msgs = append(set.msgs, msg)
-	set.setToSend.addMessage(&Message{Codec: CompressionNone, Key: key, Value: val})
-
-	size := producerMessageOverhead + len(key) + len(val)
-	set.bufferBytes += size
-	ps.bufferBytes += size
-	ps.bufferCount++
-
-	return nil
-}
-
-func (ps *produceSet) buildRequest() *ProduceRequest {
-	req := &ProduceRequest{
-		RequiredAcks: ps.parent.conf.Producer.RequiredAcks,
-		Timeout:      int32(ps.parent.conf.Producer.Timeout / time.Millisecond),
-	}
-
-	for topic, partitionSet := range ps.msgs {
-		for partition, set := range partitionSet {
-			if ps.parent.conf.Producer.Compression == CompressionNone {
-				req.AddSet(topic, partition, set.setToSend)
-			} else {
-				// When compression is enabled, the entire set for each partition is compressed
-				// and sent as the payload of a single fake "message" with the appropriate codec
-				// set and no key. When the server sees a message with a compression codec, it
-				// decompresses the payload and treats the result as its message set.
-				payload, err := encode(set.setToSend)
-				if err != nil {
-					Logger.Println(err) // if this happens, it's basically our fault.
-					panic(err)
-				}
-				req.AddMessage(topic, partition, &Message{
-					Codec: ps.parent.conf.Producer.Compression,
-					Key:   nil,
-					Value: payload,
-				})
-			}
-		}
-	}
-
-	return req
-}
-
-func (ps *produceSet) eachPartition(cb func(topic string, partition int32, msgs []*ProducerMessage)) {
-	for topic, partitionSet := range ps.msgs {
-		for partition, set := range partitionSet {
-			cb(topic, partition, set.msgs)
-		}
-	}
-}
-
-func (ps *produceSet) dropPartition(topic string, partition int32) []*ProducerMessage {
-	if ps.msgs[topic] == nil {
-		return nil
-	}
-	set := ps.msgs[topic][partition]
-	if set == nil {
-		return nil
-	}
-	ps.bufferBytes -= set.bufferBytes
-	ps.bufferCount -= len(set.msgs)
-	delete(ps.msgs[topic], partition)
-	return set.msgs
-}
-
-func (ps *produceSet) wouldOverflow(msg *ProducerMessage) bool {
-	switch {
-	// Would we overflow our maximum possible size-on-the-wire? 10KiB is arbitrary overhead for safety.
-	case ps.bufferBytes+msg.byteSize() >= int(MaxRequestSize-(10*1024)):
-		return true
-	// Would we overflow the size-limit of a compressed message-batch for this partition?
-	case ps.parent.conf.Producer.Compression != CompressionNone &&
-		ps.msgs[msg.Topic] != nil && ps.msgs[msg.Topic][msg.Partition] != nil &&
-		ps.msgs[msg.Topic][msg.Partition].bufferBytes+msg.byteSize() >= ps.parent.conf.Producer.MaxMessageBytes:
-		return true
-	// Would we overflow simply in number of messages?
-	case ps.parent.conf.Producer.Flush.MaxMessages > 0 && ps.bufferCount >= ps.parent.conf.Producer.Flush.MaxMessages:
-		return true
-	default:
-		return false
-	}
-}
-
-func (ps *produceSet) readyToFlush() bool {
-	switch {
-	// If we don't have any messages, nothing else matters
-	case ps.empty():
-		return false
-	// If all three config values are 0, we always flush as-fast-as-possible
-	case ps.parent.conf.Producer.Flush.Frequency == 0 && ps.parent.conf.Producer.Flush.Bytes == 0 && ps.parent.conf.Producer.Flush.Messages == 0:
-		return true
-	// If we've passed the message trigger-point
-	case ps.parent.conf.Producer.Flush.Messages > 0 && ps.bufferCount >= ps.parent.conf.Producer.Flush.Messages:
-		return true
-	// If we've passed the byte trigger-point
-	case ps.parent.conf.Producer.Flush.Bytes > 0 && ps.bufferBytes >= ps.parent.conf.Producer.Flush.Bytes:
-		return true
-	default:
-		return false
-	}
-}
-
-func (ps *produceSet) empty() bool {
-	return ps.bufferCount == 0
 }
 
 // utility functions

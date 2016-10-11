@@ -13,8 +13,8 @@
 		},
 		{
 			"ImportPath": "github.com/Shopify/sarama",
-			"Comment": "v1.6.1-19-g3835985",
-			"Rev": "38359850d6e0af98b4d5f2d03ea8e3a7601bf8fd"
+			"Comment": "v1.10.1-10-gaf0513c",
+			"Rev": "af0513c4d97979eb876d201391fac6475ec08268"
 		},
 		{
 			"ImportPath": "github.com/Sirupsen/logrus",
@@ -77,7 +77,7 @@
 		},
 		{
 			"ImportPath": "github.com/juju/errors",
-			"Rev": "b2c7a7da5b2995941048f60146e67702a292e468"
+			"Rev": "6f54ff6318409d31ff16261533ce2c8381a4fd5d"
 		},
 		{
 			"ImportPath": "github.com/klauspost/compress/flate",
@@ -115,6 +115,10 @@
 			"Rev": "028eae7ab5c4c9e2d1cb4c4ca1e53259bbe7e504"
 		},
 		{
+			"ImportPath": "github.com/ngaut/log",
+			"Rev": "cec23d3e10b016363780d894a0eb732a12c06e02"
+		},
+		{
 			"ImportPath": "github.com/nsqio/go-nsq",
 			"Comment": "v1.0.6",
 			"Rev": "d71fb89c9e0263aaed89645b0b168e11ccf597b1"
@@ -125,27 +129,28 @@
 		},
 		{
 			"ImportPath": "github.com/satori/go.uuid",
+			"Comment": "v1.0.0",
 			"Rev": "f9ab0dce87d815821e221626b772e3475a0d2749"
 		},
 		{
 			"ImportPath": "github.com/siddontang/go-mysql/client",
-			"Rev": "659108d0502ef9e06a7206f516918a3e56929062"
+			"Rev": "d8e777f00cdbb2bc200ebeb80364b0bcc098362e"
 		},
 		{
 			"ImportPath": "github.com/siddontang/go-mysql/mysql",
-			"Rev": "659108d0502ef9e06a7206f516918a3e56929062"
+			"Rev": "d8e777f00cdbb2bc200ebeb80364b0bcc098362e"
 		},
 		{
 			"ImportPath": "github.com/siddontang/go-mysql/packet",
-			"Rev": "659108d0502ef9e06a7206f516918a3e56929062"
+			"Rev": "d8e777f00cdbb2bc200ebeb80364b0bcc098362e"
 		},
 		{
 			"ImportPath": "github.com/siddontang/go-mysql/replication",
-			"Rev": "659108d0502ef9e06a7206f516918a3e56929062"
+			"Rev": "d8e777f00cdbb2bc200ebeb80364b0bcc098362e"
 		},
 		{
 			"ImportPath": "github.com/siddontang/go/hack",
-			"Rev": "354e14e6c093c661abb29fd28403b3c19cff5514"
+			"Rev": "1e9ce2a5ac4092fdf61e293634e40bfb49595105"
 		},
 		{
 			"ImportPath": "github.com/wvanbergen/kafka/consumergroup",

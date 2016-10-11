@@ -105,11 +105,15 @@ func startReplication(rep *ReplicationClient) {
 			rep.StopChan <- true
 		}
 	}()
-	syncer := replication.NewBinlogSyncer(rep.ServerId, "mysql")
-	err := syncer.RegisterSlave(rep.Host, rep.Port, rep.Username, rep.Password)
-	if err != nil {
-		log.Fatalf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+	cfg := replication.BinlogSyncerConfig{
+		ServerID: rep.ServerId,
+		Flavor:   "mysql",
+		Host:     rep.Host,
+		Port:     rep.Port,
+		User:     rep.Username,
+		Password: rep.Password,
 	}
+	syncer := replication.NewBinlogSyncer(&cfg)
 	filename := rep.BinlogFilename
 	pos := rep.BinlogPosition
 	log.Debugf("config filename %s, pos %d", filename, pos)
@@ -144,9 +148,11 @@ func startReplication(rep *ReplicationClient) {
 	log.Infof("start replication client on %s:%d at %s, %d", rep.Host, rep.Port, filename, pos)
 	timeout := time.Second
 	for rep.running {
-		ev, err := streamer.GetEventTimeout(timeout)
+		ctx, cancel := context.WithTimeout(context.Background(), timeout)
+		ev, err := streamer.GetEvent(ctx)
+		cancel()
 		if err != nil {
-			if err == replication.ErrGetEventTimeout {
+			if err == context.DeadlineExceeded {
 				continue
 			} else {
 				log.Fatalf("get event: %s", err.Error())
