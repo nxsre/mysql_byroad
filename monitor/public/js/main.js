@@ -170,6 +170,13 @@ $(function () {
     content: '<dd><dt>默认</dt><dl>旁路系统原有格式: 消息内容从post请求的body中读取。</dl><dl>消费方处理完成后返回 success</dl><dt>消息中心推送协议</dt><dl>使用消息中心的推送协议进行数据封装: message=POST["message"], jobid=GET["jobid"], retry_times=GET["retry_times"]</dl><dl>消费方处理完成后返回{"status": 1}</dl></dd>',
   });
 
+  $("#regexp-help").popover({
+    trigger: 'hover',
+    title: '正则表达式',
+    html: true,
+    content: '<dd><dt>支持正则表达式</dt><dl>数据库名和表名都可以使用正则表达式</dl><dl>默认会在表达式前后添加<strong>"^"</strong>和<strong>"$"</strong>符号</dl><dl>之前的<strong>*</strong>的效果同现在的<strong>([\\w]+)</strong>一样</dl><dt>',
+  });
+
   $('#client').change(function () {
     $.cookie('client', $(this).val(), { path: '/' });
     location.reload();

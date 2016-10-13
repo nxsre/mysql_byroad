@@ -28,7 +28,7 @@ func isMatch(s1, s2 string) bool {
 		return true
 	}
 	log.Debug("s1: %s, s2: %s", s1, s2)
-	reg, err := regexp.Compile(s1)
+	reg, err := regexp.Compile("^" + s1 + "$")
 	if err != nil {
 		return false
 	}

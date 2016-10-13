@@ -1,100 +1,105 @@
 {% include "header.html"%}
 <div class="container-fluid">
-  <div class="row">
-    <div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
-      <form method="post" id="form">
-        <div class="col-md-12">
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="name">任务名称</label>
-              <p class="form-control-static">(只能是数字、字母、下划线；长度不超过50；不能修改)</p>
-            </div>
-            <input class="form-control" type="text" name="name" id="name">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="desc">任务描述</label>
-              <p class="form-control-static">(任务描述)</p>
-            </div>
-            <input class="form-control" type="text" name="desc" id="desc">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="apiurl">推送地址</label>
-              <p class="form-control-static">(HTTP POST推送消息)</p>
-            </div>
-            <input class="form-control" type="text" name="apiurl" id="apiurl">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="apiurl">数据封装协议</label>
-              <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
-            </div>
-            <div class="form-control-static">
-              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer !=1 ) %}checked
-                {%endif%}/> 默认
-              <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer==1 ) %}checked
-                {%endif%}/> 消息中心推送协议
-            </div>
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="routineCount">推送消息并发数</label>
-              <p class="form-control-static">(1-10)</p>
-            </div>
-            <input class="form-control" type="text" name="routineCount" id="routineCount" value="1">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="reRoutineCount">重推消息并发数</label>
-              <p class="form-control-static">(1-10)</p>
-            </div>
-            <input class="form-control" type="text" name="reRoutineCount" id="reRoutineCount" value="1">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="reSendTime">重推时间间隔</label>
-              <p class="form-control-static">(0-30000ms)</p>
-            </div>
-            <input class="form-control" type="text" name="reSendTime" id="reSendTime" value="5000">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="retryCount">重推消息次数</label>
-              <p class="form-control-static">(0-10)</p>
-            </div>
-            <input class="form-control" type="text" name="retryCount" id="retryCount" value="3">
-          </div>
-          <div class="form-group col-md-6">
-            <div class="form-inline">
-              <label for="timeout">推送消息超时</label>
-              <p class="form-control-static">(1-30000ms)</p>
-            </div>
-            <input class="form-control" type="text" name="timeout" id="timeout" value="10000">
-          </div>
-          <div class="form-group col-md-12">
-            <div class="form-inline">
-              <label for="state">初始状态：</label>
-              <div class="radio">
-                <label>
+	<div class="row">
+		<div class="col-sm-9 col-sm-offset-3 col-md-10 col-md-offset-2 main">
+			<form method="post" id="form">
+				<div class="col-md-12">
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="name">任务名称</label>
+							<p class="form-control-static">(只能是数字、字母、下划线；长度不超过50；不能修改)</p>
+						</div>
+						<input class="form-control" type="text" name="name" id="name">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="desc">任务描述</label>
+							<p class="form-control-static">(任务描述)</p>
+						</div>
+						<input class="form-control" type="text" name="desc" id="desc">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="apiurl">推送地址</label>
+							<p class="form-control-static">(HTTP POST推送消息)</p>
+						</div>
+						<input class="form-control" type="text" name="apiurl" id="apiurl">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="apiurl">数据封装协议</label>
+							<p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
+						</div>
+						<div class="form-control-static">
+							<input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer !=1 ) %}checked
+								{%endif%}/> 默认
+							<input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer==1 ) %}checked
+								{%endif%}/> 消息中心推送协议
+						</div>
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="routineCount">推送消息并发数</label>
+							<p class="form-control-static">(1-10)</p>
+						</div>
+						<input class="form-control" type="text" name="routineCount" id="routineCount" value="1">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="reRoutineCount">重推消息并发数</label>
+							<p class="form-control-static">(1-10)</p>
+						</div>
+						<input class="form-control" type="text" name="reRoutineCount" id="reRoutineCount" value="1">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="reSendTime">重推时间间隔</label>
+							<p class="form-control-static">(0-30000ms)</p>
+						</div>
+						<input class="form-control" type="text" name="reSendTime" id="reSendTime" value="5000">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="retryCount">重推消息次数</label>
+							<p class="form-control-static">(0-10)</p>
+						</div>
+						<input class="form-control" type="text" name="retryCount" id="retryCount" value="3">
+					</div>
+					<div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="timeout">推送消息超时</label>
+							<p class="form-control-static">(1-30000ms)</p>
+						</div>
+						<input class="form-control" type="text" name="timeout" id="timeout" value="10000">
+					</div>
+					<div class="form-group col-md-12">
+						<div class="form-inline">
+							<label for="state">初始状态：</label>
+							<div class="radio">
+								<label>
                     <input type="radio" name="state" id="state" value="正常" checked> 正常
                 </label>
-                <label>
+								<label>
                     <input type="radio" name="state" id="state" value="停止"> 停止
                 </label>
-              </div>
-            </div>
-          </div>
-          <div class="form-group col-md-12">
-            <button type="button" class="btn btn-primary" id="submit" onclick="addTask()">添加</button>
-          </div>
-        </div>
-        <div id="rightdiv" class="form-inline"></div>
-      </form>
-    </div>
-    <div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
-      {% include "taskleft.html" %}
-    </div>
-  </div>
+							</div>
+						</div>
+					</div>
+					<div class="form-group col-md-12">
+						<button type="button" class="btn btn-primary" id="submit" onclick="addTask()">添加</button>
+					</div>
+				</div>
+				<div id="rightdiv" class="form-inline">
+					<div class="col-md-12">
+						<label for="apiurl">正则表达式</label>
+						<p class="form-control-static"><span id="regexp-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
+					</div>
+				</div>
+			</form>
+		</div>
+		<div class="col-sm-3 col-md-2 sidebar" id="add-left-sidebar">
+			{% include "taskleft.html" %}
+		</div>
+	</div>
 
-  {% include "footer.html"%}
+	{% include "footer.html"%}
