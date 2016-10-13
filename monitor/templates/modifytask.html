@@ -97,7 +97,8 @@
         <div id="rightdiv" class="form-inline">
           {% for schema, tables in taskColumnsMap %} {% for table, fields in tables %}
           <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
-            <h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="{{schema}}.{{table}}"></input>
+            <h3><input class="form-control input-lg schema-name" onchange="changeFieldValue(this)" value="{{schema}}"></input>
+            <input class="form-control input-lg table-name" onchange="changeFieldValue(this)" value="{{table}}"></input>
               <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
                 <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
               </a>
@@ -108,9 +109,9 @@
                 <div class="form-group">
                   <div class="input-group">
                     <input value="{{f.Column}}" readonly type="text" class="form-control">
-                    <input name="fields" value="{{schema}}.{{table}}.{{f.Column}}" type="hidden">
+                    <input name="fields" value="{{schema}}@@{{table}}@@{{f.Column}}" type="hidden">
                   </div>
-                  <div class="checkbox"><label><input type="checkbox" name="{{schema}}.{{table}}.{{f.Column}}" value="1" {%if f.Send%}checked{%endif%}></input>是否推送值<label>
+                  <div class="checkbox"><label><input type="checkbox" name="{{schema}}@@{{table}}@@{{f.Column}}" value="1" {%if f.Send%}checked{%endif%}></input>是否推送值<label>
                 </div>
                 <a href="#" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
               </div>

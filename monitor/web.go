@@ -35,7 +35,19 @@ type UserGroup struct {
 	Groups []string `json:"groups"`
 }
 
+type FieldsForm struct {
+	Schema string `json:"schema"`
+	Tables []struct {
+		Table   string `json:"table"`
+		Columns []struct {
+			Name string `json:"name"`
+			Send int    `json:"send"`
+		} `json:"columns"`
+	} `json:"tables"`
+}
+
 type TaskForm struct {
+	TaskId         int64                  `form:"taskid"`
 	Name           string                 `form:"name" binding:"AlphaDash;MaxSize(50);Required"`
 	Apiurl         string                 `form:"apiurl" binding:"Required"`
 	RoutineCount   int                    `form:"routineCount" binding:"Range(1,10)"`
@@ -46,6 +58,7 @@ type TaskForm struct {
 	Desc           string                 `form:"desc" binding:"MaxSize(255)"`
 	State          string                 `form:"state"`
 	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
+	Fields         []*FieldsForm          `form:"fields"`
 }
 
 func StartServer() {
@@ -304,6 +317,73 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "modifytask")
 }
 
+func parseFields2(fields []*FieldsForm) model.NotifyFields {
+	notifyFields := make([]*model.NotifyField, 0, 10)
+	for _, field := range fields {
+		schemaName := field.Schema
+		for _, table := range field.Tables {
+			tableName := table.Table
+			for _, column := range table.Columns {
+				f := new(model.NotifyField)
+				f.Send = column.Send
+				f.Schema = schemaName
+				f.Table = tableName
+				f.Column = column.Name
+				notifyFields = append(notifyFields, f)
+			}
+		}
+	}
+	return notifyFields
+}
+
+func doAddTask2(t TaskForm, ctx *macaron.Context, sess session.Store) string {
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	if len(t.Fields) == 0 {
+		resp.Error = true
+		resp.Message = "请添加字段信息"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	task := new(model.Task)
+	copyTask(&t, task)
+	task.CreateUser = sess.Get("user").(string)
+	schema := ctx.GetCookie("client")
+	rpcclient, ok := dispatcherManager.GetRPCClient(schema)
+	if !ok {
+		resp.Error = true
+		resp.Message = "没有相应的数据库实例"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	task.DBInstanceName = rpcclient.Desc
+	task.Fields = parseFields2(t.Fields)
+	if ex, _ := task.NameExists(); ex {
+		resp.Error = true
+		resp.Message = "任务名已经存在!"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+
+	_, err := task.Add()
+	if err != nil {
+		resp.Error = true
+		resp.Message = "添加失败!"
+		log.Errorf("add task: %s", err.Error())
+	} else {
+		resp.Message = "添加成功!"
+	}
+	dispatcherManager.AddTask(task)
+	pusherManager.AddTask(task)
+	body, _ := json.Marshal(resp)
+	ctx.Resp.WriteHeader(201)
+	log.Printf("%s: add task %v", sess.Get("user").(string), task.Name)
+	return string(body)
+}
+
 func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	fields := ctx.QueryStrings("fields")
 	if !checkAuth(ctx, sess, "all") {
@@ -334,7 +414,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		send := ctx.QueryInt(c)
 		f := new(model.NotifyField)
 		f.Send = send
-		nfs := strings.Split(c, ".")
+		nfs := strings.Split(c, "@@")
 		if len(nfs) < 3 {
 			resp.Error = true
 			resp.Message = "参数错误"
@@ -344,15 +424,14 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		f.Schema = nfs[0]
 		f.Table = nfs[1]
 		f.Column = nfs[2]
-		if !FieldExists(task, f) {
+		if !FieldExists(task.Fields, f) {
 			task.Fields = append(task.Fields, f)
 		}
 	}
-	if ex, err := task.NameExists(); ex {
+	if ex, _ := task.NameExists(); ex {
 		resp.Error = true
 		resp.Message = "任务名已经存在!"
 		body, _ := json.Marshal(resp)
-		log.Errorf("add task: %s", err.Error())
 		return string(body)
 	}
 
@@ -440,7 +519,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		send := ctx.QueryInt(c)
 		f := new(model.NotifyField)
 		f.Send = send
-		nfs := strings.Split(c, ".")
+		nfs := strings.Split(c, "@@")
 		if len(nfs) < 3 {
 			resp.Error = true
 			resp.Message = "参数错误"
@@ -450,7 +529,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		f.Schema = nfs[0]
 		f.Table = nfs[1]
 		f.Column = nfs[2]
-		if !FieldExists(task, f) {
+		if !FieldExists(task.Fields, f) {
 			task.Fields = append(task.Fields, f)
 		}
 	}
@@ -586,8 +665,8 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.PackProtocal = src.PackProtocal
 }
 
-func FieldExists(task *model.Task, field *model.NotifyField) bool {
-	for _, f := range task.Fields {
+func FieldExists(fields []*model.NotifyField, field *model.NotifyField) bool {
+	for _, f := range fields {
 		if f.Schema == field.Schema && f.Table == field.Table && f.Column == field.Column {
 			return true
 		}

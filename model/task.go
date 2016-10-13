@@ -203,7 +203,7 @@ func (task *Task) NameExists() (bool, error) {
 	var cnt int
 	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM task WHERE name=?", task.Name)
 	if err != nil {
-		return false, err
+		return true, err
 	}
 	if cnt == 1 {
 		return true, nil
