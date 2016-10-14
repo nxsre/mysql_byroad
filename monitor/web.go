@@ -58,7 +58,7 @@ type TaskForm struct {
 	Desc           string                 `form:"desc" binding:"MaxSize(255)"`
 	State          string                 `form:"state"`
 	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
-	Fields         []*FieldsForm          `form:"fields"`
+	Fields         []*FieldsForm          `form:"noUse"`
 }
 
 func StartServer() {
