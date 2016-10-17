@@ -1,38 +1,18 @@
 WORKPATH = $(PWD)
 GOGET = go get -v
+LDFLAGS = "-X main.buildstamp=`date '+%Y-%m-%d_%I:%M:%S'` -X main.githash=`git rev-parse HEAD`"
 default: build
-backend_env:
-	${GOGET} github.com/mattn/go-sqlite3
-	${GOGET} github.com/go-sql-driver/mysql
-	${GOGET} gopkg.in/macaron.v1
-	${GOGET} github.com/go-macaron/pongo2
-	${GOGET} github.com/jmoiron/sqlx
-	${GOGET} github.com/go-macaron/session
-	${GOGET} github.com/Unknwon/goconfig
-	${GOGET} github.com/garyburd/redigo/redis
-	${GOGET} github.com/go-macaron/binding
-	${GOGET} github.com/siddontang/go-mysql/replication
-	${GOGET} github.com/siddontang/go-mysql/client
-	${GOGET} github.com/siddontang/go-mysql/mysql
-	${GOGET} gopkg.in/redis.v2
-	${GOGET} github.com/sadlil/gologger
-	${GOGET} github.com/mattbaird/elastigo/lib
-	${GOGET} github.com/mattn/go-isatty
-	${GOGET} github.com/shiena/ansicolor
-
-front_env:
-	cd ${WORKPATH}/public && npm install
 init-build-dir:
 	mkdir -p build
 
 byroad-dispatcher:
-	cd ${WORKPATH}/dispatcher && go build -o ${WORKPATH}/build/byroad-dispatcher
+	cd ${WORKPATH}/dispatcher && go build -ldflags ${LDFLAGS}  -o ${WORKPATH}/build/byroad-dispatcher
 
 byroad-monitor:
-	cd ${WORKPATH}/monitor && go build -o ${WORKPATH}/build/byroad-monitor
+	cd ${WORKPATH}/monitor && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-monitor
 
 byroad-pusher:
-	cd ${WORKPATH}/pusher && go build -o ${WORKPATH}/build/byroad-pusher
+	cd ${WORKPATH}/pusher && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-pusher
 
 build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher
 
