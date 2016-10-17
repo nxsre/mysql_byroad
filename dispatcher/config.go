@@ -3,7 +3,9 @@ package main
 import (
 	"database/sql"
 	"flag"
+	"fmt"
 	"mysql_byroad/model"
+	"os"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -84,9 +86,18 @@ func InitConfig() *Config {
 	return &config
 }
 
+var buildstamp = "no timestamp set"
+var githash = "no githash set"
+
 func ParseConfig() string {
 	filename := flag.String("c", "dispatcher.toml", "config file path")
+	info := flag.Bool("info", false, "Print build info & exit")
 	flag.Parse()
+	if *info {
+		fmt.Println("build stamp: ", buildstamp)
+		fmt.Println("githash: ", githash)
+		os.Exit(0)
+	}
 	return *filename
 }
 
