@@ -38,17 +38,18 @@ type Config struct {
 }
 
 type MysqlConf struct {
-	Name           string
-	ServerId       uint32 `toml:"server_id"`
-	Host           string
-	Port           uint16
-	Username       string
-	Password       string
-	BinlogFilename string `toml:"binlog_filename"`
-	BinlogPosition uint32 `toml:"binlog_position"`
-	Exclude        []string
-	Include        []string
-	Interval       duration
+	Name               string
+	ServerId           uint32 `toml:"server_id"`
+	Host               string
+	Port               uint16
+	Username           string
+	Password           string
+	BinlogFilename     string `toml:"binlog_filename"`
+	BinlogPosition     uint32 `toml:"binlog_position"`
+	Exclude            []string
+	Include            []string
+	Interval           duration
+	TimeoutToReconnect duration `toml:"timeout_to_reconnect"`
 }
 
 type MonitorConf struct {

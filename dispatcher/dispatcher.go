@@ -67,7 +67,7 @@ func (d *Dispatcher) Stop() {
 		d.rpcClient.DeregisterClient(d.rpcServer.getSchema(), desc)
 	}
 	d.replicationClient.Stop()
-	<-d.replicationClient.StopChan
+	//<-d.replicationClient.StopChan
 	d.replicationClient.SaveBinlog()
 }
 

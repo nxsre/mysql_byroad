@@ -16,6 +16,7 @@ binlog_position = 0
 exclude = ["information_schema", "performance_schema", "mysql"]
 # include = ["test"]
 interval = "60s" # interval to update information schema
+timeout_to_reconnect = "10s" #超过该时间未收到binlog消息将重建连接
 
 # monitor的地址和rpc信息，用于获取任务信息
 [monitor]
