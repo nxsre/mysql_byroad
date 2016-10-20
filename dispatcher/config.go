@@ -49,6 +49,7 @@ type MysqlConf struct {
 	Exclude            []string
 	Include            []string
 	Interval           duration
+	Reconnect          bool     `toml:"reconnect"`
 	TimeoutToReconnect duration `toml:"timeout_to_reconnect"`
 }
 

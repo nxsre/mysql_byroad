@@ -30,6 +30,7 @@ type ReplicationClient struct {
 	binlogInfo         *model.BinlogInfo
 	columnManager      *schema.ColumnManager
 	saveBinlogInterval time.Duration
+	reconnect          bool
 	timeoutToReconnect time.Duration
 }
 
@@ -54,6 +55,7 @@ func NewReplicationClient(ctx context.Context) *ReplicationClient {
 			Position: myconf.BinlogPosition,
 		},
 		timeoutToReconnect: myconf.TimeoutToReconnect.Duration,
+		reconnect:          myconf.Reconnect,
 	}
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",
 		conf.DBConfig.Username, conf.DBConfig.Password, conf.DBConfig.Host, conf.DBConfig.Port,
@@ -229,8 +231,12 @@ func (rep *ReplicationClient) onStream(streamer *replication.BinlogStreamer) {
 		cancel()
 		if err != nil {
 			if err == context.DeadlineExceeded {
-				rep.restartChan <- err
-				return
+				if rep.reconnect {
+					rep.restartChan <- err
+					return
+				} else {
+					continue
+				}
 			} else {
 				rep.restartChan <- err
 				return

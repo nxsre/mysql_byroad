@@ -17,7 +17,8 @@ binlog_position = 0
 exclude = ["information_schema", "performance_schema", "mysql"]
 # include = ["test"]
 interval = "60s" # interval to update information schema
-timeout_to_reconnect = "10s" #超过该时间未收到binlog消息将重建连接
+reconnect = false # 超时时是否重连mysql
+timeout_to_reconnect = "1s" # 接收binlog的超时时间，配合reconnect，将在超时时进行重连
 
 #[mysql]
 #name = "jumei_product"
