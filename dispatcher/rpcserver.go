@@ -122,8 +122,11 @@ func (rs *RPCServer) GetStatus(username string, st *map[string]interface{}) erro
 func (rs *RPCServer) GetMasterStatus(username string, binfo *model.BinlogInfo) error {
 	log.Info("rpc get master status")
 	info, err := GetMasterStatus(rs.dispatcher.Config.MysqlConf)
+	if err != nil {
+		return err
+	}
 	*binfo = *info
-	return err
+	return nil
 }
 
 func (rs *RPCServer) GetCurrentBinlogInfo(username string, binfo *model.BinlogInfo) error {

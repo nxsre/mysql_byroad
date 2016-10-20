@@ -3,6 +3,7 @@ binlog_flush_interval = "5s" #binlog位置写入数据库的时间间隔
 logfile = "/var/log/byroad/dispatcher.log"
 loglevel = "Info" # Debug Info Warn Error Fatal Panic
 db_instance_names = ["localhost", "test"]  #该实例的名称，可以使用多个，用来表示相应的数据库，用于区分不同实例上的任务
+#db_instance_names = ["jumei_product"]
 #mysql slave 信息
 [mysql]
 name = "localhost1"
@@ -17,6 +18,19 @@ exclude = ["information_schema", "performance_schema", "mysql"]
 # include = ["test"]
 interval = "60s" # interval to update information schema
 timeout_to_reconnect = "10s" #超过该时间未收到binlog消息将重建连接
+
+#[mysql]
+#name = "jumei_product"
+#server_id = 2017
+#host = "192.168.20.71"
+#port = 9001
+#username = "plsys_r"
+#password = "plsys_r20.71"
+#binlog_filename = ""
+#binlog_position = 0
+#exclude = ["information_schema", "performance_schema", "mysql"]
+#interval = "300s"
+#timeout_to_reconnect = "10s" #超过该时间未收到binlog消息将重建连接
 
 # monitor的地址和rpc信息，用于获取任务信息
 [monitor]

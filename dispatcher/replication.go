@@ -206,9 +206,17 @@ func (rep *ReplicationClient) getStreamer() *replication.BinlogStreamer {
 	}
 	syncer := replication.NewBinlogSyncer(&cfg)
 	rep.syncer = syncer
-	streamer, err := syncer.StartSync(mysql.Position{rep.binlogInfo.Filename, rep.binlogInfo.Position})
-	if err != nil {
-		log.Fatalf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+	var streamer *replication.BinlogStreamer
+	var err error
+	for {
+		streamer, err = syncer.StartSync(mysql.Position{rep.binlogInfo.Filename, rep.binlogInfo.Position})
+		if err != nil {
+			log.Errorf("start replication on %s:%d %s", rep.Host, rep.Port, err.Error())
+			time.Sleep(time.Second)
+			continue
+		} else {
+			break
+		}
 	}
 	return streamer
 }
