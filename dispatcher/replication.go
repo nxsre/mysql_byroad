@@ -223,7 +223,6 @@ func (rep *ReplicationClient) getStreamer() *replication.BinlogStreamer {
 
 func (rep *ReplicationClient) onStream(streamer *replication.BinlogStreamer) {
 	timeout := rep.timeoutToReconnect
-	fmt.Println(timeout.String())
 	for rep.running {
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		ev, err := streamer.GetEvent(ctx)
