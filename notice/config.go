@@ -13,17 +13,9 @@ type EmailConfig struct {
 }
 
 func NewSmsConfig() *SmsConfig {
-	return &SmsConfig{
-		User:     "int_notice",
-		Password: "notice_rt902pnkl10udnq",
-		Addr:     "http://sms.int.jumei.com/index.php",
-	}
+	return &SmsConfig{}
 }
 
 func NewEmailConfig() *EmailConfig {
-	return &EmailConfig{
-		User:     "int_notice",
-		Password: "notice_rt902pnkl10udnq",
-		Addr:     "http://email.int.jumei.com/send.php",
-	}
+	return &EmailConfig{}
 }

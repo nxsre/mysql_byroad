@@ -6,6 +6,8 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"os"
+	"net/http"
+	_ "net/http/pprof"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -85,6 +87,9 @@ func InitConfig() *Config {
 	if err != nil {
 		panic(err)
 	}
+	go func() {
+		log.Println(http.ListenAndServe("localhost:6060", nil))
+	}()
 	return &config
 }
 
