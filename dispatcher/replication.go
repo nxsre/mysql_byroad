@@ -106,18 +106,12 @@ func (rep *ReplicationClient) AddHandler(handler EventHandler) {
 如果本地数据库中位置信息不存在，则使用 'SHOW MASTER STATUS' 获得当前的binlog信息
 */
 func startReplication(rep *ReplicationClient) {
-	defer func() {
-		if err := recover(); err != nil {
-			log.Panicf("%v", err)
-		}
-	}()
 	err := rep.prepareBinlog()
 	if err != nil {
-
 	}
 	log.Infof("start replication client on %s:%d, %s:%d", rep.Host, rep.Port, rep.binlogInfo.Filename, rep.binlogInfo.Position)
 	rep.startBinlog()
-	log.Infof("stop replication client on %s:%d", rep.Host, rep.Port)
+	log.Infof("stop replication client on %s:%d, %s:%d", rep.Host, rep.Port, rep.binlogInfo.Filename, rep.binlogInfo.Position)
 }
 
 func (rep *ReplicationClient) Stop() {
@@ -142,17 +136,25 @@ func (rep *ReplicationClient) BinlogTick() {
 }
 
 func (rep *ReplicationClient) prepareBinlog() error {
+	// 首先使用配置文件中的binlog信息
 	filename := rep.binlogInfo.Filename
 	pos := rep.binlogInfo.Position
+	defer func() {
+		rep.binlogInfo.Filename = filename
+		rep.binlogInfo.Position = pos
+	}()
 	log.Debugf("config filename %s, pos %d", filename, pos)
+	// 如果配置中没有binlog信息
 	if filename == "" || pos == 0 {
+		// 从数据库配置中读取binlog信息
 		binfo, err := rep.confdb.GetBinlogInfo(rep.Name)
 		if err != nil {
-			return err
+			log.Error("get binlog info: ", err.Error())
 		}
 		filename = binfo.Filename
 		pos = binfo.Position
 		log.Debugf("config db filename %s, pos %d", filename, pos)
+		// 如果本地数据库中位置信息不存在，则使用 'SHOW MASTER STATUS' 获取当前的binlog信息
 		if filename == "" || pos == 0 {
 			addr := fmt.Sprintf("%s:%d", rep.Host, rep.Port)
 			c, err := client.Connect(addr, rep.Username, rep.Password, "")
@@ -171,8 +173,6 @@ func (rep *ReplicationClient) prepareBinlog() error {
 			c.Close()
 		}
 	}
-	rep.binlogInfo.Filename = filename
-	rep.binlogInfo.Position = pos
 	return nil
 }
 
