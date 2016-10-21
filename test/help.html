@@ -1,0 +1,59 @@
+<h2 id="-mysql-text-blob-">消息中对mysql字段类型为text和blob的处理</h2>
+<p>mysql对text类型的字段在binlog传输时，是当做二进制数据的，因此，在接收到binlog时， 
+不能对text类型的数据当做字符串处理。在消息中，<strong>对数据进行json处理时，会进行base64编码</strong>，在接收到消息时，请自行解码还原。</p>
+<h2 id="-">任务添加时使用正则表达式</h2>
+<p>在对任务订阅的字段进行添加时，可以对数据库名和表名使用正则表达式。例如<code>jumei_product</code>库的<code>tuanmei_deals</code>表有很多sharding，
+如<code>jumei_product_1.tuammei_deals_1</code>这样的形式。在订阅时，可以对数据库名和字段名进行编辑，
+如<code>jumei_product_\d+.tuanmei_deals_\d+</code>，这将会匹配所有的sharding。</p>
+<h2 id="-">推送的消息格式</h2>
+<pre><code class="lang-golang">type NotifyEvent struct {
+    Event        string         `json:&quot;event&quot;`      //消息事件类型：Insert, Delete, Update
+    Schema       string         `json:&quot;schema&quot;`     //数据库名
+    Table        string         `json:&quot;table&quot;`      //表名
+    Fields       []*ColumnValue `json:&quot;fields&quot;`     // 变化的字段信息
+    Keys         []string       `json:&quot;keys&quot;`       //不推送值的字段名称
+    RetryCount   int            `json:&quot;retryCount&quot;` // 重推次数
+    LastSendTime time.Time      `json:&quot;lastSendTime&quot;` //推送的时间
+    TaskID       int64          `json:&quot;taskID&quot;`     //任务ID
+}
+type ColumnValue struct {
+    ColunmName string      `json:&quot;columnName&quot;`
+    Value      interface{} `json:&quot;value&quot;`
+    OldValue   interface{} `json:&quot;oldValue&quot;`
+}
+</code></pre>
+<p>消息示例：</p>
+<pre><code class="lang-json">{
+    &quot;event&quot;: &quot;Update&quot;,
+    &quot;schema&quot;: &quot;test&quot;,
+    &quot;table&quot;: &quot;user&quot;,
+    &quot;fields&quot;: [
+        {
+            &quot;columnName&quot;: &quot;id&quot;,
+            &quot;value&quot;: &quot;10&quot;,
+            &quot;oldValue&quot;: &quot;10&quot;
+        },
+        {
+            &quot;columnName&quot;: &quot;password&quot;,
+            &quot;value&quot;: &quot;123456&quot;,
+            &quot;oldValue&quot;: &quot;admin&quot;
+        }
+    ],
+    &quot;keys&quot;: [
+        &quot;username&quot;,
+        &quot;address&quot;
+    ],
+    &quot;retryCount&quot;: 10,
+    &quot;lastSendTime&quot;: &quot;2016-08-09T10:16:16.516767809+08:00&quot;,
+    &quot;taskID&quot;: 41
+}
+</code></pre>
+<h2 id="-">更新日志</h2>
+<h3 id="2016-10-21-">2016.10.21更新</h3>
+<ol>
+<li>支持在网络出现异常时，重连mysql。由于网路出现异常，例如网络断开等情况时，replication client端不会收到任何消息，使得程序一直阻塞在读取网络数据上，
+网络恢复后，服务端的连接已经断开，client将收不到任何数据，一直堵塞。通过设置超时的重连机制，在client长时间收不到消息的时候，会认为网络出现了问题，将会进行重连操作</li>
+<li>支持正则表达式，在数据库名和表名的设置中，可以使用正则表达式，在进行匹配时，将会在表达式前后自动添加<code>^</code>和<code>$</code>，因此之前未使用<code>*</code>作为通配的将不会有影响，使用了<code>*</code>
+号的需要将<code>*</code>号改为<code>\w+</code>或者<code>\d+</code>之类的正则表达式</li>
+<li>对<code>enum</code>类型的字段支持，由于<code>enum</code>和<code>set</code>类型的字段在binlog使用的是序号，而不是<code>enum</code>的值，因此需要读取<code>schema</code>来获取<code>enum</code>序号对应的值</li>
+</ol>
