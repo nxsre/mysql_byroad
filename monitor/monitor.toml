@@ -33,9 +33,9 @@ password = "toor"
 include = []
 exclude = ["information_schema", "performance_schema", "mysql"]
 
-[[mysql_instance]]
-name = "jumei_product"
-host = "192.168.20.71"
-port = 9001
-username = "plsys_r"
-password = "plsys_r20.71"
+#[[mysql_instance]]
+#name = "jumei_product"
+#host = "192.168.20.71"
+#port = 9001
+#username = "plsys_r"
+#password = "plsys_r20.71"

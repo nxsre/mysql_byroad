@@ -5,29 +5,12 @@ import (
 	"encoding/json"
 	"io/ioutil"
 	"mysql_byroad/model"
-	"net/http"
 	"net/url"
 	"strconv"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
-
-type SendClient struct {
-	http.Client
-}
-
-func NewSendClient() *SendClient {
-	httpClient := http.Client{
-		Transport: &http.Transport{
-			MaxIdleConnsPerHost: Conf.MaxIdleConnsPerHost,
-		},
-	}
-	sendClient := &SendClient{
-		Client: httpClient,
-	}
-	return sendClient
-}
 
 /*
 发送消息
@@ -45,7 +28,7 @@ func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 		retryCountStr := strconv.Itoa(evt.RetryCount)
 		pushurl := task.Apiurl + "?" + url.Values{"jobid": {idStr}, "retry_times": {retryCountStr}}.Encode()
 		body := url.Values{"message": {string(msg)}}
-		resp, err := sendClient.PostForm(pushurl, body)
+		resp, err := sendClient.Get(timeout).PostForm(pushurl, body)
 		if err != nil {
 			return "fail", err
 		}
@@ -54,8 +37,7 @@ func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 		return string(retStat), err
 	} else {
 		body := bytes.NewBuffer(msg)
-		sendClient.Timeout = timeout
-		resp, err := sendClient.Post(task.Apiurl, "application/json", body)
+		resp, err := sendClient.Get(timeout).Post(task.Apiurl, "application/json", body)
 		if err != nil {
 			return "fail", err
 		}
@@ -63,7 +45,6 @@ func (sc *SendClient) SendMessage(evt *model.NotifyEvent) (string, error) {
 		retStat, err := ioutil.ReadAll(resp.Body)
 		return string(retStat), err
 	}
-	return "success", nil
 }
 
 func isSuccessSend(msg string) bool {

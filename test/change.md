@@ -1,0 +1,3 @@
+# 旁路系统数据源由binlog转换到kafka
+
+1. kafka中的数据不是原始的binlog数据，其格式与binlog格式不同，因此需要重新解析kafka中的数据格式
