@@ -44,6 +44,9 @@ func main() {
 	}
 	model.Init(confdb)
 	go StartServer()
+	binlogChecker := NewBinlogChecker(dispatcherManager)
+	binlogChecker.AddDispatcher("localhost","")
+	go binlogChecker.Run()
 	HandleSignal()
 }
 
