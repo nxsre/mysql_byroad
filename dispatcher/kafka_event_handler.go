@@ -66,21 +66,60 @@ func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
 	keh.BinlogStatistics.IncStatistic(evt.Database, evt.Table, evt.EventType)
 	log.Debugf("gen notify event: %+v", evt)
 	taskFieldMap := make(map[int64][]*UpdateColumn)
-	for i := 0; i < len(evt.BeforeColumns); i++ {
-		beforeColumn := evt.BeforeColumns[i]
-		afterColumn := evt.AfterColumns[i]
-		ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, beforeColumn.Name)
-		log.Debugf("%s %s %s %v", evt.Database, evt.Table, beforeColumn.Name, ids)
-		for _, taskid := range ids {
-			if taskFieldMap[taskid] == nil {
-				taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
+	switch toTitle(evt.EventType) {
+	case model.INSERT_EVENT:
+		columns := evt.AfterColumns
+		for i := 0; i < len(columns); i++ {
+			column := columns[i]
+			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, column.Name)
+			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, ids)
+			for _, taskid := range ids {
+				if taskFieldMap[taskid] == nil {
+					taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
+				}
+				updateColumn := UpdateColumn{
+					Name:         column.Name,
+					BeforeColumn: new(Column),
+					AfterColumn:  column,
+				}
+				taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
 			}
-			updateColumn := UpdateColumn{
-				Name:         beforeColumn.Name,
-				BeforeColumn: beforeColumn,
-				AfterColumn:  afterColumn,
+		}
+	case model.DELETE_EVENT:
+		columns := evt.BeforeColumns
+		for i := 0; i < len(columns); i++ {
+			column := columns[i]
+			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, column.Name)
+			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, ids)
+			for _, taskid := range ids {
+				if taskFieldMap[taskid] == nil {
+					taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
+				}
+				updateColumn := UpdateColumn{
+					Name:         column.Name,
+					BeforeColumn: new(Column),
+					AfterColumn:  column,
+				}
+				taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
 			}
-			taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
+		}
+	case model.UPDATE_EVENT:
+		for i := 0; i < len(evt.BeforeColumns); i++ {
+			beforeColumn := evt.BeforeColumns[i]
+			afterColumn := evt.AfterColumns[i]
+			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, beforeColumn.Name)
+			log.Debugf("%s %s %s %v", evt.Database, evt.Table, beforeColumn.Name, ids)
+			for _, taskid := range ids {
+				if taskFieldMap[taskid] == nil {
+					taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
+				}
+				updateColumn := UpdateColumn{
+					Name:         beforeColumn.Name,
+					BeforeColumn: beforeColumn,
+					AfterColumn:  afterColumn,
+				}
+				taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
+			}
 		}
 	}
 	log.Debugf("task field map: %+v", taskFieldMap)

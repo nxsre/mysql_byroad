@@ -19,7 +19,7 @@ nsqd_tcp_address = ["127.0.0.1:4150"]
 lookup_interval = "60s" # 向nsqlookupd轮询nsqd节点信息
 
 [kafka]
-hosts = ["localhost:9092"]
+hosts = ["192.168.49.63:9092"]
 offset_processing_timeout = "1s"
-offset_reset_offsets = false
-zk_addrs = ["localhost:2181"]
+offset_reset_offsets = true
+zk_addrs = ["192.168.49.63:2181"]

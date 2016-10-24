@@ -76,7 +76,7 @@ func NewKafkaConsumer(topic string, kafkaconfig KafkaConfig) (*KafkaConsumer, er
 		handlers: make([]KafkaHandler, 0, 1),
 	}
 	config := consumergroup.NewConfig()
-	config.Offsets.Initial = sarama.OffsetNewest
+	config.Offsets.Initial = sarama.OffsetOldest
 	config.Offsets.ProcessingTimeout = kafkaconfig.OffsetProcessingTimeout.Duration
 	config.Offsets.ResetOffsets = kafkaconfig.OffsetResetOffsets
 	consumer, err := consumergroup.JoinConsumerGroup(topic, []string{topic}, kafkaconfig.ZkAddrs, config)
@@ -186,9 +186,15 @@ func (kcm *KafkaConsumerManager) TopicExists(topic string) bool {
 根据任务的数据库-表信息，新建kafka consumer
 */
 func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
+	wg := sync.WaitGroup{}
 	for _, task := range tasks {
-		kcm.traverseTask(task)
+		wg.Add(1)
+		go func(t *model.Task) {
+			kcm.traverseTask(t)
+			wg.Done()
+		}(task)
 	}
+	wg.Wait()
 }
 
 /*
@@ -205,14 +211,19 @@ func (kcm *KafkaConsumerManager) AddHandler(handler KafkaHandler) {
 停止所有的kafka consumer
 */
 func (kcm *KafkaConsumerManager) StopConsumers() {
+	wg := sync.WaitGroup{}
 	for consumer := range kcm.Iter() {
-		log.Debugf("close consumer %s", consumer.Topic)
-		err := consumer.Close()
-		if err != nil {
-			log.Errorf("kafka consumer close error: %s", err.Error())
-			continue
-		}
+		wg.Add(1)
+		go func(c *KafkaConsumer) {
+			log.Debugf("close consumer %s", c.Topic)
+			err := c.Close()
+			if err != nil {
+				log.Errorf("kafka consumer close error: %s", err.Error())
+			}
+			wg.Done()
+		}(consumer)
 	}
+	wg.Wait()
 }
 
 /*
