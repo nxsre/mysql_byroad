@@ -119,7 +119,8 @@ func (kconsumer *KafkaConsumer) Close() error {
 type KafkaConsumerManager struct {
 	consumers map[string]*KafkaConsumer
 	sync.RWMutex
-	config KafkaConfig
+	config   KafkaConfig
+	handlers []KafkaHandler
 }
 
 func NewKafkaConsumerManager(config KafkaConfig) *KafkaConsumerManager {
@@ -190,7 +191,9 @@ func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
 	for _, task := range tasks {
 		wg.Add(1)
 		go func(t *model.Task) {
-			kcm.traverseTask(t)
+			for _, handler := range kcm.handlers {
+				kcm.traverseTask(t, handler)
+			}
 			wg.Done()
 		}(task)
 	}
@@ -198,13 +201,10 @@ func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
 }
 
 /*
-添加handler并且开始从kafka获取消息进行处理
+添加handler
 */
 func (kcm *KafkaConsumerManager) AddHandler(handler KafkaHandler) {
-	for consumer := range kcm.Iter() {
-		consumer.AddHandler(handler)
-		consumer.HandleMessage()
-	}
+	kcm.handlers = append(kcm.handlers, handler)
 }
 
 /*
@@ -230,14 +230,19 @@ func (kcm *KafkaConsumerManager) StopConsumers() {
 遍历任务订阅的所有字段信息，为没有订阅kafka相应topic的字段添加consumer
 */
 func (kcm *KafkaConsumerManager) AddTask(task *model.Task) {
-	kcm.traverseTask(task)
+	for _, handler := range kcm.handlers {
+		kcm.traverseTask(task, handler)
+	}
 }
 
 func (kcm *KafkaConsumerManager) UpdateTask(task *model.Task) {
-	kcm.traverseTask(task)
+	for _, handler := range kcm.handlers {
+		kcm.traverseTask(task, handler)
+	}
 }
 
-func (kcm *KafkaConsumerManager) traverseTask(task *model.Task) {
+// 遍历所有的任务，为没有订阅kafka对应的topic添加handler
+func (kcm *KafkaConsumerManager) traverseTask(task *model.Task, handler KafkaHandler) {
 	for _, field := range task.Fields {
 		topic := GenTopicName(field.Schema, field.Table)
 		if !kcm.TopicExists(topic) {
@@ -246,6 +251,7 @@ func (kcm *KafkaConsumerManager) traverseTask(task *model.Task) {
 				log.Errorf("new kafka consumer error: %s", err.Error())
 				continue
 			}
+			consumer.AddHandler(handler)
 			kcm.Add(consumer)
 		}
 	}

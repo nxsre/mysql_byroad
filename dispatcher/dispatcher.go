@@ -39,12 +39,12 @@ func (d *Dispatcher) Start() {
 	if err != nil {
 		log.Errorf("init tasks error: %s", err.Error())
 	}
-	d.kafkaConsumerManager.InitConsumers(tasks)
 	handler, err := NewKafkaEventHandler(d.Config.NSQConf, d.taskManager)
 	if err != nil {
 		log.Errorf("new kafka event handler error: %s", err.Error())
 	}
 	d.kafkaConsumerManager.AddHandler(handler)
+	d.kafkaConsumerManager.InitConsumers(tasks)
 	d.rpcServer.initServer(d.taskManager, handler.BinlogStatistics, d.kafkaConsumerManager)
 	d.rpcServer.startRpcServer()
 	rpcClient := NewRPCClient(rpcClientSchema)
