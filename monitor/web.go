@@ -318,7 +318,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		send := ctx.QueryInt(c)
 		f := new(model.NotifyField)
 		f.Send = send
-		nfs := strings.Split(c, ".")
+		nfs := strings.Split(c, "@@")
 		if len(nfs) < 3 {
 			resp.Error = true
 			resp.Message = "参数错误"
@@ -427,7 +427,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		send := ctx.QueryInt(c)
 		f := new(model.NotifyField)
 		f.Send = send
-		nfs := strings.Split(c, ".")
+		nfs := strings.Split(c, "@@")
 		if len(nfs) < 3 {
 			resp.Error = true
 			resp.Message = "参数错误"

@@ -28,14 +28,14 @@
           </div>
           <div class="form-group col-md-6">
             <div class="form-inline">
-                <label for="apiurl">数据封装协议</label>
-                <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
+              <label for="apiurl">数据封装协议</label>
+              <p class="form-control-static"><span id="pack-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
             </div>
             <div class="form-control-static">
-              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer != 1) %} checked {%endif%}>
-            默认
-                <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer == 1) %} checked {%endif%}>
-            消息中心推送协议
+              <input type="radio" name="packProtocal" value="0" id="packProtocal_default" {% if (task.PackProtocal|integer !=1 ) %} checked
+                {%endif%}> 默认
+              <input type="radio" name="packProtocal" value="1" id="packProtocal_eventcenter" {% if (task.PackProtocal|integer==1 ) %}
+                checked {%endif%}> 消息中心推送协议
             </div>
           </div>
           <div class="form-group col-md-6">
@@ -79,39 +79,43 @@
               <div class="radio">
                 {%if (task.Stat=="正常")%}
                 <label>
-                    <input type="radio" name="state" id="state" value="正常" checked > 正常
+                    <input type="radio" name="state" id="state" value="正常" checked> 正常
                 </label>
                 {%endif%}
                 {%if (task.Stat=="停止")%}
                 <label>
-                    <input type="radio" name="state" id="state" value="停止" checked > 停止
+                    <input type="radio" name="state" id="state" value="停止" checked> 停止
                 </label>
                 {%endif%}
               </div>
             </div>
-          </div>         
+          </div>
           <div class="form-group col-md-12">
             <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新</button>
           </div>
         </div>
         <div id="rightdiv" class="form-inline">
-            {% for schema, tables in taskColumnsMap %} 
-            {% for table, fields in tables %}
-            <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
-            <h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="{{schema}}.{{table}}"></input>
-                <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
-                    <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
-                </a>
+          <div class="col-md-12">
+						<label for="apiurl">正则表达式</label>
+						<p class="form-control-static"><span id="regexp-help" class="glyphicon glyphicon-question-sign help-btn"></span></p>
+					</div>
+          {% for schema, tables in taskColumnsMap %} {% for table, fields in tables %}
+          <div class="col-md-12 right-field-div" id="{{schema}}-{{table}}">
+            <h3><input class="form-control input-lg schema-name" onchange="changeFieldValue(this)" value="{{schema}}"></input>
+            <input class="form-control input-lg table-name" onchange="changeFieldValue(this)" value="{{table}}"></input>
+              <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">
+                <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>
+              </a>
             </h3>
             <div class="row rowCont">
-            {% for f in fields %}
-            <div class="col-md-4" style="margin-bottom:5px;">
-              <div class="form-group">
-                <div class="input-group">
-                  <input value="{{f.Column}}" readonly type="text" class="form-control">
-                  <input name="fields" value="{{schema}}.{{table}}.{{f.Column}}" type="hidden">
-                </div>
-                <div class="checkbox"><label><input type="checkbox" name="{{schema}}.{{table}}.{{f.Column}}" value="1" {%if f.Send%}checked{%endif%}></input>是否推送值<label>
+              {% for f in fields %}
+              <div class="col-md-4" style="margin-bottom:5px;">
+                <div class="form-group">
+                  <div class="input-group">
+                    <input value="{{f.Column}}" readonly type="text" class="form-control">
+                    <input name="fields" value="{{schema}}@@{{table}}@@{{f.Column}}" type="hidden">
+                  </div>
+                  <div class="checkbox"><label><input type="checkbox" name="{{schema}}@@{{table}}@@{{f.Column}}" value="1" {%if f.Send%}checked{%endif%}></input>是否推送值<label>
                 </div>
                 <a href="#" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>
               </div>

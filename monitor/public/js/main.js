@@ -26,18 +26,18 @@ function removeFieldDiv(obj) {
 }
 
 function addRightField(schema, table, column) {
-  var field = schema + '.' + table + '.' + column;
+  var field = schema + '@@' + table + '@@' + column;
   var divid = schema + '-' + table;
   var data = '<div class="col-md-4" style="margin-bottom:5px;">\
-      <div class="form-group">\
-      <div class="input-group">\
-      <input value="'+ column + '" readonly type="text" class="form-control">\
-      <input name="fields" type="hidden" value="'+ field + '">\
-      </div>\
-      <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div> \
-      <a href="javascript:void(0)" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>\
-      </div>\
-      </div>';
+  <div class="form-group">\
+  <div class="input-group">\
+  <input value="'+ column + '" readonly type="text" class="form-control">\
+  <input name="fields" type="hidden" value="'+ field + '">\
+  </div>\
+  <div class="checkbox"><label><input type="checkbox" name="' + field + '" value="1"></input>是否推送值<label></div> \
+  <a href="javascript:void(0)" onclick="removeField(this)"><span class="glyphicon glyphicon-remove" aria-hidden="true"></span></a>\
+  </div>\
+  </div>';
   addRightDiv(schema, table);
   if (!checkRightField(schema, table, column)) {
     $('#' + divid).find('.rowCont').append(data);
@@ -47,12 +47,13 @@ function addRightField(schema, table, column) {
 function addRightDiv(schema, table) {
   var field = schema + '-' + table;
   var data = '<div class="col-md-12 right-field-div" id="' + field + '">\
-      <h3><input class="form-control input-lg" onchange="changeFieldValue(this)" value="' + schema + '.' + table + '"></input> \
-      <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">\
-      <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>\
-      </a>\
-      </h3>\
-      <div class="row rowCont"></div></div>';
+  <h3><input class="form-control input-lg schema-name" onchange="changeFieldValue(this)" value="' + schema + '"></input> \
+  <input class="form-control input-lg table-name" onchange="changeFieldValue(this)" value="' + table + '"></input>\
+  <a href="javascript:void(0)" onclick="removeFieldDiv(this)" class="btn btn-lg">\
+  <span class="glyphicon glyphicon-remove" aria-hidden="true"></span>\
+  </a>\
+  </h3>\
+  <div class="row rowCont"></div></div>';
   var d = document.getElementById(field);
   if (!d) {
     $('#rightdiv').append(data);
@@ -66,17 +67,19 @@ function checkRightField(schema, table, column) {
 }
 
 function changeFieldValue(obj) {
-  var newVal = $(obj).val();
-  var pardiv = $(obj).parents(".right-field-div")[0];
-  var hiddenobj = $(pardiv).find(":hidden");
-  var checkboxs = $(pardiv).find(':checkbox');
+  var pardiv = $(obj).parents('.right-field-div')[0];
+  var schema_val = $(pardiv).find('.schema-name').val();
+  var table_val = $(pardiv).find('.table-name').val();
+  var newVal = schema_val + '@@' + table_val;
+  var hiddenobj = $(pardiv).find(':hidden');
+  var checkboxs = $(pardiv).find(':checkbox')
   $(hiddenobj).each(function () {
     var fieldVal = $(this).prev().val();
-    $(this).val(newVal + "." + fieldVal);
+    $(this).val(newVal + '@@' + fieldVal);
   });
-  $(checkboxs).each(function() {
-    var fieldVal = $(this).attr('name').split('.')[2];
-    $(this).attr('name', newVal + '.' + fieldVal)
+  $(checkboxs).each(function () {
+    var fieldVal = $(this).attr('name').split('@@')[2];
+    $(this).attr('name', newVal + '@@' + fieldVal)
   });
 }
 
@@ -196,11 +199,17 @@ $(function () {
     html: true,
     content: '<dd><dt>默认</dt><dl>旁路系统原有格式: 消息内容从post请求的body中读取。</dl><dl>消费方处理完成后返回 success</dl><dt>消息中心推送协议</dt><dl>使用消息中心的推送协议进行数据封装: message=POST["message"], jobid=GET["jobid"], retry_times=GET["retry_times"]</dl><dl>消费方处理完成后返回{"status": 1}</dl></dd>',
   });
+  $("#regexp-help").popover({
+    trigger: 'hover',
+    title: '正则表达式',
+    html: true,
+    content: '<dd><dt>支持正则表达式</dt><dl>数据库名和表名都可以使用正则表达式</dl><dl>默认会在表达式前后添加<strong>"^"</strong>和<strong>"$"</strong>符号</dl><dl>之前的<strong>*</strong>的效果同现在的<strong>([\\w]+)</strong>一样</dl><dt>',
+  });
 
-/*  $('a[data-toggle="collapse"]').click(function () {
+  $('a[data-toggle="collapse"]').click(function () {
     $(this).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
     $(this).next().collapse('toggle');
-  });*/
+  });
 
   $('#search').jSearch({
     selector: '#column-list',

@@ -29,15 +29,12 @@ func isMatch(s1, s2 string) bool {
 	if s1 == s2 {
 		return true
 	}
-	log.Debugf("s1: %s, s2: %s", s1, s2)
-	if strings.Index(s1, "*") != -1 {
-		r, _ := regexp.Compile("^" + strings.Replace(s1, "*", "([\\w]+)", -1))
-		if r.MatchString(s2) {
-			return true
-		}
+	log.Debug("s1: %s, s2: %s", s1, s2)
+	reg, err := regexp.Compile("^" + s1 + "$")
+	if err != nil {
+		return false
 	}
-
-	return false
+	return reg.MatchString(s2)
 }
 
 func genTaskQueueName(task *model.Task) string {
