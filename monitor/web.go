@@ -450,7 +450,9 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "更新成功!"
 	}
-	dispatcherManager.UpdateTask(task)
+	if task.Stat == model.TASK_STATE_START{
+		dispatcherManager.UpdateTask(task)
+	}
 	pusherManager.UpdateTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)

@@ -70,6 +70,8 @@ func (rs *RPCServer) DeleteTask(id int64, status *string) error {
 	*status = "success"
 	rs.taskManager.taskIdMap.Delete(id)
 	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	task := rs.taskManager.GetTask(id)
+	rs.kafkaConsumerManager.DeleteTask(task)
 	return nil
 }
 
@@ -87,6 +89,7 @@ func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 	*status = "success"
 	rs.taskManager.taskIdMap.Set(task.ID, task)
 	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.kafkaConsumerManager.StartTask(task)
 	return nil
 }
 
@@ -95,6 +98,7 @@ func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 	*status = "success"
 	rs.taskManager.taskIdMap.Set(task.ID, task)
 	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.kafkaConsumerManager.StopTask(task)
 	return nil
 }
 

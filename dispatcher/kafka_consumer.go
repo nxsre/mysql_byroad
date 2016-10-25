@@ -4,10 +4,13 @@ import (
 	"encoding/json"
 	"fmt"
 	"mysql_byroad/model"
+	"strings"
 	"sync"
+	"time"
 
 	"github.com/Shopify/sarama"
 	log "github.com/Sirupsen/logrus"
+	"github.com/samuel/go-zookeeper/zk"
 	"github.com/wvanbergen/kafka/consumergroup"
 )
 
@@ -62,7 +65,8 @@ type KafkaHandler interface {
 }
 
 type KafkaConsumer struct {
-	Topic    string
+	Topics   []string
+	GroupID  string
 	consumer *consumergroup.ConsumerGroup
 	handlers []KafkaHandler
 }
@@ -70,17 +74,18 @@ type KafkaConsumer struct {
 /*
 新建kafka consumer，使用consumer group的方式订阅topic
 */
-func NewKafkaConsumer(topic string, kafkaconfig KafkaConfig) (*KafkaConsumer, error) {
+func NewKafkaConsumer(topics []string, groupid string, kafkaconfig KafkaConfig) (*KafkaConsumer, error) {
 	kconsumer := KafkaConsumer{
-		Topic:    topic,
+		Topics:   topics,
+		GroupID:  groupid,
 		handlers: make([]KafkaHandler, 0, 1),
 	}
 	config := consumergroup.NewConfig()
 	config.Offsets.Initial = sarama.OffsetOldest
 	config.Offsets.ProcessingTimeout = kafkaconfig.OffsetProcessingTimeout.Duration
 	config.Offsets.ResetOffsets = kafkaconfig.OffsetResetOffsets
-	consumer, err := consumergroup.JoinConsumerGroup(topic, []string{topic}, kafkaconfig.ZkAddrs, config)
-	log.Debugf("new kafka consumer topic: %s", topic)
+	consumer, err := consumergroup.JoinConsumerGroup(groupid, topics, kafkaconfig.ZkAddrs, config)
+	log.Debugf("new kafka consumers for %s, %+v", groupid, topics)
 	if err != nil {
 		return nil, err
 	}
@@ -133,14 +138,20 @@ func NewKafkaConsumerManager(config KafkaConfig) *KafkaConsumerManager {
 
 func (kcm *KafkaConsumerManager) Add(kc *KafkaConsumer) {
 	kcm.Lock()
-	kcm.consumers[kc.Topic] = kc
+	kcm.consumers[kc.GroupID] = kc
 	kcm.Unlock()
 }
 
 func (kcm *KafkaConsumerManager) Delete(kc *KafkaConsumer) {
 	kcm.Lock()
-	delete(kcm.consumers, kc.Topic)
+	delete(kcm.consumers, kc.GroupID)
 	kcm.Unlock()
+}
+
+func (kcm *KafkaConsumerManager) Get(groupid string) *KafkaConsumer {
+	kcm.RLock()
+	defer kcm.RUnlock()
+	return kcm.consumers[groupid]
 }
 
 func (kcm *KafkaConsumerManager) Iter() <-chan *KafkaConsumer {
@@ -176,9 +187,9 @@ func (kcm *KafkaConsumerManager) Len() int {
 	return length
 }
 
-func (kcm *KafkaConsumerManager) TopicExists(topic string) bool {
+func (kcm *KafkaConsumerManager) GroupExists(groupid string) bool {
 	kcm.RLock()
-	_, ok := kcm.consumers[topic]
+	_, ok := kcm.consumers[groupid]
 	kcm.RUnlock()
 	return ok
 }
@@ -189,13 +200,15 @@ func (kcm *KafkaConsumerManager) TopicExists(topic string) bool {
 func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
 	wg := sync.WaitGroup{}
 	for _, task := range tasks {
-		wg.Add(1)
-		go func(t *model.Task) {
-			for _, handler := range kcm.handlers {
-				kcm.traverseTask(t, handler)
-			}
-			wg.Done()
-		}(task)
+		if task.Stat == model.TASK_STATE_START {
+			wg.Add(1)
+			go func(t *model.Task) {
+				for _, handler := range kcm.handlers {
+					kcm.traverseTask(t, handler)
+				}
+				wg.Done()
+			}(task)
+		}
 	}
 	wg.Wait()
 }
@@ -215,7 +228,7 @@ func (kcm *KafkaConsumerManager) StopConsumers() {
 	for consumer := range kcm.Iter() {
 		wg.Add(1)
 		go func(c *KafkaConsumer) {
-			log.Debugf("close consumer %s", c.Topic)
+			log.Debugf("close consumer %s", c.GroupID)
 			err := c.Close()
 			if err != nil {
 				log.Errorf("kafka consumer close error: %s", err.Error())
@@ -235,24 +248,105 @@ func (kcm *KafkaConsumerManager) AddTask(task *model.Task) {
 	}
 }
 
+/*
+根据任务订阅的字段信息，更新consumer
+*/
 func (kcm *KafkaConsumerManager) UpdateTask(task *model.Task) {
+	groupid := GenGroupID(task)
+	consumer := kcm.Get(groupid)
+	if consumer != nil {
+		consumer.consumer.Close()
+		kcm.Delete(consumer)
+	}
 	for _, handler := range kcm.handlers {
 		kcm.traverseTask(task, handler)
 	}
 }
 
-// 遍历所有的任务，为没有订阅kafka对应的topic添加handler
+func (kcm *KafkaConsumerManager) StartTask(task *model.Task) {
+	kcm.AddTask(task)
+}
+
+// 停止订阅，从consumerManager中删除相应的consumer
+func (kcm *KafkaConsumerManager) StopTask(task *model.Task) {
+	groupid := GenGroupID(task)
+	consumer := kcm.Get(groupid)
+	consumer.Close()
+	kcm.Delete(consumer)
+}
+
+func (kcm *KafkaConsumerManager) DeleteTask(task *model.Task) {
+	kcm.StopTask(task)
+}
+
+// 遍历任务的字段信息，增加相应的订阅
 func (kcm *KafkaConsumerManager) traverseTask(task *model.Task, handler KafkaHandler) {
+	topics := kcm.getTopics(task)
+	if len(topics) == 0 {
+		log.Errorf("no matched kafka topic found for %s!", task.Name)
+		return
+	}
+	groupid := GenGroupID(task)
+	if !kcm.GroupExists(groupid) {
+		consumer, err := NewKafkaConsumer(topics, groupid, kcm.config)
+		if err != nil {
+			log.Errorf("new kafka consumer error: %s", err.Error())
+			return
+		}
+		consumer.AddHandler(handler)
+		kcm.Add(consumer)
+	}
+}
+
+type empty struct{}
+
+// 得到任务订阅的字段信息对应的所有的topic
+func (kcm *KafkaConsumerManager) getTopics(task *model.Task) []string {
+	topics := make([]string, 0, 10)
+	set := make(map[string]empty)
+	allTopics, err := kcm.getAllTopics()
+	if err != nil {
+		return topics
+	}
 	for _, field := range task.Fields {
-		topic := GenTopicName(field.Schema, field.Table)
-		if !kcm.TopicExists(topic) {
-			consumer, err := NewKafkaConsumer(topic, kcm.config)
-			if err != nil {
-				log.Errorf("new kafka consumer error: %s", err.Error())
-				continue
-			}
-			consumer.AddHandler(handler)
-			kcm.Add(consumer)
+		matched := getMatchedTopics(allTopics, field)
+		for _, topic := range matched {
+			set[topic] = empty{}
 		}
 	}
+	for topic, _ := range set {
+		topics = append(topics, topic)
+	}
+	return topics
+}
+
+// 从zookeeper中得到所有的topic
+func (kcm *KafkaConsumerManager) getAllTopics() ([]string, error) {
+	conn, _, err := zk.Connect(kcm.config.ZkAddrs, time.Second)
+	if err != nil {
+		return nil, err
+	}
+	children, _, err := conn.Children("/brokers/topics")
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("get all topics: %+v", children)
+	return children, nil
+}
+
+// 匹配用户订阅的字段信息和topic，返回匹配上的topic
+func getMatchedTopics(topics []string, field *model.NotifyField) []string {
+	matched := make([]string, 0, 10)
+	for _, topic := range topics {
+		s := strings.SplitN(topic, "___", 2)
+		if len(s) != 2 {
+			continue
+		}
+		schema := s[0]
+		table := s[1]
+		if isMatch(field.Schema, schema) && isMatch(field.Table, table) {
+			matched = append(matched, topic)
+		}
+	}
+	return matched
 }

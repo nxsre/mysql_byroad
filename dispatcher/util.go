@@ -6,8 +6,6 @@ import (
 	"regexp"
 	"strings"
 	"sync"
-
-	log "github.com/Sirupsen/logrus"
 )
 
 func isEqual(v1, v2 interface{}) bool {
@@ -29,7 +27,6 @@ func isMatch(s1, s2 string) bool {
 	if s1 == s2 {
 		return true
 	}
-	log.Debug("s1: %s, s2: %s", s1, s2)
 	reg, err := regexp.Compile("^" + s1 + "$")
 	if err != nil {
 		return false
@@ -52,6 +49,10 @@ func inStrs(strings []string, s string) bool {
 
 func GenTopicName(schema, table string) string {
 	return schema + "___" + table
+}
+
+func GenGroupID(task *model.Task) string {
+	return task.Name
 }
 
 type WaitGroupWrapper struct {

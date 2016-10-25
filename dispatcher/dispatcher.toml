@@ -1,6 +1,6 @@
 rpc_ping_interval = "10s" #心跳时间
 logfile = "/var/log/byroad/dispatcher.log"
-loglevel = "Info" # Debug Info Warn Error Fatal Panic
+loglevel = "Debug" # Debug Info Warn Error Fatal Panic
 
 # monitor的地址和rpc信息，用于获取任务信息
 [monitor]
