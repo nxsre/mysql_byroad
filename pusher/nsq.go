@@ -51,7 +51,7 @@ func NewTaskConsumer(task *model.Task) *nsq.Consumer {
 	config.DefaultRequeueDelay = time.Millisecond * time.Duration(task.ReSendTime)
 	c, err := nsq.NewConsumer(task.Name, task.Name, config)
 	if err != nil {
-		log.Error("nsq new comsumer: ", err.Error())
+		log.Errorf("nsq new comsumer %s->%s: ", task.Name, task.Name, err.Error())
 	}
 	h := &MessageHandler{}
 	c.AddHandler(h)

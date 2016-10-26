@@ -81,11 +81,11 @@ func NewKafkaConsumer(topics []string, groupid string, kafkaconfig KafkaConfig) 
 		handlers: make([]KafkaHandler, 0, 1),
 	}
 	config := consumergroup.NewConfig()
-	config.Offsets.Initial = sarama.OffsetOldest
+	config.Offsets.Initial = sarama.OffsetNewest
 	config.Offsets.ProcessingTimeout = kafkaconfig.OffsetProcessingTimeout.Duration
 	config.Offsets.ResetOffsets = kafkaconfig.OffsetResetOffsets
 	consumer, err := consumergroup.JoinConsumerGroup(groupid, topics, kafkaconfig.ZkAddrs, config)
-	log.Debugf("new kafka consumers for %s, %+v", groupid, topics)
+	log.Infof("new kafka consumers for %s, %+v", groupid, topics)
 	if err != nil {
 		return nil, err
 	}
@@ -109,6 +109,12 @@ func (kconsumer *KafkaConsumer) HandleMessage() {
 			if err != nil {
 				log.Errorf("kafka commitupto error: %s", err.Error())
 			}
+		}
+	}()
+
+	go func() {
+		for err := range kconsumer.consumer.Errors() {
+			log.Errorf("consumer error: %s", err)
 		}
 	}()
 }
@@ -228,7 +234,7 @@ func (kcm *KafkaConsumerManager) StopConsumers() {
 	for consumer := range kcm.Iter() {
 		wg.Add(1)
 		go func(c *KafkaConsumer) {
-			log.Debugf("close consumer %s", c.GroupID)
+			log.Infof("close consumer %s", c.GroupID)
 			err := c.Close()
 			if err != nil {
 				log.Errorf("kafka consumer close error: %s", err.Error())
@@ -271,8 +277,10 @@ func (kcm *KafkaConsumerManager) StartTask(task *model.Task) {
 func (kcm *KafkaConsumerManager) StopTask(task *model.Task) {
 	groupid := GenGroupID(task)
 	consumer := kcm.Get(groupid)
-	consumer.Close()
-	kcm.Delete(consumer)
+	if consumer != nil {
+		consumer.Close()
+		kcm.Delete(consumer)
+	}
 }
 
 func (kcm *KafkaConsumerManager) DeleteTask(task *model.Task) {
@@ -294,6 +302,7 @@ func (kcm *KafkaConsumerManager) traverseTask(task *model.Task, handler KafkaHan
 			return
 		}
 		consumer.AddHandler(handler)
+		consumer.HandleMessage()
 		kcm.Add(consumer)
 	}
 }

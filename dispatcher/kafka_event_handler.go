@@ -141,6 +141,7 @@ func (keh *KafkaEventHandler) Enqueue(database, table, event string, taskFieldMa
 
 func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int64, fields []*UpdateColumn) {
 	event = toTitle(event)
+	log.Debugf("enqueue: %s.%s %s %d: %+v -> %+v", database, table, event, taskid, fields[0].BeforeColumn, fields[0].AfterColumn)
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
 	ntyevt.Fields = make([]*model.ColumnValue, 0)
@@ -175,10 +176,10 @@ func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int6
 					OldValue:   f.BeforeColumn.Value,
 				}
 				ntyevt.Fields = append(ntyevt.Fields, &newValue)
-				if f.BeforeColumn.Updated {
+				if f.AfterColumn.Updated {
 					updateChanged = true
 				}
-			} else if f.BeforeColumn.Updated {
+			} else if f.AfterColumn.Updated {
 				ntyevt.Keys = append(ntyevt.Keys, f.Name)
 				updateChanged = true
 			}

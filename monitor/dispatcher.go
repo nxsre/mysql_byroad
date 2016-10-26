@@ -85,8 +85,8 @@ func (dm *DispatcherManager) UpdateDispatchClient(schema, desc string) {
 }
 
 func (dm *DispatcherManager) AddTask(task *model.Task) {
-	client, ok := dm.GetRPCClient(task.DBInstanceName)
-	if ok {
+	clients := dm.GetRPCClients()
+	for _, client := range clients {
 		status, err := client.AddTask(task)
 		if err != nil {
 			log.Errorf("dispatch manager add task status: %s, error: %s", status, err.Error())
@@ -95,8 +95,8 @@ func (dm *DispatcherManager) AddTask(task *model.Task) {
 }
 
 func (dm *DispatcherManager) DeleteTask(task *model.Task) {
-	client, ok := dm.GetRPCClient(task.DBInstanceName)
-	if ok {
+	clients := dm.GetRPCClients()
+	for _, client := range clients {
 		status, err := client.DeleteTask(task)
 		if err != nil {
 			log.Errorf("dispatch manager delete task status: %s, error: %s", status, err.Error())
@@ -105,8 +105,8 @@ func (dm *DispatcherManager) DeleteTask(task *model.Task) {
 }
 
 func (dm *DispatcherManager) UpdateTask(task *model.Task) {
-	client, ok := dm.GetRPCClient(task.DBInstanceName)
-	if ok {
+	clients := dm.GetRPCClients()
+	for _, client := range clients {
 		status, err := client.UpdateTask(task)
 		if err != nil {
 			log.Errorf("dispatch manager update task status: %s, error: %s", status, err.Error())
@@ -115,8 +115,8 @@ func (dm *DispatcherManager) UpdateTask(task *model.Task) {
 }
 
 func (dm *DispatcherManager) StartTask(task *model.Task) {
-	client, ok := dm.GetRPCClient(task.DBInstanceName)
-	if ok {
+	clients := dm.GetRPCClients()
+	for _, client := range clients {
 		status, err := client.StartTask(task)
 		if err != nil {
 			log.Errorf("dispatch manager start task status: %s, error: %s", status, err.Error())
@@ -125,8 +125,8 @@ func (dm *DispatcherManager) StartTask(task *model.Task) {
 }
 
 func (dm *DispatcherManager) StopTask(task *model.Task) {
-	client, ok := dm.GetRPCClient(task.DBInstanceName)
-	if ok {
+	clients := dm.GetRPCClients()
+	for _, client := range clients {
 		status, err := client.StopTask(task)
 		if err != nil {
 			log.Errorf("dispatch manager stop task status: %s, error: %s", status, err.Error())

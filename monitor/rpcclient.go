@@ -50,7 +50,7 @@ func (this *RPCClient) DeleteTask(task *model.Task) (status string, err error) {
 		return
 	}
 	defer client.Close()
-	err = client.Call("RPCServer.DeleteTask", task.ID, &status)
+	err = client.Call("RPCServer.DeleteTask", task, &status)
 	if err != nil {
 		log.Errorf("rpc delete task error: %s", err.Error())
 	}

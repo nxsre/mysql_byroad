@@ -65,12 +65,12 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	return nil
 }
 
-func (rs *RPCServer) DeleteTask(id int64, status *string) error {
+func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
+	id := task.ID
 	log.Info("rpc delete task: ", id)
 	*status = "success"
 	rs.taskManager.taskIdMap.Delete(id)
 	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
-	task := rs.taskManager.GetTask(id)
 	rs.kafkaConsumerManager.DeleteTask(task)
 	return nil
 }
