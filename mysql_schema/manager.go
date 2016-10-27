@@ -35,7 +35,6 @@ func NewColumnManager(configs []*MysqlConfig) (*ColumnManager, error) {
 			errors = append(errors, err)
 			continue
 		}
-		//insp.BuildColumnMap()
 		cm.inspectors = append(cm.inspectors, insp)
 	}
 	if len(errors) != 0 {
@@ -90,6 +89,15 @@ func (this *ColumnManager) GetColumns(schema, table string) ColumnList {
 func (this *ColumnManager) GetColumn(schema, table string, index int) *Column {
 	for _, inspector := range this.inspectors {
 		if column := inspector.GetColumnMap().GetColumn(schema, table, index); column != nil {
+			return column
+		}
+	}
+	return nil
+}
+
+func (this *ColumnManager) GetColumnByName(schema, table, column string) *Column {
+	for _, inspector := range this.inspectors {
+		if column := inspector.GetColumnMap().GetColumnByName(schema, table, column); column != nil {
 			return column
 		}
 	}

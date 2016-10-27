@@ -2,7 +2,9 @@ package main
 
 import (
 	"mysql_byroad/model"
+	"mysql_byroad/mysql_schema"
 	"mysql_byroad/nsq"
+	"strconv"
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -16,6 +18,7 @@ type KafkaEventHandler struct {
 	queue            Enqueuer
 	taskManager      *TaskManager
 	BinlogStatistics *model.BinlogStatistics
+	columnManager    *schema.ColumnManager
 }
 
 func NewKafkaEventHandler(nsqConfig NSQConf, taskManager *TaskManager) (*KafkaEventHandler, error) {
@@ -71,6 +74,7 @@ func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
 		columns := evt.AfterColumns
 		for i := 0; i < len(columns); i++ {
 			column := columns[i]
+			keh.translateColumnValue(evt.Database, evt.Table, column)
 			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, column.Name)
 			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, ids)
 			for _, taskid := range ids {
@@ -89,6 +93,7 @@ func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
 		columns := evt.BeforeColumns
 		for i := 0; i < len(columns); i++ {
 			column := columns[i]
+			keh.translateColumnValue(evt.Database, evt.Table, column)
 			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, column.Name)
 			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, ids)
 			for _, taskid := range ids {
@@ -107,6 +112,8 @@ func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
 		for i := 0; i < len(evt.BeforeColumns); i++ {
 			beforeColumn := evt.BeforeColumns[i]
 			afterColumn := evt.AfterColumns[i]
+			keh.translateColumnValue(evt.Database, evt.Table, beforeColumn)
+			keh.translateColumnValue(evt.Database, evt.Table, afterColumn)
 			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, beforeColumn.Name)
 			log.Debugf("%s %s %s %v", evt.Database, evt.Table, beforeColumn.Name, ids)
 			for _, taskid := range ids {
@@ -196,4 +203,23 @@ func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int6
 	ntyevt.TaskID = task.ID
 	name := genTaskQueueName(task)
 	keh.queue.Enqueue(name, ntyevt)
+}
+
+/*
+根据字段类型，得到和接binlog相兼容的数据
+*/
+func (keh *KafkaEventHandler) translateColumnValue(schema, table string, column *Column) {
+	myColumn := keh.columnManager.GetColumnByName(schema, table, column.Name)
+	if myColumn != nil {
+		if myColumn.IsEnum() {
+			index, err := strconv.Atoi(column.Value)
+			if err != nil {
+				return
+			}
+			enumValue := myColumn.GetEnumValue(index)
+			column.Value = enumValue
+		} else if myColumn.IsText() {
+			//TODO
+		}
+	}
 }

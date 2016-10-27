@@ -61,6 +61,7 @@ func main() {
 	if err != nil {
 		log.Errorf("new column manager error: %s", err.Error())
 	}
+	columnManager.LookupLoop()
 	go StartServer()
 	HandleSignal()
 }

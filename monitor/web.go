@@ -336,7 +336,9 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		resp.Error = true
 		resp.Message = "任务名已经存在!"
 		body, _ := json.Marshal(resp)
-		log.Errorf("add task: %s", err.Error())
+		if err != nil {
+			log.Errorf("add task: %s", err.Error())
+		}
 		return string(body)
 	}
 
@@ -450,7 +452,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "更新成功!"
 	}
-	if task.Stat == model.TASK_STATE_START{
+	if task.Stat == model.TASK_STATE_START {
 		dispatcherManager.UpdateTask(task)
 	}
 	pusherManager.UpdateTask(task)

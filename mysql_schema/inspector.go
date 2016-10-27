@@ -56,21 +56,23 @@ func (this *Inspector) connect() (*sqlx.DB, error) {
 func (this *Inspector) LookupLoop() {
 	clist, err := this.getColumns()
 	if err != nil {
-		log.Printf("[ERROR] get column error: %s", err.Error())
+		fmt.Printf("get column error: %s", err.Error())
 	}
 	this.buildColumnMap(clist)
 	ticker := time.NewTicker(this.config.Interval)
-	for {
-		select {
-		case <-ticker.C:
-			clist, err := this.getColumns()
-			if err != nil {
-				log.Printf("[ERROR] get columns error: %s", err.Error())
-				continue
+	go func() {
+		for {
+			select {
+			case <-ticker.C:
+				clist, err := this.getColumns()
+				if err != nil {
+					log.Printf("[ERROR] get columns error: %s", err.Error())
+					continue
+				}
+				this.buildColumnMap(clist)
 			}
-			this.buildColumnMap(clist)
 		}
-	}
+	}()
 }
 
 func (this *Inspector) BuildColumnMap() error {
@@ -98,8 +100,12 @@ func (this *Inspector) GetColumnMap() *ColumnMap {
 func (this *Inspector) getColumns() (ColumnList, error) {
 	sqlStr := "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM columns "
 	nodisplay := this.getNoDisplaySchema()
-	if nodisplay != "" {
-		sqlStr += "WHERE TABLE_SCHEMA NOT IN (" + nodisplay + ")"
+	display := this.getDisplaySchema()
+	if nodisplay != "" && display != "" {
+		sqlStr += "WHERE " + nodisplay + " AND " + display
+	} else if nodisplay != "" || display != "" {
+		sqlStr += "WHERE " + nodisplay + display
+	} else {
 	}
 	var columnList = make([]*Column, 0, 10)
 	err := this.db.Select(&columnList, sqlStr)
@@ -111,7 +117,23 @@ func (this *Inspector) getNoDisplaySchema() string {
 	for _, schema := range this.config.Exclude {
 		data = data + "'" + schema + "'" + ","
 	}
-	return strings.TrimRight(data, ",")
+	if data != "" {
+		data = strings.TrimRight(data, ",")
+		return "TABLE_SCHEMA NOT IN (" + data + ")"
+	}
+	return ""
+}
+
+func (this *Inspector) getDisplaySchema() string {
+	var data string
+	for _, schema := range this.config.Include {
+		data = data + "'" + schema + "'" + ","
+	}
+	if data != "" {
+		data = strings.TrimRight(data, ",")
+		return "TABLE_SCHEMA IN (" + data + ")"
+	}
+	return ""
 }
 
 func (this *Inspector) Close() error {
@@ -165,6 +187,6 @@ func getOrderedColumnsList(columnMap *ColumnMap) model.OrderedSchemas {
 	return colslist
 }
 
-func (this *Inspector) GetOrderedSchemas() model.OrderedSchemas {
+func (this *Inspector) GetOrderedColumns() model.OrderedSchemas {
 	return getOrderedColumnsList(this.GetColumnMap())
 }

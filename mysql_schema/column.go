@@ -1,7 +1,9 @@
 package schema
 
-import "sync"
-import "strings"
+import (
+	"regexp"
+	"sync"
+)
 
 type Column struct {
 	Schema     string `db:"TABLE_SCHEMA"`
@@ -9,10 +11,6 @@ type Column struct {
 	Name       string `db:"COLUMN_NAME"`
 	DataType   string `db:"DATA_TYPE"`
 	ColumnType string `db:"COLUMN_TYPE"`
-}
-
-func (this *Column) IsUnsigned() bool {
-	return strings.Contains(this.ColumnType, "unsigned")
 }
 
 type ColumnList []*Column
@@ -39,6 +37,12 @@ func BuildColumnMap(columns ColumnList) *ColumnMap {
 		cs[column.Schema][column.Table] = append(cs[column.Schema][column.Table], column)
 	}
 	return &cm
+}
+
+func (this *ColumnMap) GetColumns() map[string]map[string]ColumnList {
+	this.RLock()
+	defer this.RUnlock()
+	return this.columns
 }
 
 func (this *ColumnMap) Schemas() []string {
@@ -96,4 +100,51 @@ func (this *ColumnMap) GetColumn(schema, table string, index int) *Column {
 		return columns[index]
 	}
 	return nil
+}
+
+func (this *ColumnMap) GetColumnByName(schema, table, column string) *Column {
+	this.RLock()
+	defer this.RUnlock()
+	columns := this.Columns(schema, table)
+	for _, c := range columns {
+		if column == c.Name {
+			return c
+		}
+	}
+	return nil
+}
+
+func (this *Column) IsUnsigned() bool {
+	return StringContainsIgnoreCase(this.DataType, "unsigned")
+}
+
+func (this *Column) IsEnum() bool {
+	return StringContainsIgnoreCase(this.DataType, "enum")
+}
+
+func (this *Column) IsSet() bool {
+	return StringContainsIgnoreCase(this.DataType, "set")
+}
+
+func (this *Column) IsText() bool {
+	return StringContainsIgnoreCase(this.DataType, "text")
+}
+
+func (this *Column) GetEnumValue(index int) string {
+	values := this.getEnumValues()
+	if index >= 0 && index < len(values) {
+		return values[index]
+	}
+	return ""
+}
+
+func (this *Column) getEnumValues() []string {
+	s := `'(\w+)'`
+	re := regexp.MustCompile(s)
+	matches := re.FindAllStringSubmatch(this.ColumnType, -1)
+	values := make([]string, 0, 5)
+	for _, m := range matches {
+		values = append(values, m[1])
+	}
+	return values
 }

@@ -22,4 +22,5 @@ lookup_interval = "60s" # 向nsqlookupd轮询nsqd节点信息
 hosts = ["192.168.49.63:9092"]
 offset_processing_timeout = "10s"
 offset_reset_offsets = false
-zk_addrs = ["192.168.49.63:2181"]
+#zk_addrs = ["192.168.49.63:2181"]
+zk_addrs = ["127.0.0.1:2181"]

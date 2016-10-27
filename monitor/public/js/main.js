@@ -206,11 +206,6 @@ $(function () {
     content: '<dd><dt>支持正则表达式</dt><dl>数据库名和表名都可以使用正则表达式</dl><dl>默认会在表达式前后添加<strong>"^"</strong>和<strong>"$"</strong>符号</dl><dl>之前的<strong>*</strong>的效果同现在的<strong>([\\w]+)</strong>一样</dl><dt>',
   });
 
-  $('a[data-toggle="collapse"]').click(function () {
-    $(this).find('.glyphicon').toggleClass("glyphicon-triangle-bottom glyphicon-triangle-right");
-    $(this).next().collapse('toggle');
-  });
-
   $('#search').jSearch({
     selector: '#column-list',
     child: 'li .schema-for-search',
