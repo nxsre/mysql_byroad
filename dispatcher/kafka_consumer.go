@@ -94,7 +94,7 @@ func NewKafkaConsumer(topics []string, groupid string, kafkaconfig KafkaConfig) 
 }
 
 func (kconsumer *KafkaConsumer) HandleMessage() {
-	go func() {
+	go func(kc *KafkaConsumer) {
 		for msg := range kconsumer.consumer.Messages() {
 			log.Debugf("receive consumer message")
 			entity := Entity{}
@@ -110,13 +110,13 @@ func (kconsumer *KafkaConsumer) HandleMessage() {
 				log.Errorf("kafka commitupto error: %s", err.Error())
 			}
 		}
-	}()
+	}(kconsumer)
 
-	go func() {
+	go func(kc *KafkaConsumer) {
 		for err := range kconsumer.consumer.Errors() {
 			log.Errorf("consumer error: %s", err)
 		}
-	}()
+	}(kconsumer)
 }
 
 func (kconsumer *KafkaConsumer) AddHandler(handler KafkaHandler) {
