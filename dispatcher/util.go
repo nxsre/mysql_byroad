@@ -29,11 +29,12 @@ func isMatch(s1, s2 string) bool {
 	if s1 == s2 {
 		return true
 	}
-	log.Debug("s1: %s, s2: %s", s1, s2)
+	log.Debugf("s1: %s, s2: %s", s1, s2)
 	var pat *regexp.Regexp
 	var ok bool
+	var err error
 	if pat, ok = patternSet[s1]; !ok {
-		pat, err := regexp.Compile("^" + s1 + "$")
+		pat, err = regexp.Compile("^" + s1 + "$")
 		if err != nil {
 			return false
 		}
