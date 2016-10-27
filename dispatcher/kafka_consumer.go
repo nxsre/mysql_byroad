@@ -61,7 +61,7 @@ func (entity *Entity) Length() int {
 }
 
 type KafkaHandler interface {
-	HandleKafkaEvent(entity *Entity)
+	HandleKafkaEvent(entity *Entity, group string)
 }
 
 type KafkaConsumer struct {
@@ -94,7 +94,7 @@ func NewKafkaConsumer(topics []string, groupid string, kafkaconfig KafkaConfig) 
 }
 
 func (kconsumer *KafkaConsumer) HandleMessage() {
-	go func(kc *KafkaConsumer) {
+	go func() {
 		for msg := range kconsumer.consumer.Messages() {
 			log.Debugf("receive consumer message")
 			entity := Entity{}
@@ -103,20 +103,20 @@ func (kconsumer *KafkaConsumer) HandleMessage() {
 				log.Errorf("kafka consumer unmarshal error: %s", err.Error())
 			}
 			for _, handler := range kconsumer.handlers {
-				handler.HandleKafkaEvent(&entity)
+				handler.HandleKafkaEvent(&entity, kconsumer.GroupID)
 			}
 			err = kconsumer.consumer.CommitUpto(msg)
 			if err != nil {
 				log.Errorf("kafka commitupto error: %s", err.Error())
 			}
 		}
-	}(kconsumer)
+	}()
 
-	go func(kc *KafkaConsumer) {
+	go func() {
 		for err := range kconsumer.consumer.Errors() {
 			log.Errorf("consumer error: %s", err)
 		}
-	}(kconsumer)
+	}()
 }
 
 func (kconsumer *KafkaConsumer) AddHandler(handler KafkaHandler) {

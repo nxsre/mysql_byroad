@@ -1,15 +1,10 @@
 package main
 
-import (
-	"mysql_byroad/model"
-
-	log "github.com/Sirupsen/logrus"
-)
+import "mysql_byroad/model"
 
 type TaskManager struct {
-	notifyTaskMap *NotifyTaskMap
-	taskIdMap     *TaskIdMap
-	rpcSchema     string
+	taskMap   *TaskMap
+	rpcSchema string
 }
 
 func NewTaskManager(rpcSchema string) *TaskManager {
@@ -28,27 +23,11 @@ func (tm *TaskManager) InitTasks() ([]*model.Task, error) {
 	if err != nil {
 		return tasks, err
 	}
-	tm.taskIdMap = NewTaskIdMap(100)
+	tm.taskMap = NewTaskMap(100)
 	for _, t := range tasks {
-		tm.taskIdMap.Set(t.ID, t)
+		tm.taskMap.Set(t.Name, t)
 	}
-	tm.notifyTaskMap = NewNotifyTaskMap(tm.taskIdMap)
-	log.Debug("notify task map: ", tm.notifyTaskMap)
 	return tasks, nil
-}
-
-func (tm *TaskManager) InNotifyTable(schema, table string) bool {
-	log.Debugf("%s, %s in notify table: %v", schema, table, tm.notifyTaskMap.InNotifyTable(schema, table))
-	return tm.notifyTaskMap.InNotifyTable(schema, table)
-}
-
-func (tm *TaskManager) InNotifyField(schema, table, column string) bool {
-	log.Debugf("%s, %s, %s in notify field: %v", schema, table, column, tm.notifyTaskMap.InNotifyField(schema, table, column))
-	return tm.notifyTaskMap.InNotifyField(schema, table, column)
-}
-
-func (tm *TaskManager) GetNotifyTaskIDs(schema, table, column string) []int64 {
-	return tm.notifyTaskMap.GetNotifyTaskIDs(schema, table, column)
 }
 
 func (tm *TaskManager) GetTaskField(task *model.Task, schema, table, column string) *model.NotifyField {
@@ -60,6 +39,6 @@ func (tm *TaskManager) GetTaskField(task *model.Task, schema, table, column stri
 	return nil
 }
 
-func (tm *TaskManager) GetTask(id int64) *model.Task {
-	return tm.taskIdMap.Get(id)
+func (tm *TaskManager) GetTask(name string) *model.Task {
+	return tm.taskMap.Get(name)
 }

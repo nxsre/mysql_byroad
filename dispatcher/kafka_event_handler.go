@@ -7,7 +7,6 @@ import (
 	"mysql_byroad/mysql_schema"
 	"mysql_byroad/nsq"
 	"strconv"
-	"sync"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -75,26 +74,26 @@ func (keh *KafkaEventHandler) initColumnManager() {
 	keh.columnManager = columnManager
 }
 
-func (keh *KafkaEventHandler) HandleKafkaEvent(evt *Entity) {
+func (keh *KafkaEventHandler) HandleKafkaEvent(evt *Entity, taskName string) {
 	switch evt.EventType {
 	case "INSERT":
-		keh.HandleInsertEvent(evt)
+		keh.HandleInsertEvent(evt, taskName)
 	case "DELETE":
-		keh.HandleDeleteEvent(evt)
+		keh.HandleDeleteEvent(evt, taskName)
 	case "UPDATE":
-		keh.HandleUpdateEvent(evt)
+		keh.HandleUpdateEvent(evt, taskName)
 	default:
 	}
 }
 
-func (keh *KafkaEventHandler) HandleInsertEvent(evt *Entity) {
-	keh.genNotifyEvent(evt)
+func (keh *KafkaEventHandler) HandleInsertEvent(evt *Entity, taskName string) {
+	keh.genNotifyEvent(evt, taskName)
 }
-func (keh *KafkaEventHandler) HandleDeleteEvent(evt *Entity) {
-	keh.genNotifyEvent(evt)
+func (keh *KafkaEventHandler) HandleDeleteEvent(evt *Entity, taskName string) {
+	keh.genNotifyEvent(evt, taskName)
 }
-func (keh *KafkaEventHandler) HandleUpdateEvent(evt *Entity) {
-	keh.genNotifyEvent(evt)
+func (keh *KafkaEventHandler) HandleUpdateEvent(evt *Entity, taskName string) {
+	keh.genNotifyEvent(evt, taskName)
 }
 
 type UpdateColumn struct {
@@ -103,48 +102,36 @@ type UpdateColumn struct {
 	AfterColumn  *Column
 }
 
-func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
+func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity, taskName string) {
 	keh.BinlogStatistics.IncStatistic(evt.Database, evt.Table, evt.EventType)
 	log.Debugf("gen notify event: %+v", evt)
-	taskFieldMap := make(map[int64][]*UpdateColumn)
+	updateColumns := make([]*UpdateColumn, 0, 10)
 	switch toTitle(evt.EventType) {
 	case model.INSERT_EVENT:
 		columns := evt.AfterColumns
 		for i := 0; i < len(columns); i++ {
 			column := columns[i]
 			keh.translateColumnValue(evt.Database, evt.Table, column)
-			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, column.Name)
-			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, ids)
-			for _, taskid := range ids {
-				if taskFieldMap[taskid] == nil {
-					taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
-				}
-				updateColumn := UpdateColumn{
-					Name:         column.Name,
-					BeforeColumn: new(Column),
-					AfterColumn:  column,
-				}
-				taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
+			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, taskName)
+			updateColumn := UpdateColumn{
+				Name:         column.Name,
+				BeforeColumn: new(Column),
+				AfterColumn:  column,
 			}
+			updateColumns = append(updateColumns, &updateColumn)
 		}
 	case model.DELETE_EVENT:
 		columns := evt.BeforeColumns
 		for i := 0; i < len(columns); i++ {
 			column := columns[i]
 			keh.translateColumnValue(evt.Database, evt.Table, column)
-			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, column.Name)
-			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, ids)
-			for _, taskid := range ids {
-				if taskFieldMap[taskid] == nil {
-					taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
-				}
-				updateColumn := UpdateColumn{
-					Name:         column.Name,
-					BeforeColumn: new(Column),
-					AfterColumn:  column,
-				}
-				taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
+			log.Debugf("%s %s %s %v", evt.Database, evt.Table, column.Name, taskName)
+			updateColumn := UpdateColumn{
+				Name:         column.Name,
+				BeforeColumn: new(Column),
+				AfterColumn:  column,
 			}
+			updateColumns = append(updateColumns, &updateColumn)
 		}
 	case model.UPDATE_EVENT:
 		for i := 0; i < len(evt.BeforeColumns); i++ {
@@ -152,45 +139,29 @@ func (keh *KafkaEventHandler) genNotifyEvent(evt *Entity) {
 			afterColumn := evt.AfterColumns[i]
 			keh.translateColumnValue(evt.Database, evt.Table, beforeColumn)
 			keh.translateColumnValue(evt.Database, evt.Table, afterColumn)
-			ids := keh.taskManager.GetNotifyTaskIDs(evt.Database, evt.Table, beforeColumn.Name)
-			log.Debugf("%s %s %s %v", evt.Database, evt.Table, beforeColumn.Name, ids)
-			for _, taskid := range ids {
-				if taskFieldMap[taskid] == nil {
-					taskFieldMap[taskid] = make([]*UpdateColumn, 0, 10)
-				}
-				updateColumn := UpdateColumn{
-					Name:         beforeColumn.Name,
-					BeforeColumn: beforeColumn,
-					AfterColumn:  afterColumn,
-				}
-				taskFieldMap[taskid] = append(taskFieldMap[taskid], &updateColumn)
+			log.Debugf("%s %s %s %v", evt.Database, evt.Table, beforeColumn.Name, taskName)
+			updateColumn := UpdateColumn{
+				Name:         beforeColumn.Name,
+				BeforeColumn: beforeColumn,
+				AfterColumn:  afterColumn,
 			}
+			updateColumns = append(updateColumns, &updateColumn)
 		}
 	}
-	log.Debugf("task field map: %+v", taskFieldMap)
-	keh.Enqueue(evt.Database, evt.Table, evt.EventType, taskFieldMap)
+	keh.Enqueue(evt.Database, evt.Table, evt.EventType, updateColumns, taskName)
 }
 
-func (keh *KafkaEventHandler) Enqueue(database, table, event string, taskFieldMap map[int64][]*UpdateColumn) {
-	wg := sync.WaitGroup{}
-	for taskid, fields := range taskFieldMap {
-		log.Debugf("kafka event handler enqueue, task id %d, fields: %+v", taskid, fields)
-		wg.Add(1)
-		go func(id int64, fs []*UpdateColumn) {
-			keh.enqueue(database, table, event, id, fs)
-			wg.Done()
-		}(taskid, fields)
-	}
-	wg.Wait()
+func (keh *KafkaEventHandler) Enqueue(database, table, event string, updateColumns []*UpdateColumn, taskName string) {
+	keh.enqueue(database, table, event, updateColumns, taskName)
 }
 
-func (keh *KafkaEventHandler) enqueue(database, table, event string, taskid int64, fields []*UpdateColumn) {
+func (keh *KafkaEventHandler) enqueue(database, table, event string, fields []*UpdateColumn, taskName string) {
 	event = toTitle(event)
-	log.Debugf("enqueue: %s.%s %s %d: %+v -> %+v", database, table, event, taskid, fields[0].BeforeColumn, fields[0].AfterColumn)
+	log.Debugf("enqueue: %s.%s %s %d", database, table, event, taskName)
 	ntyevt := new(model.NotifyEvent)
 	ntyevt.Keys = make([]string, 0)
-	ntyevt.Fields = make([]*model.ColumnValue, 0)
-	task := keh.taskManager.GetTask(taskid)
+	ntyevt.Fields = make([]*model.ColumnValue, 0, 10)
+	task := keh.taskManager.GetTask(taskName)
 	if task == nil {
 		return
 	}

@@ -1,8 +1,8 @@
 package main
 
 import (
-	"sync"
 	"mysql_byroad/model"
+	"sync"
 )
 
 type TaskIdMap struct {
@@ -32,4 +32,34 @@ func (this *TaskIdMap) Delete(id int64) {
 	this.Lock()
 	defer this.Unlock()
 	delete(this.cmap, id)
+}
+
+type TaskMap struct {
+	cmap map[string]*model.Task
+	sync.RWMutex
+}
+
+func NewTaskMap(size int) *TaskMap {
+	tmap := new(TaskMap)
+	tmap.cmap = make(map[string]*model.Task, size)
+	return tmap
+}
+
+func (this *TaskMap) Get(name string) *model.Task {
+	this.RLock()
+	task := this.cmap[name]
+	this.RUnlock()
+	return task
+}
+
+func (this *TaskMap) Set(name string, value *model.Task) {
+	this.Lock()
+	this.cmap[name] = value
+	this.Unlock()
+}
+
+func (this *TaskMap) Delete(name string) {
+	this.Lock()
+	delete(this.cmap, name)
+	this.Unlock()
 }

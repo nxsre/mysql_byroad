@@ -57,20 +57,15 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("rpc add task: %+v", task)
 	*status = "sucess"
-	rs.taskManager.taskIdMap.Set(task.ID, task)
-	if task.Stat == model.TASK_STATE_START {
-		rs.taskManager.notifyTaskMap.AddTask(task)
-	}
+	rs.taskManager.taskMap.Set(task.Name, task)
 	rs.kafkaConsumerManager.AddTask(task)
 	return nil
 }
 
 func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
-	id := task.ID
-	log.Info("rpc delete task: ", id)
+	log.Info("rpc delete task: ", task.Name)
 	*status = "success"
-	rs.taskManager.taskIdMap.Delete(id)
-	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.taskManager.taskMap.Delete(task.Name)
 	rs.kafkaConsumerManager.DeleteTask(task)
 	return nil
 }
@@ -78,8 +73,7 @@ func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("rpc update task: %+v", task)
 	*status = "success"
-	rs.taskManager.taskIdMap.Set(task.ID, task)
-	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.taskManager.taskMap.Set(task.Name, task)
 	rs.kafkaConsumerManager.UpdateTask(task)
 	return nil
 }
@@ -87,8 +81,7 @@ func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 	log.Infof("rpc start task: %+v", task)
 	*status = "success"
-	rs.taskManager.taskIdMap.Set(task.ID, task)
-	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.taskManager.taskMap.Set(task.Name, task)
 	rs.kafkaConsumerManager.StartTask(task)
 	return nil
 }
@@ -96,8 +89,7 @@ func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 	log.Infof("rpc stop task: %+v", task)
 	*status = "success"
-	rs.taskManager.taskIdMap.Set(task.ID, task)
-	rs.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.taskManager.taskIdMap)
+	rs.taskManager.taskMap.Set(task.Name, task)
 	rs.kafkaConsumerManager.StopTask(task)
 	return nil
 }
