@@ -20,6 +20,8 @@ func isSchemaMatch(sch1, sch2 string) bool {
 	return isMatch(sch1, sch2)
 }
 
+var patternSet map[string]*regexp.Regexp = make(map[string]*regexp.Regexp, 10)
+
 /*
 判断s2是否符合s1的规则
 */
@@ -28,11 +30,16 @@ func isMatch(s1, s2 string) bool {
 		return true
 	}
 	log.Debug("s1: %s, s2: %s", s1, s2)
-	reg, err := regexp.Compile("^" + s1 + "$")
-	if err != nil {
-		return false
+	var pat *regexp.Regexp
+	var ok bool
+	if pat, ok = patternSet[s1]; !ok {
+		pat, err := regexp.Compile("^" + s1 + "$")
+		if err != nil {
+			return false
+		}
+		patternSet[s1] = pat
 	}
-	return reg.MatchString(s2)
+	return pat.MatchString(s2)
 }
 
 func genTaskQueueName(task *model.Task) string {
