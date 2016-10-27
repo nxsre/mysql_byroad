@@ -1,0 +1,139 @@
+{
+    "afterColumns": [
+        {
+            "isKey": true,
+            "isNull": false,
+            "name": "id",
+            "sqlType": 4,
+            "updated": false,
+            "value": "2342507"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "username",
+            "sqlType": -5,
+            "updated": true,
+            "value": "yangxin"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "password",
+            "sqlType": 4,
+            "updated": true,
+            "value": "12345678"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "age",
+            "sqlType": 4,
+            "updated": true,
+            "value": "17"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "flavor",
+            "sqlType": 3,
+            "updated": true,
+            "value": "1"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "price",
+            "sqlType": 4,
+            "updated": true,
+            "value": "12.78"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "profile",
+            "sqlType": 4,
+            "updated": true,
+            "value": "恭喜发财"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "status",
+            "sqlType": 4,
+            "updated": true,
+            "value": "1"
+        }
+    ],
+    "beforeColumns": [
+        {
+            "isKey": true,
+            "isNull": false,
+            "name": "id",
+            "sqlType": 4,
+            "updated": false,
+            "value": "2342507"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "username",
+            "sqlType": -5,
+            "updated": false,
+            "value": "12345678772"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "password",
+            "sqlType": 4,
+            "updated": false,
+            "value": "12345678"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "age",
+            "sqlType": 4,
+            "updated": false,
+            "value": "17"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "flavor",
+            "sqlType": 3,
+            "updated": false,
+            "value": "0"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "price",
+            "sqlType": 4,
+            "updated": false,
+            "value": "70618772"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "profile",
+            "sqlType": 4,
+            "updated": true,
+            "value": "恭喜发财,红包拿来"
+        },
+        {
+            "isKey": false,
+            "isNull": false,
+            "name": "status",
+            "sqlType": 4,
+            "updated": true,
+            "value": "2"
+        }
+    ],
+    "binlog": "mysql-bin.000051:14899",
+    "database": "test",
+    "eventType": "UPDATE",
+    "executeTime": 1477477251000,
+    "table": "user_1"
+}

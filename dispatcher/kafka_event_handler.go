@@ -1,6 +1,8 @@
 package main
 
 import (
+	"encoding/base64"
+	"fmt"
 	"mysql_byroad/model"
 	"mysql_byroad/mysql_schema"
 	"mysql_byroad/nsq"
@@ -9,6 +11,10 @@ import (
 
 	log "github.com/Sirupsen/logrus"
 )
+
+type Context struct {
+	dispatcher *Dispatcher
+}
 
 type Enqueuer interface {
 	Enqueue(name string, evt interface{})
@@ -19,10 +25,12 @@ type KafkaEventHandler struct {
 	taskManager      *TaskManager
 	BinlogStatistics *model.BinlogStatistics
 	columnManager    *schema.ColumnManager
+	ctx              *Context
 }
 
-func NewKafkaEventHandler(nsqConfig NSQConf, taskManager *TaskManager) (*KafkaEventHandler, error) {
+func NewKafkaEventHandler(nsqConfig NSQConf, taskManager *TaskManager, ctx *Context) (*KafkaEventHandler, error) {
 	keh := &KafkaEventHandler{}
+	keh.ctx = ctx
 	qm, err := nsqm.GetManager(nsqConfig.LookupdHttpAddrs, nsqConfig.NsqdAddrs, nil)
 	if err != nil {
 		log.Error(err.Error())
@@ -31,10 +39,40 @@ func NewKafkaEventHandler(nsqConfig NSQConf, taskManager *TaskManager) (*KafkaEv
 	binlogStatistics := &model.BinlogStatistics{
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}
+	keh.initColumnManager()
 	keh.queue = qm
 	keh.taskManager = taskManager
 	keh.BinlogStatistics = binlogStatistics
 	return keh, nil
+}
+
+func (keh *KafkaEventHandler) initColumnManager() {
+	rpcClientSchema := fmt.Sprintf("%s:%d", keh.ctx.dispatcher.Config.MonitorConf.Host, keh.ctx.dispatcher.Config.MonitorConf.RpcPort)
+	rpcClient := NewRPCClient(rpcClientSchema)
+	dbconfigs, err := rpcClient.GetDBInstanceConfig(rpcClientSchema)
+	if err != nil {
+		log.Error("get db instance name error: ", err.Error())
+	}
+	configs := []*schema.MysqlConfig{}
+	for _, config := range dbconfigs {
+		myconf := schema.MysqlConfig{
+			Name:     config.Name,
+			Host:     config.Host,
+			Port:     config.Port,
+			Username: config.Username,
+			Password: config.Password,
+			Exclude:  config.Exclude,
+			Interval: config.Interval.Duration,
+		}
+		configs = append(configs, &myconf)
+	}
+	columnManager, err := schema.NewColumnManager(configs)
+	if err != nil {
+		log.Errorf("new column manager error: %s", err.Error())
+	}
+	columnManager.BuildColumnMap()
+	columnManager.LookupLoop()
+	keh.columnManager = columnManager
 }
 
 func (keh *KafkaEventHandler) HandleKafkaEvent(evt *Entity) {
@@ -218,8 +256,9 @@ func (keh *KafkaEventHandler) translateColumnValue(schema, table string, column 
 			}
 			enumValue := myColumn.GetEnumValue(index)
 			column.Value = enumValue
-		} else if myColumn.IsText() {
-			//TODO
+		} else if myColumn.IsText() || myColumn.IsBlob() {
+			data := []byte(column.Value)
+			column.Value = base64.StdEncoding.EncodeToString(data)
 		}
 	}
 }

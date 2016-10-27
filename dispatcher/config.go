@@ -53,6 +53,17 @@ type KafkaConfig struct {
 	ZkAddrs                 []string `toml:"zk_addrs"`
 }
 
+type MysqlInstanceConfig struct {
+	Name     string
+	Host     string
+	Port     uint16
+	Username string
+	Password string
+	Include  []string
+	Exclude  []string
+	Interval duration
+}
+
 func InitConfig() *Config {
 	config := Config{}
 	configFile := ParseConfig()

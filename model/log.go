@@ -11,7 +11,7 @@ type TaskLog struct {
 }
 
 func createTaskLogTable() {
-	sql := `CREATE TABLE IF NOT EXISTS tasklog(
+	sql := `CREATE TABLE IF NOT EXISTS tasklog_kafka(
 		id INTEGER PRIMARY KEY AUTO_INCREMENT,
 		task_id INTEGER NOT NULL,
 		message VARCHAR(1000),
@@ -22,7 +22,7 @@ func createTaskLogTable() {
 }
 
 func (tl *TaskLog) Insert() (int64, error) {
-	sql := `INSERT INTO tasklog (task_id, message, reason, create_time) VALUES (?,?,?,?)`
+	sql := `INSERT INTO tasklog_kafka (task_id, message, reason, create_time) VALUES (?,?,?,?)`
 	ret, err := confdb.Exec(sql, tl.TaskId, tl.Message, tl.Reason, tl.CreateTime)
 	if err != nil {
 		return 0, err
@@ -32,6 +32,6 @@ func (tl *TaskLog) Insert() (int64, error) {
 
 func GetTaskLogByTaskId(id, start, offset int64) ([]*TaskLog, error) {
 	tls := []*TaskLog{}
-	err := confdb.Select(&tls, "SELECT * FROM tasklog WHERE task_id=? ORDER BY create_time desc LIMIT ?,?", id, start, offset)
+	err := confdb.Select(&tls, "SELECT * FROM tasklog_kafka WHERE task_id=? ORDER BY create_time desc LIMIT ?,?", id, start, offset)
 	return tls, err
 }

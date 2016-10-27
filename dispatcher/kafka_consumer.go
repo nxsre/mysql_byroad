@@ -210,7 +210,7 @@ func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
 			wg.Add(1)
 			go func(t *model.Task) {
 				for _, handler := range kcm.handlers {
-					kcm.traverseTask(t, handler)
+					kcm.traverseTask(t, handler, kcm.config.OffsetResetOffsets)
 				}
 				wg.Done()
 			}(task)
@@ -250,7 +250,7 @@ func (kcm *KafkaConsumerManager) StopConsumers() {
 */
 func (kcm *KafkaConsumerManager) AddTask(task *model.Task) {
 	for _, handler := range kcm.handlers {
-		kcm.traverseTask(task, handler)
+		kcm.traverseTask(task, handler, true)
 	}
 }
 
@@ -265,7 +265,7 @@ func (kcm *KafkaConsumerManager) UpdateTask(task *model.Task) {
 		kcm.Delete(consumer)
 	}
 	for _, handler := range kcm.handlers {
-		kcm.traverseTask(task, handler)
+		kcm.traverseTask(task, handler, true)
 	}
 }
 
@@ -288,7 +288,7 @@ func (kcm *KafkaConsumerManager) DeleteTask(task *model.Task) {
 }
 
 // 遍历任务的字段信息，增加相应的订阅
-func (kcm *KafkaConsumerManager) traverseTask(task *model.Task, handler KafkaHandler) {
+func (kcm *KafkaConsumerManager) traverseTask(task *model.Task, handler KafkaHandler, resetOffset bool) {
 	topics := kcm.getTopics(task)
 	if len(topics) == 0 {
 		log.Errorf("no matched kafka topic found for %s!", task.Name)
@@ -296,7 +296,9 @@ func (kcm *KafkaConsumerManager) traverseTask(task *model.Task, handler KafkaHan
 	}
 	groupid := GenGroupID(task)
 	if !kcm.GroupExists(groupid) {
-		consumer, err := NewKafkaConsumer(topics, groupid, kcm.config)
+		config := kcm.config
+		config.OffsetResetOffsets = resetOffset
+		consumer, err := NewKafkaConsumer(topics, groupid, config)
 		if err != nil {
 			log.Errorf("new kafka consumer error: %s", err.Error())
 			return

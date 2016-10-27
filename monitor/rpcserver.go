@@ -85,3 +85,8 @@ func (m *Monitor) HandleDispatchClientSignal(ss *ServiceSignal, status *string) 
 	*status = "OK"
 	return nil
 }
+
+func (m *Monitor) GetDBInstanceConfig(desc string, config *[]MysqlInstanceConfig) error {
+	*config = Conf.MysqlInstances
+	return nil
+}

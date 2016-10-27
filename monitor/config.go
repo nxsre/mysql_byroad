@@ -47,6 +47,7 @@ type MysqlInstanceConfig struct {
 	Password string
 	Include  []string
 	Exclude  []string
+	Interval duration
 }
 
 type RPCServerConf struct {

@@ -16,7 +16,7 @@ type Statistic struct {
 }
 
 func CreateStatisticTable() {
-	s := "CREATE TABLE IF NOT EXISTS `statistic`(" +
+	s := "CREATE TABLE IF NOT EXISTS `statistic_kafka`(" +
 		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
 		"`task_id` INTEGER NOT NULL," +
 		"`send_message_count` INTEGER," +
@@ -60,14 +60,14 @@ func (this *TaskStatistics) Save() (err error) {
 	errs := []error{}
 	for taskid, statistic := range this.statistics {
 		var cnt int64
-		err = confdb.Get(&cnt, "SELECT COUNT(*) FROM statistic WHERE `task_id`=?", taskid)
+		err = confdb.Get(&cnt, "SELECT COUNT(*) FROM statistic_kafka WHERE `task_id`=?", taskid)
 		if err != nil {
 			return
 		}
 		if cnt == 0 {
-			_, err = confdb.Exec("INSERT INTO statistic(task_id, send_message_count, resend_message_count, send_success_count, send_failed_count) VALUES(?,?,?,?,?)", taskid, statistic.SendMessageCount, statistic.ReSendMessageCount, statistic.SendSuccessCount, statistic.SendFailedCount)
+			_, err = confdb.Exec("INSERT INTO statistic_kafka(task_id, send_message_count, resend_message_count, send_success_count, send_failed_count) VALUES(?,?,?,?,?)", taskid, statistic.SendMessageCount, statistic.ReSendMessageCount, statistic.SendSuccessCount, statistic.SendFailedCount)
 		} else {
-			_, err = confdb.Exec("UPDATE statistic SET send_message_count=?, resend_message_count=?, send_success_count=?, send_failed_count=? WHERE task_id=?", statistic.SendMessageCount, statistic.ReSendMessageCount, statistic.SendSuccessCount, statistic.SendFailedCount, taskid)
+			_, err = confdb.Exec("UPDATE statistic_kafka SET send_message_count=?, resend_message_count=?, send_success_count=?, send_failed_count=? WHERE task_id=?", statistic.SendMessageCount, statistic.ReSendMessageCount, statistic.SendSuccessCount, statistic.SendFailedCount, taskid)
 		}
 		if err != nil {
 			errs = append(errs, err)
@@ -84,7 +84,7 @@ func (this *TaskStatistics) Save() (err error) {
 }
 
 func (this *TaskStatistics) Init() (err error) {
-	s := "SELECT task_id, send_message_count, resend_message_count, send_success_count, send_failed_count FROM statistic"
+	s := "SELECT task_id, send_message_count, resend_message_count, send_success_count, send_failed_count FROM statistic_kafka"
 	var rows *sql.Rows
 	rows, err = confdb.Query(s)
 	if err != nil {

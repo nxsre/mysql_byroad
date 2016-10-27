@@ -39,7 +39,7 @@ func (d *Dispatcher) Start() {
 	if err != nil {
 		log.Errorf("init tasks error: %s", err.Error())
 	}
-	handler, err := NewKafkaEventHandler(d.Config.NSQConf, d.taskManager)
+	handler, err := NewKafkaEventHandler(d.Config.NSQConf, d.taskManager, &Context{d})
 	if err != nil {
 		log.Errorf("new kafka event handler error: %s", err.Error())
 	}

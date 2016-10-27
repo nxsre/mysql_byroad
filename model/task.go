@@ -30,7 +30,7 @@ type Task struct {
 }
 
 func CreateTaskTable() {
-	s := "CREATE TABLE IF NOT EXISTS `task` (" +
+	s := "CREATE TABLE IF NOT EXISTS `task_kafka` (" +
 		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
 		"`name` VARCHAR(120) NOT NULL," +
 		"`apiurl` VARCHAR(120) NOT NULL," +
@@ -51,7 +51,7 @@ func CreateTaskTable() {
 }
 
 func (task *Task) Insert() (id int64, err error) {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task_kafka`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
@@ -64,12 +64,12 @@ func (task *Task) Insert() (id int64, err error) {
 
 func (task *Task) GetByID() (*Task, error) {
 	fields := make([]*NotifyField, 0)
-	s := "SELECT * FROM `task` WHERE `id`=?"
+	s := "SELECT * FROM `task_kafka` WHERE `id`=?"
 	err := confdb.Get(task, s, task.ID)
 	if err != nil {
 		return nil, err
 	}
-	s = "SELECT * FROM `notify_field` WHERE `task_id`=?"
+	s = "SELECT * FROM `notify_field_kafka` WHERE `task_id`=?"
 	rows, err := confdb.Queryx(s, task.ID)
 	if err != nil {
 		return nil, err
@@ -87,7 +87,7 @@ func (task *Task) GetByID() (*Task, error) {
 
 func (task *Task) Update() (int64, error) {
 	task.Fields.Delete(task.ID)
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=? WHERE `id`=?"
+	s := "UPDATE `task_kafka` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=? WHERE `id`=?"
 	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal, task.ID)
 	if err != nil {
 		return 0, err
@@ -98,12 +98,12 @@ func (task *Task) Update() (int64, error) {
 
 //delete task and its fields
 func (task *Task) Delete() (int64, error) {
-	s := "DELETE FROM `task` WHERE `id`=?"
+	s := "DELETE FROM `task_kafka` WHERE `id`=?"
 	res, err := confdb.Exec(s, task.ID)
 	if err != nil {
 		return 0, err
 	}
-	s = "DELETE FROM `notify_field` WHERE `task_id`=?"
+	s = "DELETE FROM `notify_field_kafka` WHERE `task_id`=?"
 	res, err = confdb.Exec(s, task.ID)
 	if err != nil {
 		return 0, err
@@ -157,12 +157,12 @@ func (task *Task) Add() (id int64, err error) {
 
 func GetAllTask() ([]*Task, error) {
 	ts := []*Task{}
-	err := confdb.Select(&ts, "SELECT * FROM `task`")
+	err := confdb.Select(&ts, "SELECT * FROM `task_kafka`")
 	if err != nil {
 		return nil, err
 	}
 	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field_kafka`")
 	if err != nil {
 		return nil, err
 	}
@@ -188,7 +188,7 @@ func (task *Task) Exists() (bool, error) {
 
 func (task *Task) NameExists() (bool, error) {
 	var cnt int
-	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM task WHERE name=?", task.Name)
+	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM `task_kafka` WHERE name=?", task.Name)
 	if err != nil {
 		return false, err
 	}
@@ -201,12 +201,12 @@ func (task *Task) NameExists() (bool, error) {
 
 func GetTasksByUser(createUser string) ([]*Task, error) {
 	ts := []*Task{}
-	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=?", createUser)
+	err := confdb.Select(&ts, "SELECT * FROM `task_kafka` WHERE create_user=?", createUser)
 	if err != nil {
 		return nil, err
 	}
 	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field_kafka`")
 	if err != nil {
 		return nil, err
 	}
@@ -222,12 +222,12 @@ func GetTasksByUser(createUser string) ([]*Task, error) {
 
 func GetTaskByInstanceName(name string) ([]*Task, error) {
 	ts := []*Task{}
-	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE db_instance_name=?", name)
+	err := confdb.Select(&ts, "SELECT * FROM `task_kafka` WHERE db_instance_name=?", name)
 	if err != nil {
 		return nil, err
 	}
 	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field_kafka`")
 	if err != nil {
 		return nil, err
 	}
@@ -243,12 +243,12 @@ func GetTaskByInstanceName(name string) ([]*Task, error) {
 
 func GetTasksByUserAndInstance(username, instance string) ([]*Task, error) {
 	ts := []*Task{}
-	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=? AND db_instance_name=?", username, instance)
+	err := confdb.Select(&ts, "SELECT * FROM `task_kafka` WHERE create_user=? AND db_instance_name=?", username, instance)
 	if err != nil {
 		return nil, err
 	}
 	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field_kafka`")
 	if err != nil {
 		return nil, err
 	}

@@ -134,3 +134,17 @@ func (this *RPCClient) Ping(schema, desc string) (status string, err error) {
 	}
 	return
 }
+
+func (this *RPCClient) GetDBInstanceConfig(desc string) (config []MysqlInstanceConfig, err error) {
+	log.Debug("rpc get db instance config")
+	client, err := this.GetClient()
+	if err != nil {
+		return
+	}
+	defer client.Close()
+	err = client.Call("Monitor.GetDBInstanceConfig", desc, &config)
+	if err != nil {
+		log.Errorf("rpc get db instance config error")
+	}
+	return
+}

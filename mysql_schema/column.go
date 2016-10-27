@@ -130,6 +130,10 @@ func (this *Column) IsText() bool {
 	return StringContainsIgnoreCase(this.DataType, "text")
 }
 
+func (this *Column) IsBlob() bool {
+	return StringContainsIgnoreCase(this.DataType, "blob")
+}
+
 func (this *Column) GetEnumValue(index int) string {
 	values := this.getEnumValues()
 	if index >= 0 && index < len(values) {
