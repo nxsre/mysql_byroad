@@ -27,6 +27,9 @@ type Task struct {
 	Statistic      *Statistic
 	PackProtocal   DataPackProtocal `db:"pack_protocal"`
 	DBInstanceName string           `db:"db_instance_name"` // 该任务所属的mysql实例
+	PhoneNumbers   string           `db:"phone_numbers"`
+	Emails         string           `db:"emails"`
+	Alert          int              `db:"alert"`
 }
 
 func CreateTaskTable() {

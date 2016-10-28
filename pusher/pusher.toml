@@ -22,3 +22,9 @@ port = 3306
 username = "root"
 password = "toor"
 dbname = "byroad"
+
+[alert]
+username = ""
+password = ""
+sms_addr = ""
+emai_addr = ""

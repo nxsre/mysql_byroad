@@ -21,8 +21,10 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 	log.Debugf("send message ret %s, error: %v", ret, err)
 	if !isSuccessSend(ret) {
 		if err != nil {
+			handleAlert(evt, err.Error())
 			sendClient.LogSendError(evt, err.Error())
 		} else {
+			handleAlert(evt, ret)
 			sendClient.LogSendError(evt, ret)
 		}
 		msg.RequeueWithoutBackoff(-1)
@@ -51,7 +53,7 @@ func NewTaskConsumer(task *model.Task) *nsq.Consumer {
 	config.DefaultRequeueDelay = time.Millisecond * time.Duration(task.ReSendTime)
 	c, err := nsq.NewConsumer(task.Name, task.Name, config)
 	if err != nil {
-		log.Errorf("nsq new comsumer %s->%s: ", task.Name, task.Name, err.Error())
+		log.Errorf("nsq new comsumer %s, error: %s: ", task.Name, err.Error())
 	}
 	h := &MessageHandler{}
 	c.AddHandler(h)
