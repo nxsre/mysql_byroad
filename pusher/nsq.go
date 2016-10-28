@@ -3,6 +3,7 @@ package main
 import (
 	"encoding/json"
 	"mysql_byroad/model"
+	"mysql_byroad/notice"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
@@ -20,6 +21,7 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 	ret, err := sendClient.SendMessage(evt)
 	log.Debugf("send message ret %s, error: %v", ret, err)
 	if !isSuccessSend(ret) {
+		handleAlert(evt)
 		if err != nil {
 			sendClient.LogSendError(evt, err.Error())
 		} else {
@@ -60,4 +62,15 @@ func NewTaskConsumer(task *model.Task) *nsq.Consumer {
 		log.Error("nsq connect to nsq lookupds: ", err.Error())
 	}
 	return c
+}
+
+func handleAlert(evt *model.NotifyEvent) {
+	task := taskManager.GetTask(evt.TaskID)
+	if task == nil {
+		return
+	}
+	if evt.RetryCount > 1 {
+		notice := notice.NewSmsNoticer(nil)
+		notice.SendSms()
+	}
 }

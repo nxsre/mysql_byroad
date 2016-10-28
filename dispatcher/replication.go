@@ -65,8 +65,6 @@ func NewReplicationClient(ctx context.Context) *ReplicationClient {
 		log.Panic(err)
 	}
 	replicationClient.confdb = confdb
-	binlogInfo := &model.BinlogInfo{}
-	replicationClient.binlogInfo = binlogInfo
 	columnManager, err := schema.NewColumnManager([]*schema.MysqlConfig{
 		&schema.MysqlConfig{
 			Host:     conf.MysqlConf.Host,

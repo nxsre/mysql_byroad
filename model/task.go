@@ -27,6 +27,8 @@ type Task struct {
 	Statistic      *Statistic
 	PackProtocal   DataPackProtocal `db:"pack_protocal"`
 	DBInstanceName string           `db:"db_instance_name"` // 该任务所属的mysql实例
+	PhoneNumbers   string           `db:"phone_numbers"`
+	EmailAddrs     string           `d;b:"email_addrs"`
 }
 
 func CreateTaskTable() {
@@ -74,7 +76,7 @@ func (task *Task) _getByID() (*Task, error) {
 	if err != nil {
 		return nil, err
 	}
-    defer rows.Close()
+	defer rows.Close()
 	for rows.Next() {
 		f := new(NotifyField)
 		rows.StructScan(f)
