@@ -350,9 +350,8 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "添加成功!"
 	}
-	dispatcherManager.AddTask(task)
-	if err != nil {
-		log.Error("add task error: ", err.Error())
+	if task.Stat == model.TASK_STATE_START {
+		dispatcherManager.AddTask(task)
 	}
 	pusherManager.AddTask(task)
 	body, _ := json.Marshal(resp)
