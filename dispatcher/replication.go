@@ -176,7 +176,8 @@ func (rep *ReplicationClient) prepareBinlog() error {
 
 func (rep *ReplicationClient) startBinlog() {
 	stream := rep.getStreamer()
-	go rep.onStream(stream)
+	//go rep.onStream(stream)
+	rep.onMultiStream(stream, 10)
 	for {
 		select {
 		case err := <-rep.restartChan:
@@ -193,7 +194,8 @@ func (rep *ReplicationClient) startBinlog() {
 func (rep *ReplicationClient) restart() {
 	rep.syncer.Close()
 	stream := rep.getStreamer()
-	go rep.onStream(stream)
+	//go rep.onStream(stream)
+	rep.onMultiStream(stream, 10)
 }
 
 func (rep *ReplicationClient) getStreamer() *replication.BinlogStreamer {
@@ -246,4 +248,10 @@ func (rep *ReplicationClient) onStream(streamer *replication.BinlogStreamer) {
 		}
 	}
 	rep.StopChan <- true
+}
+
+func (rep *ReplicationClient) onMultiStream(streamer *replication.BinlogStreamer, count int) {
+	for i := 0; i < count; i++ {
+		go rep.onStream(streamer)
+	}
 }
