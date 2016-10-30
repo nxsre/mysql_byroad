@@ -181,6 +181,7 @@ func (rep *ReplicationClient) startBinlog() {
 		select {
 		case err := <-rep.restartChan:
 			log.Errorf("restart replication because of: %s", err.Error())
+			time.Sleep(time.Second)
 			rep.restart()
 		case <-rep.StopChan:
 			rep.syncer.Close()
