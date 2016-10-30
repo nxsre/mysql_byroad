@@ -28,6 +28,7 @@ type Config struct {
 	MysqlConf           MysqlConf     `toml:"mysql"`
 	MaxIdleConnsPerHost int           `toml:"max_idle_conns_per_host"`
 	LogLevel            string        `toml:"loglevel"`
+	AlertConfig         AlertConfig   `toml:"alert"`
 }
 
 type MysqlConf struct {
@@ -52,6 +53,13 @@ type RPCServerConf struct {
 type NSQConf struct {
 	LookupdHttpAddrs []string `toml:"lookupd_http_address"`
 	NsqdAddrs        []string `toml:"nsqd_tcp_address"`
+}
+
+type AlertConfig struct {
+	User      string
+	Password  string
+	SmsAddr   string `toml:"sms_addr"`
+	EmailAddr string `toml:"email_addr"`
 }
 
 var Conf Config

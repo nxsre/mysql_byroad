@@ -28,7 +28,8 @@ type Task struct {
 	PackProtocal   DataPackProtocal `db:"pack_protocal"`
 	DBInstanceName string           `db:"db_instance_name"` // 该任务所属的mysql实例
 	PhoneNumbers   string           `db:"phone_numbers"`
-	EmailAddrs     string           `d;b:"email_addrs"`
+	Emails         string           `db:"emails"`
+	Alert          int
 }
 
 func CreateTaskTable() {
@@ -48,16 +49,19 @@ func CreateTaskTable() {
 		"`desc` VARCHAR(255)," +
 		"`pack_protocal` INTEGER," +
 		"`db_instance_name` VARCHAR(255) NOT NULL," +
+		"`phone_numbers` VARCHAR(255) NOT NULL," +
+		"`emails` VARCHAR(255) NOT NULL," +
+		"`alert` INTEGER NOT NULL" +
 		")"
 	confdb.MustExec(s)
 }
 
 func (task *Task) _insert() (id int64, err error) {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.DBInstanceName)
+		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert)
 	if err != nil {
 		return 0, err
 	}
@@ -89,8 +93,10 @@ func (task *Task) _getByID() (*Task, error) {
 
 func (task *Task) _update() (int64, error) {
 	task.Fields._delete(task.ID)
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=? WHERE `id`=?"
-	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal, task.ID)
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
+	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount,
+		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
+		task.PhoneNumbers, task.Emails, task.Alert, task.ID)
 	if err != nil {
 		return 0, err
 	}

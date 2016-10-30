@@ -73,6 +73,22 @@
             </div>
             <input class="form-control" type="text" name="timeout" id="timeout" value="{{task.Timeout}}">
           </div>
+          <div class="form-group col-md-6">
+						<div class="form-inline">
+							<label for="alert">消息报警</label>
+							<p class="form-control-static">消息推送失败超过一定次数或频率时将发送失败信息(使用分号`;`隔开)</p>
+              <div class="radio">
+								<label>
+                    <input type="radio" name="alert" id="alert" value="1" {% if task.Alert== 1 %}checked{% endif %}> 开启
+                </label>
+								<label>
+                    <input type="radio" name="alert" id="alert" value="0" {% if task.Alert==0 %}checked {%endif%}> 关闭
+                </label>
+							</div>
+						</div>
+						电话：<input class="form-control" type="text" name="phoneNumbers" id="phoneNumbers" value="{{task.PhoneNumbers}}">
+            邮箱：<input class="form-control" type="text" name="emails" id="emails" value="{{task.Emails}}">
+					</div>
           <div class="form-group col-md-12">
             <div class="form-inline">
               <label for="state">状态：</label>

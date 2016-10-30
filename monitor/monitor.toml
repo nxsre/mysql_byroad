@@ -7,7 +7,7 @@ loglevel = "Info" # Debug Info Warn Error Fatal Panic
 host = "127.0.0.1"
 port = 3306
 username = "root"
-password = "toor"
+password = "root"
 dbname = "byroad"
 
 #做为rpcserver监听信息

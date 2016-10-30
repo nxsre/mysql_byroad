@@ -58,6 +58,9 @@ type TaskForm struct {
 	Desc           string                 `form:"desc" binding:"MaxSize(255)"`
 	State          string                 `form:"state"`
 	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
+	PhoneNunbers   string                 `form:"phoneNumbers"`
+	Emails         string                 `form:"emails"`
+	Alert          int                    `form:"alert"`
 	Fields         []*FieldsForm          `form:"noUse"`
 }
 
@@ -361,7 +364,10 @@ func doAddTask2(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	}
 	task.DBInstanceName = rpcclient.Desc
 	task.Fields = parseFields2(t.Fields)
-	if ex, _ := task.NameExists(); ex {
+	if ex, err := task.NameExists(); ex {
+		if err != nil {
+			log.Errorf("task exists error: %s", err.Error())
+		}
 		resp.Error = true
 		resp.Message = "任务名已经存在!"
 		body, _ := json.Marshal(resp)
@@ -663,6 +669,9 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Desc = strings.TrimSpace(src.Desc)
 	dst.Stat = src.State
 	dst.PackProtocal = src.PackProtocal
+	dst.PhoneNumbers = src.PhoneNunbers
+	dst.Emails = src.Emails
+	dst.Alert = src.Alert
 }
 
 func FieldExists(fields []*model.NotifyField, field *model.NotifyField) bool {
