@@ -20,7 +20,7 @@ desc = "localhost:1239"
 host = "127.0.0.1"
 port = 3306
 username = "root"
-password = "root"
+password = "toor"
 dbname = "byroad"
 
 [alert]
@@ -28,3 +28,5 @@ user = ""
 password = ""
 sms_addr = "http://localhost:12344"
 email_addr = "http://localhost:3123"
+max_count = 10 #单位时间内超过次数将报警
+period = "1m" #单位时间

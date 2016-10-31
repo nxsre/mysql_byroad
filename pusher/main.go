@@ -3,7 +3,6 @@ package main
 import (
 	"fmt"
 	"mysql_byroad/model"
-	"mysql_byroad/notice"
 	"os"
 	"os/signal"
 	"syscall"
@@ -35,12 +34,7 @@ func initGlobal() {
 
 func main() {
 	InitLog()
-	notice.Init(&notice.Config{
-		User:      Conf.AlertConfig.User,
-		Password:  Conf.AlertConfig.Password,
-		SmsAddr:   Conf.AlertConfig.SmsAddr,
-		EmailAddr: Conf.AlertConfig.EmailAddr,
-	})
+	InitAlert(&Conf.AlertConfig)
 	log.Debugf("Conf: %+v", Conf)
 	initGlobal()
 	dsn := fmt.Sprintf("%s:%s@(%s:%d)/%s?charset=utf8&parseTime=true",

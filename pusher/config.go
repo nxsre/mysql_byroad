@@ -58,8 +58,10 @@ type NSQConf struct {
 type AlertConfig struct {
 	User      string
 	Password  string
-	SmsAddr   string `toml:"sms_addr"`
-	EmailAddr string `toml:"email_addr"`
+	SmsAddr   string   `toml:"sms_addr"`
+	EmailAddr string   `toml:"email_addr"`
+	MaxCount  int      `toml:"max_count"`
+	Period    duration `toml:"period"`
 }
 
 var Conf Config
