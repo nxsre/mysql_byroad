@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"mysql_byroad/model"
 	"sort"
 	"time"
@@ -171,4 +172,30 @@ func (dm *DispatcherManager) GetSysStatus(desc string) (status map[string]interf
 		return client.GetSysStatus()
 	}
 	return nil, nil
+}
+
+func (dm *DispatcherManager) RunBinlogCheck() {
+	go func() {
+		for {
+			select {
+			case <-time.After(Conf.AlertConfig.BinlogCheckPeriod.Duration):
+				for dispatcher := range dm.rpcclients.Iter() {
+					checkBinlog(dispatcher)
+				}
+			}
+		}
+	}()
+}
+
+func checkBinlog(dispatcher *RPCClient) {
+	masterStatus, err := dispatcher.GetMasterStatus()
+	if err != nil {
+	}
+	currentStatus, err := dispatcher.GetCurrentBinlogInfo()
+	if err != nil {
+	}
+	if masterStatus.Position-currentStatus.Position > Conf.AlertConfig.BinlogPosGap {
+		content := fmt.Sprintf("旁路系统\n时间：%s\n%s\nmaster status: %+v\ncurrent status: %+v", time.Now().String(), dispatcher.Desc, masterStatus, currentStatus)
+		SendAlert(content)
+	}
 }

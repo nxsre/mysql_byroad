@@ -24,9 +24,11 @@ var (
 func main() {
 	var err error
 	InitLog()
+	InitAlert(Conf.AlertConfig)
 	log.Debugf("Conf: %+v", Conf)
 	pusherManager = NewPusherManager()
 	dispatcherManager = NewDispatcherManager()
+	dispatcherManager.RunBinlogCheck()
 	rpcServer = NewRPCServer("tcp", fmt.Sprintf("%s:%d", Conf.RPCServerConf.Host, Conf.RPCServerConf.Port), "")
 	rpcServer.start()
 	nsqManager, err = nsqm.NewNSQManager(Conf.NSQLookupdAddress, nil, nil)
@@ -44,9 +46,6 @@ func main() {
 	}
 	model.Init(confdb)
 	go StartServer()
-	binlogChecker := NewBinlogChecker(dispatcherManager)
-	binlogChecker.AddDispatcher("localhost","")
-	go binlogChecker.Run()
 	HandleSignal()
 }
 

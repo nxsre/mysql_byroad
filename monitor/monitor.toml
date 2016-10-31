@@ -23,3 +23,13 @@ auth_url = "http://auth.jumeird.com"
 appkey = "457e3930b5cc11e589e1842b2b738d12"
 appname = "bypass"
 aliasname = "bypass"
+
+[alert]
+user = ""
+password = ""
+sms_addr = "http://localhost:12344"
+email_addr = "http://localhost:3123"
+phone_numbers = "123;234"
+emails = "xin@ju;ju@iu"
+binlog_check_period = "1m" # 检测binlog的时间间隔
+binlog_pos_gap = 10000 # binlog差距超过改值将会报警
