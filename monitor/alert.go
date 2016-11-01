@@ -28,11 +28,11 @@ func SendAlert(content string) {
 	for _, number := range phoneNumbers {
 		number = strings.TrimSpace(number)
 		ret, err := notice.SendSms(number, content)
-		log.Infof("send sms %s: %s, ret: %s error: %s", number, content, ret, err.Error())
+		log.Infof("send sms %s: %s,\nret: %s error: %s", number, content, ret, err.Error())
 	}
 	for _, email := range emails {
 		email = strings.TrimSpace(email)
 		ret, err := notice.SendEmail(email, "旁路系统", content)
-		log.Infof("send email %s: %s, ret: %s error: %s", email, content, ret, err.Error())
+		log.Infof("send email %s: %s,\nret: %s error: %s", email, content, ret, err.Error())
 	}
 }
