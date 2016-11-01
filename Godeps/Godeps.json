@@ -12,11 +12,6 @@
 			"Rev": "ffaa107fbd880f6d18cd6fec9b511668dcad8639"
 		},
 		{
-			"ImportPath": "github.com/Shopify/sarama",
-			"Comment": "v1.10.1-10-gaf0513c",
-			"Rev": "af0513c4d97979eb876d201391fac6475ec08268"
-		},
-		{
 			"ImportPath": "github.com/Sirupsen/logrus",
 			"Comment": "v0.10.0-16-gcd7d1bb",
 			"Rev": "cd7d1bbe41066b6c1f19780f895901052150a575"
@@ -25,16 +20,6 @@
 			"ImportPath": "github.com/Unknwon/com",
 			"Comment": "v1",
 			"Rev": "28b053d5a2923b87ce8c5a08f3af779894a72758"
-		},
-		{
-			"ImportPath": "github.com/eapache/go-resiliency/breaker",
-			"Comment": "v1.0.0-3-gf341fb4",
-			"Rev": "f341fb4dca45128e4aa86389fa6a675d55fe25e1"
-		},
-		{
-			"ImportPath": "github.com/eapache/queue",
-			"Comment": "v1.0.2",
-			"Rev": "ded5959c0d4e360646dc9e9908cff48666781367"
 		},
 		{
 			"ImportPath": "github.com/go-macaron/binding",
@@ -60,10 +45,6 @@
 			"ImportPath": "github.com/go-sql-driver/mysql",
 			"Comment": "v1.2-125-gd512f20",
 			"Rev": "d512f204a577a4ab037a1816604c48c9c13210be"
-		},
-		{
-			"ImportPath": "github.com/golang/snappy",
-			"Rev": "723cc1e459b8eea2dea4583200fd60757d40097a"
 		},
 		{
 			"ImportPath": "github.com/jmoiron/sqlx",
@@ -96,13 +77,8 @@
 		},
 		{
 			"ImportPath": "github.com/klauspost/crc32",
-			"Comment": "v1.0",
-			"Rev": "19b0b332c9e4516a6370a0456e6182c3b5036720"
-		},
-		{
-			"ImportPath": "github.com/mattn/go-sqlite3",
-			"Comment": "v1.1.0-62-g467f50b",
-			"Rev": "467f50b0c026317ad28fc2c0a08aab6f755cfc7a"
+			"Comment": "v1.0-2-gcb6bfca",
+			"Rev": "cb6bfca970f6908083f26f39a79009d608efd5cd"
 		},
 		{
 			"ImportPath": "github.com/mreiferson/go-snappystream",
@@ -122,10 +98,6 @@
 			"ImportPath": "github.com/nsqio/go-nsq",
 			"Comment": "v1.0.6",
 			"Rev": "d71fb89c9e0263aaed89645b0b168e11ccf597b1"
-		},
-		{
-			"ImportPath": "github.com/samuel/go-zookeeper/zk",
-			"Rev": "218e9c81c0dd8b3b18172b2bbfad92cc7d6db55f"
 		},
 		{
 			"ImportPath": "github.com/satori/go.uuid",
@@ -151,14 +123,6 @@
 		{
 			"ImportPath": "github.com/siddontang/go/hack",
 			"Rev": "1e9ce2a5ac4092fdf61e293634e40bfb49595105"
-		},
-		{
-			"ImportPath": "github.com/wvanbergen/kafka/consumergroup",
-			"Rev": "6df90f1eb4669ee0ae66616f90e64770da8ff462"
-		},
-		{
-			"ImportPath": "github.com/wvanbergen/kazoo-go",
-			"Rev": "0f768712ae6f76454f987c3356177e138df258f8"
 		},
 		{
 			"ImportPath": "golang.org/x/net/context",
