@@ -10,7 +10,7 @@ var confdb *sqlx.DB
 
 // 不允许并发调用
 func Init(db *sqlx.DB) {
-	confdb = db
+	confdb = db.Unsafe()
 }
 
 type DataPackProtocal int
