@@ -4,9 +4,8 @@ import (
 	"fmt"
 	"mysql_byroad/model"
 	"sort"
-	"time"
-
 	"strings"
+	"time"
 
 	log "github.com/Sirupsen/logrus"
 )
@@ -192,9 +191,13 @@ func (dm *DispatcherManager) RunBinlogCheck() {
 func checkBinlog(dispatcher *RPCClient) {
 	masterStatus, err := dispatcher.GetMasterStatus()
 	if err != nil {
+		log.Errorf("get %s master status error: %s", dispatcher.Desc, err.Error())
+		return
 	}
 	currentStatus, err := dispatcher.GetCurrentBinlogInfo()
 	if err != nil {
+		log.Errorf("get %s current status error: %s", dispatcher.Desc, err.Error())
+		return
 	}
 	if isAlert(masterStatus, currentStatus) {
 		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\nmaster status: %+v\ncurrent status: %+v", time.Now().String(), dispatcher.Desc, masterStatus, currentStatus)
