@@ -6,6 +6,8 @@ import (
 	"sort"
 	"time"
 
+	"strings"
+
 	log "github.com/Sirupsen/logrus"
 )
 
@@ -194,8 +196,19 @@ func checkBinlog(dispatcher *RPCClient) {
 	currentStatus, err := dispatcher.GetCurrentBinlogInfo()
 	if err != nil {
 	}
-	if masterStatus.Position-currentStatus.Position > Conf.AlertConfig.BinlogPosGap {
+	if isAlert(masterStatus, currentStatus) {
 		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\nmaster status: %+v\ncurrent status: %+v", time.Now().String(), dispatcher.Desc, masterStatus, currentStatus)
 		SendAlert(content)
 	}
+}
+
+/*
+根据binlog的filename和position判断是否需要报警
+*/
+func isAlert(masterStatus, currentStatus *model.BinlogInfo) bool {
+	if masterStatus.Position-currentStatus.Position > Conf.AlertConfig.BinlogPosGap ||
+		(strings.Compare(masterStatus.Filename, currentStatus.Filename) > 0 && currentStatus.Position-masterStatus.Position < Conf.AlertConfig.BinlogPosGap) {
+		return true
+	}
+	return false
 }

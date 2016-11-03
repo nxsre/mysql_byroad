@@ -18,14 +18,14 @@ type NodeStats struct {
 	Stats    *Stats
 }
 
-// nsqlookupd的lookup接口返回信息
+// nsqlookupd的nodes接口返回信息
 type Node struct {
 	Producer
 	Tombstones []bool   `json:"tombstones"`
 	Topics     []string `json:"topics"`
 }
 
-// nsqlookupd的topics接口返回信息
+// nsqlookupd的lookup?topics和nsqd的info接口返回信息
 type Producer struct {
 	RemoteAddress    string `json:"remote_address"`
 	Hostname         string `json:"hostname"`
@@ -34,6 +34,8 @@ type Producer struct {
 	HTTPPort         int    `json:"http_port"`
 	Version          string `json:"version"`
 }
+
+type Producers []*Producer
 
 // topic在一个nsqd上的统计信息
 type TopicStats struct {
