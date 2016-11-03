@@ -210,9 +210,15 @@ func checkBinlog(dispatcher *RPCClient) {
 根据binlog的filename和position判断是否需要报警
 */
 func isAlert(masterStatus, currentStatus *model.BinlogInfo) bool {
-	if masterStatus.Position-currentStatus.Position > Conf.AlertConfig.BinlogPosGap ||
-		(strings.Compare(masterStatus.Filename, currentStatus.Filename) > 0 && currentStatus.Position-masterStatus.Position < Conf.AlertConfig.BinlogPosGap) {
-		return true
+	// uint32相减时注意溢出问题
+	if masterStatus.Position > currentStatus.Position {
+		if masterStatus.Position-currentStatus.Position > Conf.AlertConfig.BinlogPosGap {
+			return true
+		}
+	} else {
+		if strings.Compare(masterStatus.Filename, currentStatus.Filename) > 0 && currentStatus.Position-masterStatus.Position < Conf.AlertConfig.BinlogPosGap {
+			return true
+		}
 	}
 	return false
 }
