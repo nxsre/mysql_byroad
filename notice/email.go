@@ -4,7 +4,6 @@ import (
 	"io/ioutil"
 	"net/http"
 	"net/url"
-	"strings"
 )
 
 type EmailNoticer struct {
@@ -13,8 +12,7 @@ type EmailNoticer struct {
 
 func (this *EmailNoticer) SendEmail(recipient, subject, content string) (string, error) {
 	payload := this.newPayload(recipient, subject, content)
-	reader := strings.NewReader(payload)
-	resp, err := http.Post(this.config.Addr, "text/html", reader)
+	resp, err := http.PostForm(this.config.Addr, payload)
 	if err != nil {
 		return "", err
 	}
@@ -26,14 +24,14 @@ func (this *EmailNoticer) SendEmail(recipient, subject, content string) (string,
 	return string(body), nil
 }
 
-func (this *EmailNoticer) newPayload(recipient, subject, content string) string {
+func (this *EmailNoticer) newPayload(recipient, subject, content string) url.Values {
 	v := url.Values{}
 	v.Add("task", this.config.User)
 	v.Add("key", this.config.Password)
 	v.Add("email_destinations", recipient)
 	v.Add("email_subject", subject)
 	v.Add("email_content", content)
-	return v.Encode()
+	return v
 }
 
 func NewEmailNoticer(config *EmailConfig) *EmailNoticer {
