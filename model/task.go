@@ -282,3 +282,9 @@ func GetTasksByUserAndInstance(username, instance string) ([]*Task, error) {
 	}
 	return ts, nil
 }
+
+func GetTaskByName(taskname string) (*Task, error) {
+	task := Task{}
+	err := confdb.Get(&task, "SELECT * FROM `task` WHERE name=?", taskname)
+	return &task, err
+}
