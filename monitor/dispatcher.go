@@ -219,5 +219,6 @@ func isAlert(masterStatus, currentStatus *model.BinlogInfo) bool {
 		if strings.Compare(masterStatus.Filename, currentStatus.Filename) > 0 && currentStatus.Position-masterStatus.Position < Conf.AlertConfig.BinlogPosGap {
 			return true
 		}
+	}
 	return false
 }
