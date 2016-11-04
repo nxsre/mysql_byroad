@@ -14,7 +14,10 @@ byroad-monitor:
 byroad-pusher:
 	cd ${WORKPATH}/pusher && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-pusher
 
-build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher
+nsq-monitor:
+	cd ${WORKPATH}/nsq_monitor && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/nsq_monitor
+
+build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher nsq-monitor
 
 build-dev:
 	cd ${WORKPATH}/dispatcher && go build
