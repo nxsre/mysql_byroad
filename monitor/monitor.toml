@@ -7,7 +7,7 @@ loglevel = "Info" # Debug Info Warn Error Fatal Panic
 host = "127.0.0.1"
 port = 3306
 username = "root"
-password = "toor"
+password = ""
 dbname = "byroad"
 
 #做为rpcserver监听信息
@@ -29,25 +29,25 @@ name = "localhost"
 host = "127.0.0.1"
 port = 3306
 username = "root"
-password = "toor"
+password = ""
 include = []
 exclude = ["information_schema", "performance_schema", "mysql"]
 interval = "10s"
 
-[[mysql_instance]]
-name = "jumei_product"
-host = "192.168.20.71"
-port = 9001
-username = "plsys_r"
-password = "plsys_r20.71"
-interval = "10s"
-
-[[mysql_instance]]
-name = "jumei_shiping_sharding1"
-host = "192.168.20.71"
-port = 6001
-username = "plsys_r"
-password = "plsys_r20.71"
-include = []
-exclude = ["information_schema", "performance_schema", "mysql"]
-interval = "10s"
+#[[mysql_instance]]
+#name = "jumei_product"
+#host = "192.168.20.71"
+#port = 9001
+#username = "plsys_r"
+#password = "plsys_r20.71"
+#interval = "10s"
+#
+#[[mysql_instance]]
+#name = "jumei_shiping_sharding1"
+#host = "192.168.20.71"
+#port = 6001
+#username = "plsys_r"
+#password = "plsys_r20.71"
+#include = []
+#exclude = ["information_schema", "performance_schema", "mysql"]
+#interval = "10s"

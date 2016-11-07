@@ -21,7 +21,7 @@ var createSql = `CREATE TABLE user (
 func main() {
 	count := flag.Int64("n", 1000, "number of sql")
 	flag.Parse()
-	dsn := fmt.Sprintf("%s:%s@(%s:%d)/test", "root", "toor", "127.0.0.1", 3306)
+	dsn := fmt.Sprintf("%s:%s@(%s:%d)/test", "root", "", "127.0.0.1", 3306)
 	db, err := sqlx.Open("mysql", dsn)
 	if err != nil {
 		panic(err)

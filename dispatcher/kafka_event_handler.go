@@ -30,11 +30,13 @@ type KafkaEventHandler struct {
 func NewKafkaEventHandler(nsqConfig NSQConf, taskManager *TaskManager, ctx *Context) (*KafkaEventHandler, error) {
 	keh := &KafkaEventHandler{}
 	keh.ctx = ctx
-	qm, err := nsqm.GetManager(nsqConfig.LookupdHttpAddrs, nsqConfig.NsqdAddrs, nil)
+	qm, err := nsqm.NewNSQManager(nsqConfig.LookupdHttpAddrs, nsqConfig.NsqdAddrs, nil)
 	if err != nil {
 		log.Error(err.Error())
 		return nil, err
 	}
+	qm.InitProducers()
+	qm.ProducerUpdateLoop()
 	binlogStatistics := &model.BinlogStatistics{
 		Statistics: make([]*model.BinlogStatistic, 0, 100),
 	}

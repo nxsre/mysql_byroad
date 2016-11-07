@@ -10,10 +10,6 @@ import (
 	_ "github.com/go-sql-driver/mysql"
 )
 
-//var host = "10.0.12.44"
-//var port = 6006
-//var username = "byroad_swd"
-//var password = "0CX9VnXh"
 var host = "localhost"
 var port = 3306
 var username = "root"

@@ -135,5 +135,5 @@
     "database": "test",
     "eventType": "UPDATE",
     "executeTime": 1477477251000,
-    "table": "user_1"
+    "table": "user"
 }

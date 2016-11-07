@@ -1,0 +1,16 @@
+lookup_addrs = "127.0.0.1:4161"
+nsqd_addrs = ""
+notice_user = ""
+noitce_password = ""
+sms_addr = ""
+email_addr = ""
+max_channel_depth = 1
+lookup_interval = "1m"
+phone_numbers = "123445678"
+emails = ""
+
+mysql_username = "root"
+mysql_password = "toor"
+mysql_host = "localhost"
+mysql_port = 3306
+mysql_db_name = "byroad"

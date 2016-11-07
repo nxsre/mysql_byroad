@@ -52,9 +52,11 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	return nil
 }
 
-func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
-	log.Infof("delete task: %d", task.ID)
+func (rs *RPCServer) DeleteTask(id int64, status *string) error {
+	log.Infof("delete task: %d", id)
 	*status = "success"
+	task := new(model.Task)
+	task.ID = id
 	taskManager.DeleteTask(task)
 	return nil
 }

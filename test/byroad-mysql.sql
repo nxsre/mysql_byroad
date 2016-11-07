@@ -25,7 +25,7 @@ USE `byroad`;
 -- 表的结构 `notify_field`
 --
 
-CREATE TABLE IF NOT EXISTS `notify_field` (
+CREATE TABLE IF NOT EXISTS `notify_field_kafka` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `schema` varchar(120) NOT NULL,
   `table` varchar(120) NOT NULL,
@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS `notify_field` (
 -- 表的结构 `task`
 --
 
-CREATE TABLE IF NOT EXISTS `task` (
+CREATE TABLE IF NOT EXISTS `task_kafka` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `name` varchar(120) NOT NULL,
   `apiurl` varchar(255) NOT NULL,
@@ -67,7 +67,7 @@ CREATE TABLE IF NOT EXISTS `task` (
 -- 表的结构 `tasklog`
 --
 
-CREATE TABLE IF NOT EXISTS `tasklog` (
+CREATE TABLE IF NOT EXISTS `tasklog_kafka` (
   `id` int(11) NOT NULL AUTO_INCREMENT,
   `task_id` int(11) NOT NULL,
   `message` varchar(1000) DEFAULT NULL,
@@ -79,3 +79,8 @@ CREATE TABLE IF NOT EXISTS `tasklog` (
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
+
+ALTER TABLE `byroad`.`task_kafka` 
+ADD COLUMN `phone_numbers` VARCHAR(255) NOT NULL AFTER `db_instance_name`,
+ADD COLUMN `emails` VARCHAR(255) NOT NULL AFTER `phone_numbers`,
+ADD COLUMN `alert` INT NOT NULL AFTER `emails`;

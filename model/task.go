@@ -54,11 +54,11 @@ func CreateTaskTable() {
 }
 
 func (task *Task) Insert() (id int64, err error) {
-	s := "INSERT INTO `task_kafka`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task_kafka`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.DBInstanceName)
+		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert)
 	if err != nil {
 		return 0, err
 	}
@@ -90,8 +90,10 @@ func (task *Task) GetByID() (*Task, error) {
 
 func (task *Task) Update() (int64, error) {
 	task.Fields.Delete(task.ID)
-	s := "UPDATE `task_kafka` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=? WHERE `id`=?"
-	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal, task.ID)
+	s := "UPDATE `task_kafka` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
+	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime,
+		task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout,
+		task.Desc, task.PackProtocal, task.PhoneNumbers, task.Emails, task.Alert, task.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -263,4 +265,10 @@ func GetTasksByUserAndInstance(username, instance string) ([]*Task, error) {
 		}
 	}
 	return ts, nil
+}
+
+func GetTaskByName(taskname string) (*Task, error) {
+	task := Task{}
+	err := confdb.Get(&task, "SELECT * FROM `task_kafka` WHERE name=?", taskname)
+	return &task, err
 }

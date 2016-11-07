@@ -14,11 +14,6 @@ import (
 	"github.com/nsqio/go-nsq"
 )
 
-var (
-	nsqManager *NSQManager
-	once       sync.Once
-)
-
 type ErrList []error
 
 func (l ErrList) Error() string {
@@ -42,16 +37,6 @@ type NSQManager struct {
 	sync.RWMutex
 }
 
-func GetManager(lookupAddrs []string, nsqaddrs []string, config *nsq.Config) (*NSQManager, error) {
-	var err error
-	once.Do(func() {
-		nsqManager, err = NewNSQManager(lookupAddrs, nsqaddrs, config)
-		nsqManager.InitProducers()
-		nsqManager.ProducerUpdateLoop()
-	})
-	return nsqManager, err
-}
-
 func NewNSQManager(lookupAddrs []string, nsqaddrs []string, config *nsq.Config) (*NSQManager, error) {
 	if config == nil {
 		config = nsq.NewConfig()
@@ -62,7 +47,8 @@ func NewNSQManager(lookupAddrs []string, nsqaddrs []string, config *nsq.Config) 
 		config:       config,
 	}
 	var err error
-	qm.nsqdNodes, err = getNodesInfo(lookupAddrs)
+	qm.nsqdNodes, err = GetNodesInfo(lookupAddrs)
+
 	return qm, err
 }
 
@@ -83,7 +69,7 @@ func (qm *NSQManager) NodeInfoUpdateLoop() {
 		for {
 			select {
 			case <-ticker.C:
-				nodes, _ := getNodesInfo(qm.lookupdAddrs)
+				nodes, _ := GetNodesInfo(qm.lookupdAddrs)
 				qm.Lock()
 				qm.nsqdNodes = nodes
 				qm.Unlock()
@@ -93,7 +79,7 @@ func (qm *NSQManager) NodeInfoUpdateLoop() {
 }
 
 func (qm *NSQManager) GetNodesInfo() ([]*Node, error) {
-	nodes, err := getNodesInfo(qm.lookupdAddrs)
+	nodes, err := GetNodesInfo(qm.lookupdAddrs)
 	qm.Lock()
 	qm.nsqdNodes = nodes
 	qm.Unlock()
@@ -101,7 +87,7 @@ func (qm *NSQManager) GetNodesInfo() ([]*Node, error) {
 }
 
 // 通过nsqlookupd的nodes接口获取所有nsqd节点信息
-func getNodesInfo(lookupAddrs []string) ([]*Node, error) {
+func GetNodesInfo(lookupAddrs []string) ([]*Node, error) {
 	var errs []error
 	nodesInfo := make([]*Node, 0, 10)
 	for _, addr := range lookupAddrs {
@@ -216,7 +202,7 @@ func (qm *NSQManager) GetStats(topicname string) ([]*NodeStats, error) {
 	}
 	for _, n := range proNodes {
 		addr := fmt.Sprintf("%s:%d", n.BroadcastAddress, n.HTTPPort)
-		s, err := getNodeStats(addr)
+		s, err := GetNodeStats(addr)
 		if err != nil {
 			errs = append(errs, err)
 			log.Error("get node stats error: ", err.Error())
@@ -235,7 +221,7 @@ func (qm *NSQManager) GetStats(topicname string) ([]*NodeStats, error) {
 	return stats, nil
 }
 
-func getNodeStats(addr string) (*Stats, error) {
+func GetNodeStats(addr string) (*Stats, error) {
 	url := fmt.Sprintf("http://%s/stats?format=json", addr)
 
 	req, err := http.Get(url)

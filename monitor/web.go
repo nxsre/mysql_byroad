@@ -12,12 +12,13 @@ import (
 	"strings"
 	"time"
 
+	"gopkg.in/macaron.v1"
+
 	log "github.com/Sirupsen/logrus"
 	"github.com/go-macaron/binding"
 	"github.com/go-macaron/gzip"
 	"github.com/go-macaron/pongo2"
 	"github.com/go-macaron/session"
-	"gopkg.in/macaron.v1"
 )
 
 type httpJsonResponse struct {
@@ -46,6 +47,9 @@ type TaskForm struct {
 	Desc           string                 `form:"desc" binding:"MaxSize(255)"`
 	State          string                 `form:"state"`
 	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
+	PhoneNumbers   string                 `form:"phoneNumbers"`
+	Emails         string                 `form:"emails"`
+	Alert          int                    `form:"alert"`
 }
 
 func StartServer() {
@@ -570,6 +574,9 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Desc = strings.TrimSpace(src.Desc)
 	dst.Stat = src.State
 	dst.PackProtocal = src.PackProtocal
+	dst.PhoneNumbers = src.PhoneNumbers
+	dst.Emails = src.Emails
+	dst.Alert = src.Alert
 }
 
 func FieldExists(task *model.Task, field *model.NotifyField) bool {
