@@ -84,6 +84,7 @@ func NewKafkaConsumer(topics []string, groupid string, kafkaconfig KafkaConfig) 
 	config.Offsets.Initial = sarama.OffsetNewest
 	config.Offsets.ProcessingTimeout = kafkaconfig.OffsetProcessingTimeout.Duration
 	config.Offsets.ResetOffsets = kafkaconfig.OffsetResetOffsets
+	config.ClientID = "byroad"
 	consumer, err := consumergroup.JoinConsumerGroup(groupid, topics, kafkaconfig.ZkAddrs, config)
 	log.Infof("new kafka consumers for %s, %+v", groupid, topics)
 	if err != nil {
@@ -337,6 +338,7 @@ func (kcm *KafkaConsumerManager) getAllTopics() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer conn.Close()
 	children, _, err := conn.Children("/brokers/topics")
 	if err != nil {
 		return nil, err
