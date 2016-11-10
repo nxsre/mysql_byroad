@@ -22,10 +22,15 @@
       <td>{{task.RoutineCount}}/{{task.ReRoutineCount}}</td>
       <td><a href="/task/detail/{{task.ID}}">详情</a></td>
       <td>
-        {%if (task.Stat=="正常")%}
-        <span class="label label-success">{{task.Stat}}</span> 
+        {%if (task.SubscribeStat == 1)%}
+        <span class="label label-success">订阅</span> 
         {%else%}
-        <span class="label label-danger">{{task.Stat}}</span> 
+        <span class="label label-danger">订阅</span> 
+        {%endif%}
+        {%if (task.PushStat == 1)%}
+        <span class="label label-success">推送</span> 
+        {%else%}
+        <span class="label label-danger">推送</span> 
         {%endif%}
       </td>
       <td>
@@ -81,10 +86,20 @@
             <li><a href="/taskmodify/{{task.ID}}" class="modify-task">修改</a></li>
             <li><a href="javascript:void(0)" onclick="deleteTask({{task.ID}})" class="delete-task">删除</a></li>
             <li role="separator" class="divider"></li>
-            {% if (task.Stat == "正常")%}
+            <!--{% if (task.Stat == "正常")%}
             <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'停止')">停止</a></li>
             {% else %}
             <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'正常')">启动</a></li>
+            {% endif %}-->
+            {% if (task.SubscribeStat == 0)%}
+            <li><a href="javascript:void(0)" onclick="startSub({{task.ID}})">启动订阅</a></li>
+            {% else %}
+            <li><a href="javascript:void(0)" onclick="stopSub({{task.ID}})">停止订阅</a></li>            
+            {% endif %}
+            {% if (task.PushStat == 0)%}
+            <li><a href="javascript:void(0)" onclick="startPush({{task.ID}})">启动推送</a></li>                        
+            {% else %}
+            <li><a href="javascript:void(0)" onclick="stopPush({{task.ID}})">停止推送</a></li>                                    
             {% endif %}
           </ul>
         </div>

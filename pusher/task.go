@@ -28,11 +28,11 @@ func (tm *TaskManager) InitTaskMap(tasks []*model.Task) {
 }
 
 func (tm *TaskManager) InitTasKRoutine() {
-	for _, task := range tm.taskMap.cmap {
-		if task.Stat == model.TASK_STATE_START {
-			consumers := tm.newConsumers(task)
-			tm.taskConsumerMap[task.ID] = consumers
-		}
+	for task := range tm.taskMap.IterBuffered() {
+		//if task.PushStat == model.TASK_STAT_PUSH {
+		consumers := tm.newConsumers(task)
+		tm.taskConsumerMap[task.ID] = consumers
+		//}
 	}
 }
 
@@ -70,7 +70,7 @@ func (tm *TaskManager) DeleteTask(task *model.Task) {
 func (tm *TaskManager) UpdateTask(task *model.Task) {
 	oldTask := tm.GetTask(task.ID)
 	tm.taskMap.Set(task.ID, task)
-	if task.Stat == model.TASK_STATE_STOP {
+	if task.PushStat == model.TASK_STAT_UNPUSH {
 		return
 	}
 	if oldTask == nil {

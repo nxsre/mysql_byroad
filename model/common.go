@@ -89,3 +89,10 @@ const (
 	INSERT_EVENT = "Insert"
 	DELETE_EVENT = "Delete"
 )
+
+const (
+	TASK_STAT_SUBSCRIBE   = 1
+	TASK_STAT_UNSUBSCRIBE = 0
+	TASK_STAT_PUSH        = 1
+	TASK_STAT_UNPUSH      = 0
+)

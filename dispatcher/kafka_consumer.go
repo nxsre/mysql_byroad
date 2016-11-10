@@ -207,7 +207,7 @@ func (kcm *KafkaConsumerManager) GroupExists(groupid string) bool {
 func (kcm *KafkaConsumerManager) InitConsumers(tasks []*model.Task) {
 	wg := sync.WaitGroup{}
 	for _, task := range tasks {
-		if task.Stat == model.TASK_STATE_START {
+		if task.SubscribeStat == model.TASK_STAT_SUBSCRIBE {
 			wg.Add(1)
 			go func(t *model.Task) {
 				for _, handler := range kcm.handlers {

@@ -192,6 +192,66 @@ function getColumns(schema, table) {
   }
 }
 
+function startSub(taskid) {
+  var option = {
+    type: 'post',
+    url: 'task/'+taskid+'/startSub',
+    dataType: 'json',
+    success: function (data) {
+      location.reload();
+    },
+    error: function (data) {
+      alert("操作失败");
+    }
+  };
+  $.ajax(option);
+}
+
+function stopSub(taskid) {
+  var option = {
+    type: 'post',
+    url: 'task/'+taskid+'/stopSub',
+    dataType: 'json',
+    success: function (data) {
+      location.reload();
+    },
+    error: function (data) {
+      alert("操作失败");
+    }
+  };
+  $.ajax(option);
+}
+
+function startPush(taskid) {
+  var option = {
+    type: 'post',
+    url: 'task/'+taskid+'/startPush',
+    dataType: 'json',
+    success: function (data) {
+      location.reload();
+    },
+    error: function (data) {
+      alert("操作失败");
+    }
+  };
+  $.ajax(option);
+}
+
+function stopPush(taskid) {
+  var option = {
+    type: 'post',
+    url: 'task/'+taskid+'/stopPush',
+    dataType: 'json',
+    success: function (data) {
+      location.reload();
+    },
+    error: function (data) {
+      alert("操作失败");
+    }
+  };
+  $.ajax(option);
+}
+
 $(function () {
   $('#pack-help').popover({
     trigger: 'hover',

@@ -30,35 +30,17 @@ type Task struct {
 	PhoneNumbers   string           `db:"phone_numbers"`
 	Emails         string           `db:"emails"`
 	Alert          int              `db:"alert"`
-}
-
-func CreateTaskTable() {
-	s := "CREATE TABLE IF NOT EXISTS `task_kafka` (" +
-		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
-		"`name` VARCHAR(120) NOT NULL," +
-		"`apiurl` VARCHAR(120) NOT NULL," +
-		"`event` VARCHAR(120) NOT NULL," +
-		"`stat` VARCHAR(120) NOT NULL," +
-		"`create_time` DATETIME NOT NULL," +
-		"`create_user` VARCHAR(120) NOT NULL," +
-		"`routine_count` INTEGER NOT NULL," +
-		"`re_routine_count` INTEGER NOT NULL," +
-		"`re_send_time` INTEGER NOT NULL," +
-		"`retry_count` INTEGER NOT NULL," +
-		"`timeout` INTEGER NOT NULL," +
-		"`desc` VARCHAR(255)," +
-		"`pack_protocal` INTEGER," +
-		"`db_instance_name` VARCHAR(255) NOT NULL," +
-		")"
-	confdb.MustExec(s)
+	SubscribeStat  int              `db:"subscribe_stat"` // 任务是否开启订阅
+	PushStat       int              `db:"push_stat"`      // 任务是否开启推送
 }
 
 func (task *Task) Insert() (id int64, err error) {
-	s := "INSERT INTO `task_kafka`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task_kafka`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`,		`pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `subscribe_stat`, `push_stat` VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert)
+		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.SubscribeStat,
+		task.PushStat)
 	if err != nil {
 		return 0, err
 	}
@@ -90,10 +72,11 @@ func (task *Task) GetByID() (*Task, error) {
 
 func (task *Task) Update() (int64, error) {
 	task.Fields.Delete(task.ID)
-	s := "UPDATE `task_kafka` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
+	s := "UPDATE `task_kafka` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?,	`phone_numbers`=?, `emails`=?, `alert`=?, `subscribe_stat`=?, `push_stat`=? WHERE `id`="
 	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime,
 		task.RoutineCount, task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout,
-		task.Desc, task.PackProtocal, task.PhoneNumbers, task.Emails, task.Alert, task.ID)
+		task.Desc, task.PackProtocal, task.PhoneNumbers, task.Emails, task.Alert, task.SubscribeStat,
+		task.PushStat, task.ID)
 	if err != nil {
 		return 0, err
 	}
@@ -124,6 +107,18 @@ func (task *Task) SetStat() error {
 		return err
 	}
 	return nil
+}
+
+func (task *Task) SetSubscribeStat() error {
+	s := "UPDATE `task_kafka` SET `subscribe_stat`=? where `id`=?"
+	_, err := confdb.Exec(s, task.SubscribeStat, task.ID)
+	return err
+}
+
+func (task *Task) SetPushStat() error {
+	s := "UPDATE `task_kafka` SET `push_stat`=? where `id`=?"
+	_,err := confdb.Exec(s, task.PushStat, task.ID)
+	return err
 }
 
 func (this *Task) FieldExists(field *NotifyField) bool {

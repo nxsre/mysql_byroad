@@ -51,6 +51,7 @@ func NewNSQConsumer(topic, channel string, concurrency int) *nsq.Consumer {
 func NewTaskConsumer(task *model.Task) *nsq.Consumer {
 	config := nsq.NewConfig()
 	config.MaxAttempts = uint16(task.RetryCount + 1)
+	config.MaxInFlight = task.RoutineCount
 	config.DefaultRequeueDelay = time.Millisecond * time.Duration(task.ReSendTime)
 	c, err := nsq.NewConsumer(task.Name, task.Name, config)
 	if err != nil {

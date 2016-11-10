@@ -33,3 +33,29 @@ func (this *TaskIdMap) Delete(id int64) {
 	defer this.Unlock()
 	delete(this.cmap, id)
 }
+
+func (this *TaskIdMap) Iter() <-chan *model.Task {
+	ch := make(chan *model.Task)
+	go func(c chan *model.Task) {
+		this.RLock()
+		for _, task := range this.cmap {
+			c <- task
+		}
+		this.RUnlock()
+		close(c)
+	}(ch)
+	return ch
+}
+
+func (this *TaskIdMap) IterBuffered() <-chan *model.Task {
+	ch := make(chan *model.Task, len(this.cmap))
+	go func(c chan *model.Task) {
+		this.RLock()
+		for _, task := range this.cmap {
+			c <- task
+		}
+		this.RUnlock()
+		close(c)
+	}(ch)
+	return ch
+}

@@ -106,7 +106,10 @@ func StartServer() {
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
-
+	m.Post("/task/:taskid/startSub", startSub)
+	m.Post("/task/:taskid/stopSub", stopSub)
+	m.Post("/task/:taskid/startPush", startPush)
+	m.Post("/task/:taskid/stopPush", stopPush)
 	m.Put("/task", binding.Bind(TaskForm{}), doUpdateTask)
 
 	m.Delete("/task/:taskid", doDeleteTask)
@@ -354,8 +357,11 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "添加成功!"
 	}
-	if task.Stat == model.TASK_STATE_START {
-		dispatcherManager.AddTask(task)
+	if task.SubscribeStat == model.TASK_STAT_SUBSCRIBE {
+		dispatcherManager.UpdateTask(task)
+	}
+	if task.PushStat == model.TASK_STAT_PUSH {
+		pusherManager.UpdateTask(task)
 	}
 	pusherManager.AddTask(task)
 	body, _ := json.Marshal(resp)
@@ -455,10 +461,12 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	} else {
 		resp.Message = "更新成功!"
 	}
-	if task.Stat == model.TASK_STATE_START {
+	if task.SubscribeStat == model.TASK_STAT_SUBSCRIBE {
 		dispatcherManager.UpdateTask(task)
 	}
-	pusherManager.UpdateTask(task)
+	if task.PushStat == model.TASK_STAT_PUSH {
+		pusherManager.UpdateTask(task)
+	}
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
 	log.Printf("%s: update task %v", sess.Get("user").(string), task.Name)
@@ -519,15 +527,143 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	if stat == model.TASK_STATE_START {
 		nsqManager.UnPauseTopic(task.Name)
 		dispatcherManager.StartTask(task)
-		pusherManager.StartTask(task)
+		//pusherManager.StartTask(task)
 	} else if stat == model.TASK_STATE_STOP {
 		nsqManager.PauseTopic(task.Name)
 		dispatcherManager.StopTask(task)
-		pusherManager.StopTask(task)
+		//pusherManager.StopTask(task)
 	}
 
 	body, _ := json.Marshal(resp)
-	log.Printf("%s: change task state %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: change task %s state to %s", sess.Get("user").(string), task.Name, stat)
+	return string(body)
+}
+
+func startSub(ctx *macaron.Context, sess session.Store) string {
+	taskid := ctx.ParamsInt64("taskid")
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
+	task.SubscribeStat = model.TASK_STAT_SUBSCRIBE
+	err := task.SetSubscribeStat()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		log.Error("start task subscribe: ", err.Error())
+	} else {
+		resp.Error = false
+		resp.Message = "操作成功"
+	}
+	dispatcherManager.StartTask(task)
+	body, _ := json.Marshal(resp)
+	log.Printf("%s: start task subscribe %v", sess.Get("user").(string), task.Name)
+	return string(body)
+}
+
+func stopSub(ctx *macaron.Context, sess session.Store) string {
+	taskid := ctx.ParamsInt64("taskid")
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
+	task.SubscribeStat = model.TASK_STAT_UNSUBSCRIBE
+	err := task.SetSubscribeStat()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		log.Error("stop task subscribe: ", err.Error())
+	} else {
+		resp.Error = false
+		resp.Message = "操作成功"
+	}
+	dispatcherManager.StopTask(task)
+	body, _ := json.Marshal(resp)
+	log.Printf("%s: stop task subscribe %v", sess.Get("user").(string), task.Name)
+	return string(body)
+}
+
+func startPush(ctx *macaron.Context, sess session.Store) string {
+	taskid := ctx.ParamsInt64("taskid")
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
+	task.PushStat = model.TASK_STAT_PUSH
+	err := task.SetPushStat()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		log.Error("start task push: ", err.Error())
+	} else {
+		resp.Error = false
+		resp.Message = "操作成功"
+	}
+	nsqManager.UnPauseTopic(task.Name)
+	body, _ := json.Marshal(resp)
+	log.Printf("%s: start task push %v", sess.Get("user").(string), task.Name)
+	return string(body)
+}
+
+func stopPush(ctx *macaron.Context, sess session.Store) string {
+	taskid := ctx.ParamsInt64("taskid")
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
+	task.PushStat = model.TASK_STAT_UNPUSH
+	err := task.SetPushStat()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		log.Error("stop task push: ", err.Error())
+	} else {
+		resp.Error = false
+		resp.Message = "操作成功"
+	}
+	nsqManager.PauseTopic(task.Name)
+	body, _ := json.Marshal(resp)
+	log.Printf("%s: stop task push %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
@@ -573,6 +709,10 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.CreateTime = time.Now()
 	dst.Desc = strings.TrimSpace(src.Desc)
 	dst.Stat = src.State
+	if dst.Stat == "正常" {
+		dst.SubscribeStat = model.TASK_STAT_SUBSCRIBE
+		dst.PushStat = model.TASK_STAT_PUSH
+	}
 	dst.PackProtocal = src.PackProtocal
 	dst.PhoneNumbers = src.PhoneNumbers
 	dst.Emails = src.Emails

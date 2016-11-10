@@ -44,19 +44,13 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("add task: %+v", task)
 	*status = "sucess"
-	if task.Stat == model.TASK_STATE_START {
-		taskManager.StartTask(task)
-	} else {
-		taskManager.AddTask(task)
-	}
+	taskManager.StartTask(task)
 	return nil
 }
 
-func (rs *RPCServer) DeleteTask(id int64, status *string) error {
-	log.Infof("delete task: %d", id)
+func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
+	log.Infof("delete task: %s", task.Name)
 	*status = "success"
-	task := new(model.Task)
-	task.ID = id
 	taskManager.DeleteTask(task)
 	return nil
 }
