@@ -629,7 +629,7 @@ func startPush(ctx *macaron.Context, sess session.Store) string {
 		resp.Error = false
 		resp.Message = "操作成功"
 	}
-	nsqManager.UnPauseTopic(task.Name)
+	pusherManager.StartTask(task)
 	body, _ := json.Marshal(resp)
 	log.Printf("%s: start task push %v", sess.Get("user").(string), task.Name)
 	return string(body)
@@ -661,7 +661,7 @@ func stopPush(ctx *macaron.Context, sess session.Store) string {
 		resp.Error = false
 		resp.Message = "操作成功"
 	}
-	nsqManager.PauseTopic(task.Name)
+	pusherManager.StopTask(task)
 	body, _ := json.Marshal(resp)
 	log.Printf("%s: stop task push %v", sess.Get("user").(string), task.Name)
 	return string(body)

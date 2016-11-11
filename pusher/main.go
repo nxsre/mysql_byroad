@@ -14,10 +14,10 @@ import (
 )
 
 var (
-	taskManager *TaskManager
 	rpcserver   *RPCServer
 	rpcclient   *RPCClient
 	sendClient  *SendClient
+	taskManager *TaskConsumerManager
 )
 
 func initGlobal() {
@@ -49,9 +49,9 @@ func main() {
 	if err != nil {
 		log.Error(err.Error())
 	}
-	taskManager = NewTaskManager()
-	taskManager.InitTaskMap(tasks)
-	taskManager.InitTasKRoutine()
+
+	taskManager = NewTaskConsumerManager()
+	taskManager.Init(tasks)
 	HandleSignal()
 }
 
@@ -69,6 +69,7 @@ func HandleSignal() {
 			if err != nil {
 				log.Error("rpc deregister error: ", err.Error())
 			}
+			taskManager.StopAllTask()
 			time.Sleep(1 * time.Second)
 			return
 		case syscall.SIGHUP:

@@ -44,34 +44,48 @@ func (this *RPCServer) startRpcServer() {
 func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	log.Infof("add task: %+v", task)
 	*status = "sucess"
-	taskManager.StartTask(task)
+	_, err := taskManager.AddTask(task)
+	if err != nil {
+		return err
+	}
+	if task.PushStat == model.TASK_STAT_PUSH {
+		return taskManager.StartTask(task)
+	}
 	return nil
 }
 
 func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
 	log.Infof("delete task: %s", task.Name)
 	*status = "success"
-	taskManager.DeleteTask(task)
-	return nil
+	_, err := taskManager.DeleteTask(task)
+	return err
 }
 
 func (rs *RPCServer) UpdateTask(task *model.Task, status *string) error {
 	log.Infof("update task: %+v", task)
 	*status = "success"
-	taskManager.UpdateTask(task)
-	return nil
+	_, err := taskManager.UpdateTask(task)
+	return err
 }
 
 func (rs *RPCServer) StartTask(task *model.Task, status *string) error {
 	log.Infof("start task: %+v", task)
 	*status = "success"
-	taskManager.StartTask(task)
-	return nil
+	// 确保任务已经停止
+	err := taskManager.StopTask(task)
+	if err != nil {
+		return err
+	}
+	_, err = taskManager.AddTask(task)
+	if err != nil {
+		return err
+	}
+	return taskManager.StartTask(task)
 }
 
 func (rs *RPCServer) StopTask(task *model.Task, status *string) error {
 	log.Infof("stop task: %+v", task)
 	*status = "success"
-	taskManager.StopTask(task)
-	return nil
+	err := taskManager.StopTask(task)
+	return err
 }
