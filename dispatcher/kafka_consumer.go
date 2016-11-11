@@ -266,7 +266,7 @@ func (kcm *KafkaConsumerManager) UpdateTask(task *model.Task) {
 		kcm.Delete(consumer)
 	}
 	for _, handler := range kcm.handlers {
-		kcm.traverseTask(task, handler, true)
+		kcm.traverseTask(task, handler, false)
 	}
 }
 
@@ -353,6 +353,7 @@ func getMatchedTopics(topics []string, field *model.NotifyField) []string {
 	for _, topic := range topics {
 		s := strings.SplitN(topic, "___", 2)
 		if len(s) != 2 {
+			log.Errorf("get matched topics split topic: %s", topic)
 			continue
 		}
 		schema := s[0]

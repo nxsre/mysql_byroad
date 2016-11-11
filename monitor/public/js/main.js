@@ -97,7 +97,7 @@ function addTask() {
         if (data.status == 422) {
           alert("任务数据格式错误");
         } else {
-          alert('添加失败');
+          alert(data.Message||'添加失败');
         }
       }
     };
@@ -119,7 +119,7 @@ function getTaskTopics() {
         if (data.status == 422) {
           alert("任务数据格式错误");
         } else {
-          alert('添加失败');
+          alert(data.Message||'添加失败');
         }
       }
     };
@@ -140,7 +140,7 @@ function modifyTask() {
         if (data.status == 422) {
           alert("任务数据格式错误");
         } else {
-          alert('修改失败');
+          alert(data.Message||'修改失败');
         }
       }
     };
@@ -159,7 +159,7 @@ function deleteTask(taskid) {
         location.reload();
       },
       error: function (data) {
-        alert("操作失败");
+        alert(data.Message||"操作失败");
       }
     };
     $.ajax(option);
@@ -176,7 +176,7 @@ function changeTaskStat(taskid, stat) {
       location.reload();
     },
     error: function (data) {
-      alert("操作失败");
+      alert(data.Message||"操作失败");
     }
   };
   $.ajax(option);
@@ -221,7 +221,7 @@ function startSub(taskid) {
       location.reload();
     },
     error: function (data) {
-      alert("操作失败");
+      alert(data.Message||"操作失败");
     }
   };
   $.ajax(option);
@@ -236,7 +236,7 @@ function stopSub(taskid) {
       location.reload();
     },
     error: function (data) {
-      alert("操作失败");
+      alert(data.Message||"操作失败");
     }
   };
   $.ajax(option);
@@ -251,7 +251,7 @@ function startPush(taskid) {
       location.reload();
     },
     error: function (data) {
-      alert("操作失败");
+      alert(data.Message||"操作失败");
     }
   };
   $.ajax(option);
@@ -266,7 +266,7 @@ function stopPush(taskid) {
       location.reload();
     },
     error: function (data) {
-      alert("操作失败");
+      alert(data.Message||"操作失败");
     }
   };
   $.ajax(option);

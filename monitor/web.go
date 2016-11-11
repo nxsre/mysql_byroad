@@ -93,28 +93,28 @@ func StartServer() {
 
 	m.Get("/auth/login", login)
 	m.Get("/auth/logout", logout)
-	m.Get("/", tasklist)
-	m.Get("/addtask", addTaskHTML)
-	m.Get("/task", tasklist)
-	m.Get("/taskmodify/:taskid", modifytask)
-	m.Get("/task/detail/:taskid", getTaskStatistic)
-	m.Get("/task/log/:taskid", loglist)
-	m.Get("/help", help)
-	m.Get("/schemas", getSchemas)
-	m.Get("/tables", getTables)
-	m.Get("/columns", getColumns)
+	m.Get("/", authorizeHTML("all"), tasklist)
+	m.Get("/addtask", authorizeHTML("all"), addTaskHTML)
+	m.Get("/task", authorizeHTML("all"), tasklist)
+	m.Get("/taskmodify/:taskid", authorizeHTML("all"), modifytask)
+	m.Get("/task/detail/:taskid", authorizeHTML("all"), getTaskStatistic)
+	m.Get("/task/log/:taskid", authorizeHTML("all"), loglist)
+	m.Get("/help", authorizeHTML("all"), help)
+	m.Get("/schemas", authorizeJSON("all"), getSchemas)
+	m.Get("/tables", authorizeJSON("all"), getTables)
+	m.Get("/columns", authorizeJSON("all"), getColumns)
 
-	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
-	m.Post("/task/changeStat/:taskid", changeTaskStat)
-	m.Post("/task/:taskid/startSub", startSub)
-	m.Post("/task/:taskid/stopSub", stopSub)
-	m.Post("/task/:taskid/startPush", startPush)
-	m.Post("/task/:taskid/stopPush", stopPush)
-	m.Post("/task/getTopics", getTaskTopics)
+	m.Post("/task", authorizeJSON("all"), binding.Bind(TaskForm{}), doAddTask)
+	m.Post("/task/changeStat/:taskid", authorizeJSON("all"), changeTaskStat)
+	m.Post("/task/:taskid/startSub", authorizeJSON("all"), startSub)
+	m.Post("/task/:taskid/stopSub", authorizeJSON("all"), stopSub)
+	m.Post("/task/:taskid/startPush", authorizeJSON("all"), startPush)
+	m.Post("/task/:taskid/stopPush", authorizeJSON("all"), stopPush)
+	m.Post("/task/getTopics", authorizeJSON("all"), getTaskTopics)
 
-	m.Put("/task", binding.Bind(TaskForm{}), doUpdateTask)
+	m.Put("/task", authorizeJSON("all"), binding.Bind(TaskForm{}), doUpdateTask)
 
-	m.Delete("/task/:taskid", doDeleteTask)
+	m.Delete("/task/:taskid", authorizeJSON("all"), doDeleteTask)
 
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
@@ -125,6 +125,34 @@ func getUsername(sess session.Store) string {
 		return ""
 	}
 	return username.(string)
+}
+
+func authorizeJSON(auth string) macaron.Handler {
+	return func(ctx *macaron.Context, sess session.Store) {
+		if Conf.Debug {
+			return
+		}
+		if !checkAuth(ctx, sess, auth) {
+			resp := new(httpJsonResponse)
+			resp.Error = true
+			resp.Message = "权限不够"
+			body, _ := json.Marshal(resp)
+			ctx.JSON(403, string(body))
+			return
+		}
+	}
+}
+
+func authorizeHTML(auth string) macaron.Handler {
+	return func(ctx *macaron.Context, sess session.Store) {
+		if Conf.Debug {
+			return
+		}
+		if !checkAuth(ctx, sess, auth) {
+			ctx.HTML(403, "403")
+			return
+		}
+	}
 }
 
 //判断用户是否拥有flag的权限
@@ -246,18 +274,10 @@ func logout(ctx *macaron.Context, sess session.Store) {
 }
 
 func index(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
 	ctx.HTML(200, "index")
 }
 
 func addTaskHTML(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
 	inspector := ctx.GetCookie("inspector")
 	schemas, err := columnManager.GetInspector(inspector).GetSchemas()
 	log.Debugf("inspector: %s, schemas :%+v, err: %v", inspector, schemas, err)
@@ -268,10 +288,6 @@ func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 }
 
 func modifytask(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
 	taskid := ctx.ParamsInt64("taskid")
 	task := &model.Task{
 		ID: taskid,
@@ -298,15 +314,12 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 }
 
 func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
-	fields := ctx.QueryStrings("fields")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
+	fields, err := parseTaskField(ctx)
 	resp := new(httpJsonResponse)
 	resp.Error = false
-	if len(fields) == 0 {
+	if err != nil {
 		resp.Error = true
-		resp.Message = "请添加字段信息"
+		resp.Message = err.Error()
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
@@ -322,25 +335,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		return string(body)
 	}
 	task.DBInstanceName = desc
-	task.Fields = *new(model.NotifyFields)
-	for _, c := range fields {
-		send := ctx.QueryInt(c)
-		f := new(model.NotifyField)
-		f.Send = send
-		nfs := strings.Split(c, "@@")
-		if len(nfs) < 3 {
-			resp.Error = true
-			resp.Message = "参数错误"
-			body, _ := json.Marshal(resp)
-			return string(body)
-		}
-		f.Schema = nfs[0]
-		f.Table = nfs[1]
-		f.Column = nfs[2]
-		if !FieldExists(task, f) {
-			task.Fields = append(task.Fields, f)
-		}
-	}
+	task.Fields = fields
 	if ex, err := task.NameExists(); ex {
 		resp.Error = true
 		resp.Message = "任务名已经存在!"
@@ -351,7 +346,7 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		return string(body)
 	}
 
-	_, err := task.Add()
+	_, err = task.Add()
 	if err != nil {
 		resp.Error = true
 		resp.Message = "添加失败!"
@@ -374,9 +369,6 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 
 func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	id := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -406,9 +398,6 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 
 func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.QueryInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -421,10 +410,10 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 	if !checkTaskUser(task, sess) {
 		return return403(ctx)
 	}
-	fields := ctx.QueryStrings("fields")
-	if len(fields) == 0 {
+	fields, err := parseTaskField(ctx)
+	if err != nil {
 		resp.Error = true
-		resp.Message = "请添加字段信息"
+		resp.Message = err.Error()
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
@@ -435,27 +424,9 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 		return string(body)
 	}
 	copyTask(&t, task)
-	task.Fields = *new(model.NotifyFields)
-	for _, c := range fields {
-		send := ctx.QueryInt(c)
-		f := new(model.NotifyField)
-		f.Send = send
-		nfs := strings.Split(c, "@@")
-		if len(nfs) < 3 {
-			resp.Error = true
-			resp.Message = "参数错误"
-			body, _ := json.Marshal(resp)
-			return string(body)
-		}
-		f.Schema = nfs[0]
-		f.Table = nfs[1]
-		f.Column = nfs[2]
-		if !FieldExists(task, f) {
-			task.Fields = append(task.Fields, f)
-		}
-	}
+	task.Fields = fields
 
-	_, err := task.Update()
+	_, err = task.Update()
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
@@ -476,10 +447,6 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 }
 
 func tasklist(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
 	var sortTasks []*model.Task
 	inspector := ctx.GetCookie("inspector")
 	var err error
@@ -501,9 +468,6 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 
 func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -543,9 +507,6 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 
 func startSub(ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -569,15 +530,12 @@ func startSub(ctx *macaron.Context, sess session.Store) string {
 	}
 	dispatcherManager.StartTask(task)
 	body, _ := json.Marshal(resp)
-	log.Printf("%s: start task subscribe %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: start subscribe task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
 func stopSub(ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -601,15 +559,12 @@ func stopSub(ctx *macaron.Context, sess session.Store) string {
 	}
 	dispatcherManager.StopTask(task)
 	body, _ := json.Marshal(resp)
-	log.Printf("%s: stop task subscribe %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: stop subscribe task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
 func startPush(ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -633,15 +588,12 @@ func startPush(ctx *macaron.Context, sess session.Store) string {
 	}
 	pusherManager.StartTask(task)
 	body, _ := json.Marshal(resp)
-	log.Printf("%s: start task push %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: start push task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
 func stopPush(ctx *macaron.Context, sess session.Store) string {
 	taskid := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		return return403(ctx)
-	}
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
@@ -665,15 +617,11 @@ func stopPush(ctx *macaron.Context, sess session.Store) string {
 	}
 	pusherManager.StopTask(task)
 	body, _ := json.Marshal(resp)
-	log.Printf("%s: stop task push %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: stop push task %v", sess.Get("user").(string), task.Name)
 	return string(body)
 }
 
 func loglist(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
 	taskid := ctx.ParamsInt64("taskid")
 	task := &model.Task{
 		ID: taskid,
@@ -699,6 +647,124 @@ func loglist(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "loglist")
 }
 
+func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
+	taskid := ctx.ParamsInt64("taskid")
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		ctx.HTML(404, "404")
+		return
+	}
+	if !checkTaskUser(task, sess) {
+		ctx.HTML(403, "403")
+		return
+	}
+	stats := nsqManager.GetTopicStats(task.Name)
+	ctx.Data["statistics"] = stats
+	ctx.HTML(200, "taskdetail")
+}
+
+func help(ctx *macaron.Context, sess session.Store) {
+	ctx.HTML(200, "help")
+}
+
+func getSchemas(ctx *macaron.Context, sess session.Store) {
+	inspector := ctx.GetCookie("inspector")
+	schemas, err := columnManager.GetInspector(inspector).GetSchemas()
+	if err != nil {
+		return
+	} else {
+		ctx.Data["schemas"] = schemas
+	}
+	ctx.HTML(200, "schemas")
+}
+
+func getTables(ctx *macaron.Context, sess session.Store) {
+	inspector := ctx.GetCookie("inspector")
+	schema := ctx.Query("schema")
+	tables, err := columnManager.GetInspector(inspector).GetTables(schema)
+	log.Debugf("schema: %s, tables: %+v", schema, tables)
+	if err != nil {
+		log.Errorf("get %s tables error: %s", schema, err.Error())
+		return
+	} else {
+		ctx.Data["schema"] = schema
+		ctx.Data["tables"] = tables
+	}
+	ctx.HTML(200, "tables")
+}
+
+func getColumns(ctx *macaron.Context, sess session.Store) {
+	inspector := ctx.GetCookie("inspector")
+	schema := ctx.Query("schema")
+	table := ctx.Query("table")
+	columns, err := columnManager.GetInspector(inspector).GetColumns(schema, table)
+	log.Debugf("schema: %s, table: %s, columns: %+v,err: %v", schema, table, columns, err)
+	if err != nil {
+		return
+	} else {
+		ctx.Data["schema"] = schema
+		ctx.Data["table"] = table
+		ctx.Data["columns"] = columns
+	}
+	ctx.HTML(200, "columns")
+}
+
+func getTaskTopics(ctx *macaron.Context, sess session.Store) string {
+	fields, err := parseTaskField(ctx)
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	task := new(model.Task)
+	task.Fields = fields
+	topics := getTopics(task)
+	ret, _ := json.Marshal(topics)
+	resp.Message = string(ret)
+	body, _ := json.Marshal(resp)
+	return string(body)
+}
+
+func parseTaskField(ctx *macaron.Context) (model.NotifyFields, error) {
+	fields := ctx.QueryStrings("fields")
+	if len(fields) == 0 {
+		err := fmt.Errorf("请添加字段信息")
+		return nil, err
+	}
+	taskFields := model.NotifyFields{}
+	for _, c := range fields {
+		send := ctx.QueryInt(c)
+		f := new(model.NotifyField)
+		f.Send = send
+		nfs := strings.Split(c, "@@")
+		if len(nfs) < 3 {
+			err := fmt.Errorf("请添加字段信息")
+			return nil, err
+		}
+		f.Schema = nfs[0]
+		f.Table = nfs[1]
+		f.Column = nfs[2]
+		if !FieldExists(taskFields, f) {
+			taskFields = append(taskFields, f)
+		}
+	}
+	return taskFields, nil
+}
+
+func FieldExists(fields model.NotifyFields, field *model.NotifyField) bool {
+	for _, f := range fields {
+		if f.Schema == field.Schema && f.Table == field.Table && f.Column == field.Column {
+			return true
+		}
+	}
+	return false
+}
+
 func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Name = strings.TrimSpace(src.Name)
 	dst.Apiurl = strings.TrimSpace(src.Apiurl)
@@ -721,133 +787,6 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Alert = src.Alert
 }
 
-func FieldExists(task *model.Task, field *model.NotifyField) bool {
-	for _, f := range task.Fields {
-		if f.Schema == field.Schema && f.Table == field.Table && f.Column == field.Column {
-			return true
-		}
-	}
-	return false
-}
-
-func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
-	taskid := ctx.ParamsInt64("taskid")
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
-	task := &model.Task{
-		ID: taskid,
-	}
-	if ext, _ := task.Exists(); !ext {
-		ctx.HTML(404, "404")
-		return
-	}
-	if !checkTaskUser(task, sess) {
-		ctx.HTML(403, "403")
-		return
-	}
-	stats := nsqManager.GetTopicStats(task.Name)
-	ctx.Data["statistics"] = stats
-	ctx.HTML(200, "taskdetail")
-}
-
-func help(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
-	ctx.HTML(200, "help")
-}
-
-func getSchemas(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
-	inspector := ctx.GetCookie("inspector")
-	schemas, err := columnManager.GetInspector(inspector).GetSchemas()
-	if err != nil {
-		return
-	} else {
-		ctx.Data["schemas"] = schemas
-	}
-	ctx.HTML(200, "schemas")
-}
-
-func getTables(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
-	inspector := ctx.GetCookie("inspector")
-	schema := ctx.Query("schema")
-	tables, err := columnManager.GetInspector(inspector).GetTables(schema)
-	log.Debugf("schema: %s, tables: %+v", schema, tables)
-	if err != nil {
-		log.Errorf("get %s tables error: %s", schema, err.Error())
-		return
-	} else {
-		ctx.Data["schema"] = schema
-		ctx.Data["tables"] = tables
-	}
-	ctx.HTML(200, "tables")
-}
-
-func getColumns(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
-	inspector := ctx.GetCookie("inspector")
-	schema := ctx.Query("schema")
-	table := ctx.Query("table")
-	columns, err := columnManager.GetInspector(inspector).GetColumns(schema, table)
-	log.Debugf("schema: %s, table: %s, columns: %+v,err: %v", schema, table, columns, err)
-	if err != nil {
-		return
-	} else {
-		ctx.Data["schema"] = schema
-		ctx.Data["table"] = table
-		ctx.Data["columns"] = columns
-	}
-	ctx.HTML(200, "columns")
-
-}
-
-func getTaskTopics(ctx *macaron.Context, sess session.Store) string {
-	fields := ctx.QueryStrings("fields")
-	resp := new(httpJsonResponse)
-	resp.Error = false
-	if len(fields) == 0 {
-		resp.Error = true
-		resp.Message = "请添加字段信息"
-		body, _ := json.Marshal(resp)
-		return string(body)
-	}
-	task := new(model.Task)
-	task.Fields = *new(model.NotifyFields)
-	for _, c := range fields {
-		send := ctx.QueryInt(c)
-		f := new(model.NotifyField)
-		f.Send = send
-		nfs := strings.Split(c, "@@")
-		if len(nfs) < 3 {
-			resp.Error = true
-			resp.Message = "参数错误"
-			body, _ := json.Marshal(resp)
-			return string(body)
-		}
-		f.Schema = nfs[0]
-		f.Table = nfs[1]
-		f.Column = nfs[2]
-		if !FieldExists(task, f) {
-			task.Fields = append(task.Fields, f)
-		}
-	}
-	topics := getTopics(task)
-	ret, _ := json.Marshal(topics)
-	resp.Message = string(ret)
-	body, _ := json.Marshal(resp)
-	return string(body)
+func TaskFieldExists(task *model.Task, field *model.NotifyField) bool {
+	return FieldExists(task.Fields, field)
 }
