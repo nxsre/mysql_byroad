@@ -7,11 +7,14 @@ import (
 	"mysql_byroad/nsq"
 	"os"
 	"os/signal"
+	"regexp"
+	"strings"
 	"syscall"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
 	"github.com/jmoiron/sqlx"
+	"github.com/samuel/go-zookeeper/zk"
 )
 
 var (
@@ -84,4 +87,72 @@ func HandleSignal() {
 			return
 		}
 	}
+}
+
+type empty struct{}
+
+// 得到任务订阅的字段信息对应的所有的topic
+func getTopics(task *model.Task) []string {
+	topics := make([]string, 0, 10)
+	set := make(map[string]empty)
+	allTopics, err := getAllTopics()
+	if err != nil {
+		return topics
+	}
+	for _, field := range task.Fields {
+		matched := getMatchedTopics(allTopics, field)
+		for _, topic := range matched {
+			set[topic] = empty{}
+		}
+	}
+	for topic, _ := range set {
+		topics = append(topics, topic)
+	}
+	return topics
+}
+
+// 从zookeeper中得到所有的topic
+func getAllTopics() ([]string, error) {
+	conn, _, err := zk.Connect(Conf.ZkAddrs, time.Second)
+	if err != nil {
+		return nil, err
+	}
+	defer conn.Close()
+	children, _, err := conn.Children("/brokers/topics")
+	if err != nil {
+		return nil, err
+	}
+	log.Debugf("get all topics: %+v", children)
+	return children, nil
+}
+
+// 匹配用户订阅的字段信息和topic，返回匹配上的topic
+func getMatchedTopics(topics []string, field *model.NotifyField) []string {
+	matched := make([]string, 0, 10)
+	for _, topic := range topics {
+		s := strings.SplitN(topic, "___", 2)
+		if len(s) != 2 {
+			continue
+		}
+		schema := s[0]
+		table := s[1]
+		if isMatch(field.Schema, schema) && isMatch(field.Table, table) {
+			matched = append(matched, topic)
+		}
+	}
+	return matched
+}
+
+/*
+判断s2是否符合s1的规则
+*/
+func isMatch(s1, s2 string) bool {
+	if s1 == s2 {
+		return true
+	}
+	reg, err := regexp.Compile("^" + s1 + "$")
+	if err != nil {
+		return false
+	}
+	return reg.MatchString(s2)
 }

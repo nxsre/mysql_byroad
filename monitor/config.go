@@ -29,6 +29,7 @@ type Config struct {
 	WebConfig               WebConfig             `toml:"web"`
 	LogLevel                string                `toml:"loglevel"`
 	MysqlInstances          []MysqlInstanceConfig `toml:"mysql_instance"`
+	ZkAddrs                 []string              `toml:"zk_addrs"`
 }
 
 type MysqlConf struct {

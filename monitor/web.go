@@ -110,6 +110,8 @@ func StartServer() {
 	m.Post("/task/:taskid/stopSub", stopSub)
 	m.Post("/task/:taskid/startPush", startPush)
 	m.Post("/task/:taskid/stopPush", stopPush)
+	m.Post("/task/getTopics", getTaskTopics)
+
 	m.Put("/task", binding.Bind(TaskForm{}), doUpdateTask)
 
 	m.Delete("/task/:taskid", doDeleteTask)
@@ -811,4 +813,41 @@ func getColumns(ctx *macaron.Context, sess session.Store) {
 	}
 	ctx.HTML(200, "columns")
 
+}
+
+func getTaskTopics(ctx *macaron.Context, sess session.Store) string {
+	fields := ctx.QueryStrings("fields")
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	if len(fields) == 0 {
+		resp.Error = true
+		resp.Message = "请添加字段信息"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	task := new(model.Task)
+	task.Fields = *new(model.NotifyFields)
+	for _, c := range fields {
+		send := ctx.QueryInt(c)
+		f := new(model.NotifyField)
+		f.Send = send
+		nfs := strings.Split(c, "@@")
+		if len(nfs) < 3 {
+			resp.Error = true
+			resp.Message = "参数错误"
+			body, _ := json.Marshal(resp)
+			return string(body)
+		}
+		f.Schema = nfs[0]
+		f.Table = nfs[1]
+		f.Column = nfs[2]
+		if !FieldExists(task, f) {
+			task.Fields = append(task.Fields, f)
+		}
+	}
+	topics := getTopics(task)
+	ret, _ := json.Marshal(topics)
+	resp.Message = string(ret)
+	body, _ := json.Marshal(resp)
+	return string(body)
 }

@@ -106,6 +106,26 @@ function addTask() {
   }
 }
 
+function getTaskTopics() {
+  var options = {
+      url: '/task/getTopics',
+      type: 'post',
+      dataType: 'json',
+      data: $('#form').serialize(),
+      success: function (data) {
+        alert('查找到的topic：' + data.Message);
+      },
+      error: function (data) {
+        if (data.status == 422) {
+          alert("任务数据格式错误");
+        } else {
+          alert('添加失败');
+        }
+      }
+    };
+    $.ajax(options);
+}
+
 function modifyTask() {
   if (confirm('确认修改？')) {
     var options = {
