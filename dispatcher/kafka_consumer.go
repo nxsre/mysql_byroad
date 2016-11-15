@@ -334,7 +334,7 @@ func (kcm *KafkaConsumerManager) getTopics(task *model.Task) []string {
 
 // 从zookeeper中得到所有的topic
 func (kcm *KafkaConsumerManager) getAllTopics() ([]string, error) {
-	conn, _, err := zk.Connect(kcm.config.ZkAddrs, time.Second)
+	conn, _, err := zk.Connect(kcm.config.ZkAddrs, time.Second*10)
 	if err != nil {
 		return nil, err
 	}

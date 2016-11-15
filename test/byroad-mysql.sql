@@ -81,6 +81,8 @@ CREATE TABLE IF NOT EXISTS `tasklog_kafka` (
 /*!40101 SET COLLATION_CONNECTION=@OLD_COLLATION_CONNECTION */;
 
 ALTER TABLE `byroad`.`task_kafka` 
-ADD COLUMN `phone_numbers` VARCHAR(255) NOT NULL AFTER `db_instance_name`,
-ADD COLUMN `emails` VARCHAR(255) NOT NULL AFTER `phone_numbers`,
-ADD COLUMN `alert` INT NOT NULL AFTER `emails`;
+ADD COLUMN `phone_numbers` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '报警电话，使用分号隔开' AFTER `db_instance_name`,
+ADD COLUMN `emails` VARCHAR(255) NOT NULL DEFAULT '' COMMENT '报警邮箱，使用分号隔开' AFTER `phone_numbers`,
+ADD COLUMN `alert` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否开启报警' AFTER `emails`;
+ADD COLUMN `subscribe_stat` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否开启kafka consumer' AFTER `alert` ,
+ADD COLUMN `push_stat` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '是否开启消息推送' AFTER `subscribe_stat` ;

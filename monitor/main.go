@@ -97,6 +97,7 @@ func getTopics(task *model.Task) []string {
 	set := make(map[string]empty)
 	allTopics, err := getAllTopics()
 	if err != nil {
+		log.Errorf("get topics: %s", err.Error())
 		return topics
 	}
 	for _, field := range task.Fields {
@@ -113,7 +114,7 @@ func getTopics(task *model.Task) []string {
 
 // 从zookeeper中得到所有的topic
 func getAllTopics() ([]string, error) {
-	conn, _, err := zk.Connect(Conf.ZkAddrs, time.Second)
+	conn, _, err := zk.Connect(Conf.ZkAddrs, time.Second*10)
 	if err != nil {
 		return nil, err
 	}
