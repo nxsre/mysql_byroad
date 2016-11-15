@@ -148,6 +148,10 @@
 			"Rev": "354e14e6c093c661abb29fd28403b3c19cff5514"
 		},
 		{
+			"ImportPath": "github.com/streamrail/concurrent-map",
+			"Rev": "8bf1e9bacbf65b10c81d0f4314cf2b1ebef728b5"
+		},
+		{
 			"ImportPath": "github.com/wvanbergen/kafka/consumergroup",
 			"Rev": "6df90f1eb4669ee0ae66616f90e64770da8ff462"
 		},
