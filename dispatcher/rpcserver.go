@@ -57,10 +57,10 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	return nil
 }
 
-func (rs *RPCServer) DeleteTask(id int64, status *string) error {
-	log.Info("rpc delete task: ", id)
+func (rs *RPCServer) DeleteTask(task *model.Task, status *string) error {
+	log.Info("rpc delete task: %+v ", task)
 	*status = "success"
-	rs.dispatcher.taskManager.taskIdMap.Delete(id)
+	rs.dispatcher.taskManager.taskIdMap.Delete(task.ID)
 	rs.dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.dispatcher.taskManager.taskIdMap)
 	return nil
 }
