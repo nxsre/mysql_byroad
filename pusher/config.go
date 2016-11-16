@@ -51,8 +51,9 @@ type RPCServerConf struct {
 }
 
 type NSQConf struct {
-	LookupdHttpAddrs []string `toml:"lookupd_http_address"`
-	NsqdAddrs        []string `toml:"nsqd_tcp_address"`
+	LookupdHttpAddrs     []string `toml:"lookupd_http_address"`
+	NsqdAddrs            []string `toml:"nsqd_tcp_address"`
+	MaxConcurrentHandler int      `toml:"max_concurrent_handler"`
 }
 
 type AlertConfig struct {

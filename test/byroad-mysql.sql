@@ -84,3 +84,10 @@ ALTER TABLE `byroad`.`task`
 ADD COLUMN `phone_numbers` VARCHAR(255) NOT NULL AFTER `db_instance_name`,
 ADD COLUMN `emails` VARCHAR(255) NOT NULL AFTER `phone_numbers`,
 ADD COLUMN `alert` INT NOT NULL AFTER `emails`;
+
+CREATE TABLE IF NOT EXISTS `config` (
+  `id` INTEGER PRIMARY KEY AUTO_INCREMENT,
+  `key` varchar(120) NOT NULL,
+  `value` varchar(120) NOT NULL,
+  `description` varchar(120)
+) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
