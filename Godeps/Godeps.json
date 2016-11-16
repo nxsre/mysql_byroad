@@ -125,6 +125,10 @@
 			"Rev": "1e9ce2a5ac4092fdf61e293634e40bfb49595105"
 		},
 		{
+			"ImportPath": "github.com/streamrail/concurrent-map",
+			"Rev": "8bf1e9bacbf65b10c81d0f4314cf2b1ebef728b5"
+		},
+		{
 			"ImportPath": "golang.org/x/net/context",
 			"Rev": "154d9f9ea81208afed560f4cf27b4860c8ed1904"
 		},
