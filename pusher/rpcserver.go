@@ -48,7 +48,7 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	if err != nil {
 		return err
 	}
-	if task.PushStat == model.TASK_STAT_PUSH {
+	if task.Stat == model.TASK_STATE_START || task.PushStat == model.TASK_STAT_PUSH {
 		return taskManager.StartTask(task)
 	}
 	return nil
