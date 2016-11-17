@@ -30,6 +30,8 @@ type Task struct {
 	PhoneNumbers   string           `db:"phone_numbers"`
 	Emails         string           `db:"emails"`
 	Alert          int
+	SubscribeStat  int `db:"subscribe_stat"` // 任务是否开启订阅
+	PushStat       int `db:"push_stat"`      // 任务是否开启推送
 }
 
 func CreateTaskTable() {
