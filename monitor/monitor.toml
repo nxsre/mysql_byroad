@@ -2,7 +2,7 @@ debug = true
 nsqlookupd_http_address = ["127.0.0.1:4161"]
 rpcclient_lookup_interval = "60s" # 心跳时间
 logfile = "/var/log/byroad/monitor.log"
-loglevel = "Info" # Debug Info Warn Error Fatal Panic
+loglevel = "Debug" # Debug Info Warn Error Fatal Panic
 [mysql]
 host = "127.0.0.1"
 port = 3306
@@ -29,7 +29,16 @@ user = ""
 password = ""
 sms_addr = "http://localhost:12344"
 email_addr = "http://localhost:3123"
-phone_numbers = "123;234"
-emails = "xin@ju;ju@iu"
+phone_numbers = ["123", "234"]
+emails = ["xin@ju", "ju@iu"]
 binlog_check_period = "1m" # 检测binlog的时间间隔
-binlog_pos_gap = 10000 # binlog差距超过改值将会报警
+binlog_pos_gap = 1 # binlog差距超过改值将会报警
+[alert.userinfo.jumei_product]
+phone_numbers = ["123456789"]
+emails = ["xiny1@jumei.com"]
+[alert.userinfo.jumei_shipping_sharding]
+phone_numbers = ["123456789"]
+emails = ["xiny1@jumei.com"]
+[alert.userinfo.localhost]
+phone_numbers = ["123456789"]
+emails = ["xiny1@jumei.com"]

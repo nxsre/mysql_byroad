@@ -17,13 +17,14 @@ func InitAlert(config AlertConfig) {
 	notice.Init(&c)
 }
 
-func SendAlert(content string) {
+func SendAlert(instance, content string) {
 	var phoneNumbers, emails []string
-	if Conf.AlertConfig.PhoneNumbers != "" {
-		phoneNumbers = strings.Split(Conf.AlertConfig.PhoneNumbers, ";")
-	}
-	if Conf.AlertConfig.Emails != "" {
-		emails = strings.Split(Conf.AlertConfig.Emails, ";")
+	if userinfo, ok := Conf.AlertConfig.AlertMap[instance]; ok {
+		phoneNumbers = userinfo.PhoneNumbers
+		emails = userinfo.Emails
+	} else {
+		phoneNumbers = Conf.AlertConfig.PhoneNumbers
+		emails = Conf.AlertConfig.Emails
 	}
 	for _, number := range phoneNumbers {
 		number = strings.TrimSpace(number)

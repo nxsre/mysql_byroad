@@ -55,12 +55,18 @@ type WebConfig struct {
 type AlertConfig struct {
 	User              string
 	Password          string
-	SmsAddr           string   `toml:"sms_addr"`
-	EmailAddr         string   `toml:"email_addr"`
-	PhoneNumbers      string   `toml:"phone_numbers"`
-	Emails            string   `toml:"emails"`
-	BinlogCheckPeriod duration `toml:"binlog_check_period"`
-	BinlogPosGap      uint32   `toml:"binlog_pos_gap"`
+	SmsAddr           string                   `toml:"sms_addr"`
+	EmailAddr         string                   `toml:"email_addr"`
+	PhoneNumbers      []string                 `toml:"phone_numbers"`
+	Emails            []string                 `toml:"emails"`
+	BinlogCheckPeriod duration                 `toml:"binlog_check_period"`
+	BinlogPosGap      uint32                   `toml:"binlog_pos_gap"`
+	AlertMap          map[string]AlertUserInfo `toml:"userinfo"`
+}
+
+type AlertUserInfo struct {
+	PhoneNumbers []string `toml:"phone_numbers"`
+	Emails       []string `toml:"emails"`
 }
 
 var Conf Config

@@ -202,7 +202,7 @@ func checkBinlog(dispatcher *RPCClient) {
 	if isAlert(masterStatus, currentStatus) {
 		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\nmaster status: %s--%d\ncurrent status: %s--%d", time.Now().String(), dispatcher.Desc, masterStatus.Filename,
 			masterStatus.Position, currentStatus.Filename, currentStatus.Position)
-		SendAlert(content)
+		SendAlert(dispatcher.Desc, content)
 	}
 }
 
