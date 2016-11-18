@@ -22,7 +22,7 @@ func NewTaskConsumer(task *model.Task) (*TaskConsumer, error) {
 	config.MaxAttempts = uint16(task.RetryCount + 1)
 	config.MaxInFlight = task.RoutineCount
 	config.DefaultRequeueDelay = time.Millisecond * time.Duration(task.ReSendTime)
-	c, err := nsq.NewConsumer(task.Name, task.Name, config)
+	c, err := nsq.NewConsumer(genTaskTopic(task), genTaskChannel(task), config)
 	if err != nil {
 		log.Error("nsq new comsumer: ", err.Error())
 		return nil, err
@@ -76,4 +76,12 @@ func (this *TaskConsumer) DisconnectFromNSQLookupds() error {
 		}
 	}
 	return nil
+}
+
+func genTaskTopic(task *model.Task) string {
+	return task.Name + "___kafka"
+}
+
+func genTaskChannel(task *model.Task) string {
+	return task.Name + "___kafka"
 }

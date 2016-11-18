@@ -35,7 +35,7 @@ func isMatch(s1, s2 string) bool {
 }
 
 func genTaskQueueName(task *model.Task) string {
-	return task.Name
+	return task.Name + "___kafka"
 }
 
 func inStrs(strings []string, s string) bool {
