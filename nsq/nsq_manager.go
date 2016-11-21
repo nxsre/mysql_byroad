@@ -170,8 +170,8 @@ func (qm *NSQManager) GetProducer(topicname string) ([]*Producer, error) {
 			continue
 		}
 		if u.StatusCode != 200 {
-			errs = append(errs, err)
 			log.Errorf("topic: %s, error: api status code: %d, %s", topicname, u.StatusCode, u.StatusText)
+			errs = append(errs, fmt.Errorf("topic: %s, error: api status code: %d, %s", topicname, u.StatusCode, u.StatusText))
 			continue
 		}
 		var v struct {
@@ -197,6 +197,9 @@ func (qm *NSQManager) GetStats(topicname string) ([]*NodeStats, error) {
 	stats := make([]*NodeStats, 0, 10)
 	proNodes, err := qm.GetProducer(topicname)
 	if err != nil {
+		log.Errorf("nsq get producer error: %s", err.Error())
+	}
+	if proNodes == nil {
 		return stats, err
 	}
 	for _, n := range proNodes {
@@ -408,7 +411,7 @@ func (qm *NSQManager) actionHelper(topicname, url, action, qs string) error {
 			continue
 		}
 		if resp.StatusCode != 200 {
-			log.Error("pause topic error: %q", body)
+			log.Errorf("pause topic error: %s", body)
 			continue
 		}
 	}
