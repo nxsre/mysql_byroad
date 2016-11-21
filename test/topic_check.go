@@ -33,7 +33,14 @@ func getAllTopics() ([]string, error) {
 	if err != nil {
 		return nil, err
 	}
-	fmt.Printf("get all topics: %+v", children)
+	fmt.Printf("get all topics: %+v\n", children)
+	for _, child := range children {
+		fmt.Println("get ", path+"/"+child)
+		if exists, _, _ := conn.Exists(path + "/" + child); exists {
+			data, _, _ := conn.Get(path + "/" + child)
+			fmt.Printf("%s:%s\n", path+"/"+child, string(data))
+		}
+	}
 	return children, nil
 }
 
