@@ -20,3 +20,6 @@ pusher/pusher
 monitor/public/node_modules/*
 .editorconfig
 nsq_monitor/nsq_monitor
+.DS_Store
+*.sql
+*.py
