@@ -19,3 +19,5 @@ monitor/monitor
 pusher/pusher
 monitor/public/node_modules/*
 .editorconfig
+*.py
+*.sql
