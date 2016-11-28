@@ -64,7 +64,7 @@ func (this *Inspector) LoopupLoop() {
 		for {
 			select {
 			case <-ticker.C:
-				clist, err := this.getColumns()
+				clist, err := this.getColumnsMultiTimes()
 				if err != nil {
 					log.Printf("[ERROR] get columns error: %s", err.Error())
 					continue
@@ -100,6 +100,28 @@ func (this *Inspector) getColumns() (ColumnList, error) {
 	}
 	var columnList = make([]*Column, 0, 10)
 	err := this.db.Select(&columnList, sqlStr)
+	return columnList, err
+}
+
+/*
+每次查询一个数据库的字段信息，防止一次查询时间过长
+*/
+func (this *Inspector) getColumnsMultiTimes() (ColumnList, error) {
+	schemas, err := this.GetSchemas()
+	if err != nil {
+		return nil, err
+	}
+	sqlStr := "SELECT TABLE_SCHEMA, TABLE_NAME, COLUMN_NAME, DATA_TYPE, COLUMN_TYPE FROM columns WHERE TABLE_SCHEMA=? "
+	var columnList = make([]*Column, 0, 100)
+	for _, schema := range schemas {
+		var columns = make([]*Column, 0, 10)
+		err := this.db.Select(&columns, sqlStr, schema)
+		fmt.Println(sqlStr, schema)
+		if err != nil {
+			return nil, err
+		}
+		columnList = append(columnList, columns...)
+	}
 	return columnList, err
 }
 
