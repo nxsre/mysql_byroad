@@ -116,7 +116,6 @@ func (this *Inspector) getColumnsMultiTimes() (ColumnList, error) {
 	for _, schema := range schemas {
 		var columns = make([]*Column, 0, 10)
 		err := this.db.Select(&columns, sqlStr, schema)
-		fmt.Println(sqlStr, schema)
 		if err != nil {
 			return nil, err
 		}

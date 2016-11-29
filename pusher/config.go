@@ -29,6 +29,7 @@ type Config struct {
 	MaxIdleConnsPerHost int           `toml:"max_idle_conns_per_host"`
 	LogLevel            string        `toml:"loglevel"`
 	AlertConfig         AlertConfig   `toml:"alert"`
+	LogConfig           LogConfig     `toml:"log"`
 }
 
 type MysqlConf struct {
@@ -63,6 +64,11 @@ type AlertConfig struct {
 	EmailAddr string   `toml:"email_addr"`
 	MaxCount  int      `toml:"max_count"`
 	Period    duration `toml:"period"`
+}
+
+type LogConfig struct {
+	IsLog   bool   `toml:"islog"`
+	LogPath string `toml:"log_path"`
 }
 
 var Conf Config

@@ -22,7 +22,7 @@ func NewTaskConsumerManager() *TaskConsumerManager {
 	tcm := &TaskConsumerManager{
 		taskConsumers: cmap.New(),
 		taskIdMap:     NewTaskIdMap(10),
-		handler:       &MessageHandler{},
+		handler:       NewMessageHandler(),
 	}
 	return tcm
 }

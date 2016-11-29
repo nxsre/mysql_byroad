@@ -9,6 +9,17 @@ import (
 )
 
 type MessageHandler struct {
+	log *LogFile
+}
+
+func NewMessageHandler() *MessageHandler {
+	logfile, err := NewLogFile(Conf.LogConfig.LogPath)
+	if err != nil {
+		log.Errorf("new log file error: %s", err.Error())
+	}
+	return &MessageHandler{
+		log: logfile,
+	}
 }
 
 func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
@@ -18,6 +29,16 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 	evt.RetryCount = int(msg.Attempts) - 1
 	ret, err := sendClient.SendMessage(evt)
 	log.Debugf("send message ret %s, error: %v", ret, err)
+	if h.log != nil {
+		var errmsg string
+		if err != nil {
+			errmsg = err.Error()
+		}
+		err := h.log.WritePayload(ret, errmsg, evt)
+		if err != nil {
+			log.Errorf("log message error: %s", err.Error())
+		}
+	}
 	if !isSuccessSend(ret) {
 		var reason string
 		if err != nil {
