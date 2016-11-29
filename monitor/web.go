@@ -612,11 +612,11 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 		resp.Message = "操作成功"
 	}
 	if stat == model.TASK_STATE_START {
-		//nsqManager.UnPauseTopic(task.Name)
+		nsqManager.UnPauseTopic(task.Name)
 		dispatcherManager.StartTask(task)
 		pusherManager.StartTask(task)
 	} else if stat == model.TASK_STATE_STOP {
-		//nsqManager.PauseTopic(task.Name)
+		nsqManager.PauseTopic(task.Name)
 		dispatcherManager.StopTask(task)
 		pusherManager.StopTask(task)
 	}
