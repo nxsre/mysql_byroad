@@ -97,6 +97,8 @@ func (this *NSQMonitor) checkNode(nsqdAddr string) {
 						emails = strings.Split(task.Emails, ";")
 					}
 					this.sendAlert(phoneNumbers, emails, "【旁路系统】消息队列长度报警\nTime: %s\nHost: %s\nTopic: %s\nChannel: %s\nDepth: %d", time.Now().String(), nsqdAddr, topic.Name, channel.Name, channel.Depth)
+				} else {
+					this.sendAlert(this.config.PhoneNumbers, this.config.Emails, "【旁路系统】消息队列长度报警\nTime: %s\nHost: %s\nTopic: %s\nChannel: %s\nDepth: %d", time.Now().String(), nsqdAddr, topic.Name, channel.Name, channel.Depth)
 				}
 			}
 		}

@@ -50,8 +50,8 @@ type TaskForm struct {
 	TaskId         int64                  `form:"taskid"`
 	Name           string                 `form:"name" binding:"AlphaDash;MaxSize(50);Required"`
 	Apiurl         string                 `form:"apiurl" binding:"Required"`
-	RoutineCount   int                    `form:"routineCount" binding:"Range(1,10)"`
-	ReRoutineCount int                    `form:"reRoutineCount" binding:"Range(1,10)"`
+	RoutineCount   int                    `form:"routineCount" binding:"Range(1,100)"`
+	ReRoutineCount int                    `form:"reRoutineCount" binding:"Range(1,100)"`
 	ReSendTime     int                    `form:"reSendTime" binding:"Range(0,30000)"`
 	RetryCount     int                    `form:"retryCount" binding:"Range(0,10)"`
 	Timeout        int                    `form:"timeout" binding:"Range(1,30000)"`
