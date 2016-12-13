@@ -30,6 +30,7 @@ type Config struct {
 	LogLevel                string                `toml:"loglevel"`
 	MysqlInstances          []MysqlInstanceConfig `toml:"mysql_instance"`
 	ZkAddrs                 []string              `toml:"zk_addrs"`
+	ZKPrefix                string                `toml:"zk_prefix"`
 }
 
 type MysqlConf struct {
