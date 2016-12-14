@@ -51,7 +51,7 @@ type KafkaConfig struct {
 	OffsetProcessingTimeout duration `toml:"offset_processing_timeout"`
 	OffsetResetOffsets      bool     `toml:"offset_reset_offsets"`
 	ZkAddrs                 []string `toml:"zk_addrs"`
-	ZKPrefix                string   `toml:"zk_prefix"`
+	ZKChroot                string   `toml:"zk_chroot"`
 }
 
 type MysqlInstanceConfig struct {

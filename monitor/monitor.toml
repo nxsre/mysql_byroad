@@ -4,7 +4,7 @@ rpcclient_lookup_interval = "60s" # 心跳时间
 logfile = "/var/log/byroad/monitor.log"
 loglevel = "Info" # Debug Info Warn Error Fatal Panic
 zk_addrs = ["127.0.0.1:2181"]
-zk_prefix = "/chroot/9093"
+zk_chroot = "/chroot/9093"
 
 [mysql]
 host = "127.0.0.1"

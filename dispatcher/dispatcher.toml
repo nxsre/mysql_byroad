@@ -24,4 +24,4 @@ offset_processing_timeout = "10s"
 offset_reset_offsets = false
 #zk_addrs = ["192.168.49.63:2181"]
 zk_addrs = ["127.0.0.1:2181"]
-zk_prefix = "/chroot/9093"
+zk_chroot = "/chroot/9093"

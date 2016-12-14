@@ -119,7 +119,7 @@ func getAllTopics() ([]string, error) {
 		return nil, err
 	}
 	defer conn.Close()
-	children, _, err := conn.Children(Conf.ZKPrefix + "/brokers/topics")
+	children, _, err := conn.Children(Conf.ZKChroot + "/brokers/topics")
 	if err != nil {
 		return nil, err
 	}
