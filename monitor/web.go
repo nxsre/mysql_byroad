@@ -118,6 +118,7 @@ func StartServer() {
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
+	m.Post("/task/copy/:taskid", copyTaskToDb)
 
 	m.Put("/task", binding.Bind(TaskForm{}), doUpdateTask)
 
@@ -707,4 +708,54 @@ func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
 
 func help(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "help")
+}
+
+func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
+	taskid := ctx.ParamsInt64("taskid")
+	if !checkAuth(ctx, sess, "all") {
+		return return403(ctx)
+	}
+	resp := new(httpJsonResponse)
+	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	if ext, _ := task.Exists(); !ext {
+		return return403(ctx)
+	}
+	if !checkTaskUser(task, sess) {
+		return return403(ctx)
+	}
+	db := ctx.Query("dbInstanceName")
+	name := ctx.Query("taskName")
+
+	rpcclient, ok := dispatcherManager.GetRPCClient(db)
+	if !ok {
+		resp.Error = true
+		resp.Message = "没有相应的数据库实例"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	task.DBInstanceName = rpcclient.Desc
+	task.Name = name
+	if ex, _ := task.NameExists(); ex {
+		resp.Error = true
+		resp.Message = "任务名已经存在!"
+		body, _ := json.Marshal(resp)
+		return string(body)
+	}
+	_, err := task.Add()
+	if err != nil {
+		resp.Error = true
+		resp.Message = "复制失败!"
+		log.Errorf("add task: %s", err.Error())
+	} else {
+		resp.Message = "复制成功!"
+	}
+	dispatcherManager.AddTask(task)
+	pusherManager.AddTask(task)
+	body, _ := json.Marshal(resp)
+	ctx.Resp.WriteHeader(201)
+	log.Printf("%s: copy task %v", sess.Get("user").(string), task.Name)
+	return string(body)
 }

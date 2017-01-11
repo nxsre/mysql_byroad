@@ -162,6 +162,37 @@ function changeTaskStat(taskid, stat) {
   $.ajax(option);
 }
 
+function copyTaskDialog(taskid, taskName) {
+  console.log(taskid, taskName);
+  $('#copyTaskModal [name="taskid"]').val(taskid);
+  $('#copyTaskModal [name="taskName"]').val(taskName);
+  $('#copyTaskModal').modal('toggle');
+}
+
+function copyTask() {
+  var taskid = $('#copyTaskModal [name="taskid"]').val();
+  if (confirm('确认复制？')) {
+    var options = {
+      url: '/task/copy/' + taskid,
+      type: 'post',
+      dataType: 'json',
+      data: $('#copyTaskForm').serialize(),
+      success: function (data) {
+        alert(data.Message);
+      },
+      error: function (data) {
+        if (data.status == 422) {
+          alert("任务数据格式错误");
+        } else {
+          alert('复制失败');
+        }
+      }
+    };
+    $.ajax(options);
+    return false;
+  }
+}
+
 $(function () {
   $("#pack-help").popover({
     trigger: 'hover',
