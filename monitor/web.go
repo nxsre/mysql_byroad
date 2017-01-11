@@ -738,6 +738,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
 	}
 	task.DBInstanceName = rpcclient.Desc
 	task.Name = name
+	task.CreateUser = sess.Get("user").(string)
 	if ex, _ := task.NameExists(); ex {
 		resp.Error = true
 		resp.Message = "任务名已经存在!"
