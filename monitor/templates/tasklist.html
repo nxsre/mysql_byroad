@@ -101,10 +101,12 @@
     <div class="modal-content">
       <div class="modal-header">
         <h4 class="modal-title" id="myModalLabel">复制任务到其他数据库实例</h4>
+        <p>(注意：复制后的任务状态默认是停止，需要手动开启)</p>        
       </div>
       <div class="modal-body">
         <form id="copyTaskForm">
-          <input type="hidden" name="taskid", value="">
+          <input type="hidden" name="taskid" value="">
+          <input type="hidden" name="stat" value="停止">
           <div class="form-group">
 						<div class="form-inline">
 							<label for="name">任务名称</label>

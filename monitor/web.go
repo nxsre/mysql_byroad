@@ -728,7 +728,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
 	}
 	db := ctx.Query("dbInstanceName")
 	name := ctx.Query("taskName")
-
+	stat := ctx.Query("stat")
 	rpcclient, ok := dispatcherManager.GetRPCClient(db)
 	if !ok {
 		resp.Error = true
@@ -738,6 +738,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
 	}
 	task.DBInstanceName = rpcclient.Desc
 	task.Name = name
+	task.Stat = stat
 	task.CreateUser = sess.Get("user").(string)
 	if ex, _ := task.NameExists(); ex {
 		resp.Error = true
