@@ -1,6 +1,6 @@
 WORKPATH = $(PWD)
 GOGET = go get -v
-LDFLAGS = "-X main.buildstamp=`date '+%Y-%m-%d_%I:%M:%S'` -X main.githash=`git rev-parse HEAD`"
+LDFLAGS = "-w -s -X main.buildstamp=`date '+%Y-%m-%d_%I:%M:%S'` -X main.githash=`git rev-parse HEAD`"
 default: build
 init-build-dir:
 	mkdir -p build
