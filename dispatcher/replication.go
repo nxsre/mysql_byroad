@@ -181,7 +181,11 @@ func (rep *ReplicationClient) startBinlog() {
 		select {
 		case err := <-rep.restartChan:
 			log.Errorf("restart replication because of: %s", err.Error())
-			time.Sleep(time.Second)
+			if err != context.DeadlineExceeded {
+				msg := fmt.Sprintf("旁路系统：%s restart because of %s", rep.Name, err.Error())
+				SendAlert(msg)
+			}
+			time.Sleep(time.Second * 60)
 			rep.restart()
 		case <-rep.StopChan:
 			rep.syncer.Close()

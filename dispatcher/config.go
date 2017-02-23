@@ -5,9 +5,9 @@ import (
 	"flag"
 	"fmt"
 	"mysql_byroad/model"
-	"os"
 	"net/http"
 	_ "net/http/pprof"
+	"os"
 	"time"
 
 	"github.com/BurntSushi/toml"
@@ -37,6 +37,7 @@ type Config struct {
 	NSQConf         NSQConf       `toml:"nsq"`
 	LogLevel        string        `toml:"loglevel"`
 	DBInstanceNames []string      `toml:"db_instance_names"`
+	AlertConfig     AlertConfig   `toml:"alert"`
 }
 
 type MysqlConf struct {
@@ -78,6 +79,15 @@ type DBConfig struct {
 	Username string
 	Password string
 	DBName   string `toml:"dbname"`
+}
+
+type AlertConfig struct {
+	User         string
+	Password     string
+	SmsAddr      string   `toml:"sms_addr"`
+	EmailAddr    string   `toml:"email_addr"`
+	PhoneNumbers []string `toml:"phone_numbers"`
+	Emails       []string `toml:"emails"`
 }
 
 func InitConfig() *Config {
