@@ -229,7 +229,7 @@ func login(ctx *macaron.Context, sess session.Store) string {
 
 	apiUrl := fmt.Sprintf("%s/api/grouprole/?uid=%s&app_key=%s&app_name=%s", Conf.WebConfig.AuthURL, username, Conf.WebConfig.AppKey, Conf.WebConfig.AppName)
 
-	resp, err = http.Get(apiUrl)
+	resp, err = client.Get(apiUrl)
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return "api请求错误.#4"
