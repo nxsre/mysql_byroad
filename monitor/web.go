@@ -2,6 +2,7 @@ package main
 
 import (
 	"crypto/sha1"
+	"crypto/tls"
 	"encoding/json"
 	"fmt"
 	"io"
@@ -184,14 +185,27 @@ func return404(ctx *macaron.Context) string {
 	return string(body)
 }
 
+func newHttpClient(isSecurity bool) *http.Client {
+	var client *http.Client
+	if isSecurity {
+		client = http.DefaultClient
+	} else {
+		tr := &http.Transport{
+			TLSClientConfig: &tls.Config{InsecureSkipVerify: true},
+		}
+		client = &http.Client{Transport: tr}
+	}
+	return client
+}
+
 func login(ctx *macaron.Context, sess session.Store) string {
 	token := ctx.Query("token")
 	username := ctx.Query("username")
 	t := sha1.New()
 	io.WriteString(t, fmt.Sprintf("%s%s%s", token, Conf.WebConfig.AppKey, username))
 	sessionId := fmt.Sprintf("%x", t.Sum(nil))
-
-	resp, err := http.Get(fmt.Sprintf("%s/api/info/?session_id=%s", Conf.WebConfig.AuthURL, sessionId))
+	client := newHttpClient(false)
+	resp, err := client.Get(fmt.Sprintf("%s/api/info/?session_id=%s", Conf.WebConfig.AuthURL, sessionId))
 	if err != nil {
 		return "api请求错误.#1"
 	}
