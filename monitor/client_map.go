@@ -79,8 +79,8 @@ func (tmap *TimerMap) Set(key string, timer *time.Timer) {
 }
 
 func (tmap *TimerMap) Delete(key string) {
-	tmap.RLock()
-	defer tmap.RUnlock()
+	tmap.Lock()
+	defer tmap.Unlock()
 	delete(tmap.cmap, key)
 }
 
