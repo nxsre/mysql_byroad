@@ -71,14 +71,23 @@ func (this *NSQMonitor) checkNode(nsqdAddr string) {
 	stats, err := nsqm.GetNodeStats(nsqdAddr)
 	if err != nil {
 		log.Errorf("get node %s error: %s", nsqdAddr, err.Error())
-		this.sendAlert(this.config.PhoneNumbers, this.config.Emails, "【旁路系统】get nsqd node %s error: %s", nsqdAddr, err.Error())
+		this.sendAlert(this.config.PhoneNumbers, this.config.Emails,
+			"【旁路系统】get nsqd node %s error: %s",
+			nsqdAddr, err.Error())
 		return
 	}
 	if stats.Health != "OK" {
 		log.Errorf("%s health status: %s", nsqdAddr, stats.Health)
-		this.sendAlert(this.config.PhoneNumbers, this.config.Emails, "【旁路系统】 nsqd node %s health status: %s", nsqdAddr, stats.Health)
+		this.sendAlert(this.config.PhoneNumbers, this.config.Emails,
+			"【旁路系统】 nsqd node %s health status: %s",
+			nsqdAddr, stats.Health)
 	}
 	for _, topic := range stats.Topics {
+		if len(topic.Channels) == 0 {
+			this.sendAlert(this.config.PhoneNumbers, this.config.Emails,
+				"【旁路系统】消息队列报警\nTime: %s\nHost: %s\nTopic: %s\n No Channel Consume!",
+				time.Now().String(), nsqdAddr, topic.Name)
+		}
 		for _, channel := range topic.Channels {
 			log.Infof("topic: %s, channel: %s, depth: %d", topic.Name, channel.Name, channel.Depth)
 			if channel.Depth+channel.BackendDepth > this.config.MaxChannelDepth {
@@ -87,7 +96,8 @@ func (this *NSQMonitor) checkNode(nsqdAddr string) {
 					log.Errorf("get task error: %s", err.Error())
 					continue
 				}
-				log.Infof("Host: %s\nTopic: %s\nChannel: %s\nDepth: %d", nsqdAddr, topic.Name, channel.Name, channel.Depth)
+				log.Infof("Host: %s\nTopic: %s\nChannel: %s\nDepth: %d",
+					nsqdAddr, topic.Name, channel.Name, channel.Depth)
 				if task.Alert == 1 {
 					var phoneNumbers, emails []string
 					if task.PhoneNumbers != "" {
@@ -96,9 +106,13 @@ func (this *NSQMonitor) checkNode(nsqdAddr string) {
 					if task.Emails != "" {
 						emails = strings.Split(task.Emails, ";")
 					}
-					this.sendAlert(phoneNumbers, emails, "【旁路系统】消息队列长度报警\nTime: %s\nHost: %s\nTopic: %s\nChannel: %s\nDepth: %d", time.Now().String(), nsqdAddr, topic.Name, channel.Name, channel.Depth)
+					this.sendAlert(phoneNumbers, emails,
+						"【旁路系统】消息队列长度报警\nTime: %s\nHost: %s\nTopic: %s\nChannel: %s\nDepth: %d",
+						time.Now().String(), nsqdAddr, topic.Name, channel.Name, channel.Depth)
 				} else {
-					this.sendAlert(this.config.PhoneNumbers, this.config.Emails, "【旁路系统】消息队列长度报警\nTime: %s\nHost: %s\nTopic: %s\nChannel: %s\nDepth: %d", time.Now().String(), nsqdAddr, topic.Name, channel.Name, channel.Depth)
+					this.sendAlert(this.config.PhoneNumbers, this.config.Emails,
+						"【旁路系统】消息队列长度报警\nTime: %s\nHost: %s\nTopic: %s\nChannel: %s\nDepth: %d",
+						time.Now().String(), nsqdAddr, topic.Name, channel.Name, channel.Depth)
 				}
 			}
 		}

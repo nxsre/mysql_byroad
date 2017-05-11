@@ -5,6 +5,7 @@ import (
 	"time"
 
 	log "github.com/Sirupsen/logrus"
+	"fmt"
 )
 
 type PusherManager struct {
@@ -37,8 +38,9 @@ func (pm *PusherManager) AddPushClient(schema, desc string) {
 			}
 		}()
 	}
-
-	log.Infof("add push client: %s, length: %d ", schema, pm.rpcclients.Length())
+	msg := fmt.Sprintf("add push client: %s, length: %d ", schema, pm.rpcclients.Length())
+	SendAlert(schema, msg)
+	log.Infof(msg)
 }
 
 func (pm *PusherManager) DeletePushClient(schema string) {
@@ -47,7 +49,9 @@ func (pm *PusherManager) DeletePushClient(schema string) {
 		timer.Stop()
 	}
 	pm.timers.Delete(schema)
-	log.Infof("delete push client %s, length: %d", schema, pm.rpcclients.Length())
+	msg := fmt.Sprintf("delete push client %s, length: %d", schema, pm.rpcclients.Length())
+	SendAlert(schema, msg)
+	log.Infof(msg)
 }
 
 func (pm *PusherManager) UpdatePushClient(schema, desc string) {

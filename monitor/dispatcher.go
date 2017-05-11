@@ -192,15 +192,22 @@ func checkBinlog(dispatcher *RPCClient) {
 	masterStatus, err := dispatcher.GetMasterStatus()
 	if err != nil {
 		log.Errorf("get %s master status error: %s", dispatcher.Desc, err.Error())
+		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\n无法获取数据库binlog信息： %s",
+			time.Now().String(), dispatcher.Desc, err.Error())
+		SendAlert(dispatcher.Desc, content)
 		return
 	}
 	currentStatus, err := dispatcher.GetCurrentBinlogInfo()
 	if err != nil {
 		log.Errorf("get %s current status error: %s", dispatcher.Desc, err.Error())
+		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\n无法获取当前binlog信息： %s",
+			time.Now().String(), dispatcher.Desc, err.Error())
+		SendAlert(dispatcher.Desc, content)
 		return
 	}
 	if isAlert(masterStatus, currentStatus) {
-		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\nmaster status: %s--%d\ncurrent status: %s--%d", time.Now().String(), dispatcher.Desc, masterStatus.Filename,
+		content := fmt.Sprintf("旁路系统\n时间：%s\n数据库实例：%s\nmaster status: %s--%d\ncurrent status: %s--%d",
+			time.Now().String(), dispatcher.Desc, masterStatus.Filename,
 			masterStatus.Position, currentStatus.Filename, currentStatus.Position)
 		SendAlert(dispatcher.Desc, content)
 	}
