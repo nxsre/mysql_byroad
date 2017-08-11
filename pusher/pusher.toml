@@ -2,6 +2,7 @@ rpc_ping_interval = "10s"
 max_idle_conns_per_host = 1000
 logfile = "/var/log/byroad/pusher.log"
 loglevel = "Info" # Debug Info Warn Error Fatal Panic
+disable_keep_alive = false
 
 [nsq]
 lookupd_http_address = ["127.0.0.1:4161"]

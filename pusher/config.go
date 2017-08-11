@@ -30,6 +30,7 @@ type Config struct {
 	LogLevel            string        `toml:"loglevel"`
 	AlertConfig         AlertConfig   `toml:"alert"`
 	LogConfig           LogConfig     `toml:"log"`
+	DisableKeepAlives   bool          `toml:"disable_keep_alive"`
 }
 
 type MysqlConf struct {

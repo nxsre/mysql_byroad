@@ -31,6 +31,7 @@ func (this *SendClient) add(timeout time.Duration) *http.Client {
 	client := http.Client{
 		Transport: &http.Transport{
 			MaxIdleConnsPerHost: Conf.MaxIdleConnsPerHost,
+			DisableKeepAlives:   Conf.DisableKeepAlives,
 		},
 		Timeout: timeout,
 	}
