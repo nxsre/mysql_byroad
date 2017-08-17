@@ -45,7 +45,9 @@ func (reh *RowsEventHandler) HandleEvent(ev *replication.BinlogEvent) {
 		default:
 			log.Info("Event type %s not supported", ev.Header.EventType)
 		}
-		reh.replicationClient.binlogInfo.Position = ev.Header.LogPos
+		if ev.Header.EventType != replication.TABLE_MAP_EVENT {
+			reh.replicationClient.binlogInfo.Position = ev.Header.LogPos
+		}
 	case *replication.RotateEvent:
 		reh.replicationClient.binlogInfo.Filename = string(e.NextLogName)
 		reh.replicationClient.binlogInfo.Position = uint32(e.Position)
