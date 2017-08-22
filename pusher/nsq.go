@@ -47,7 +47,10 @@ func (h *MessageHandler) HandleMessage(msg *nsq.Message) error {
 			reason = ret
 		}
 		handleAlert(evt, reason)
-		sendClient.LogSendError(evt, reason)
+		task := taskManager.GetTask(evt.TaskID)
+		if evt.RetryCount >= task.RetryCount {
+			sendClient.LogSendError(evt, reason)
+		}
 		msg.RequeueWithoutBackoff(-1)
 	}
 	return nil
