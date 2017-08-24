@@ -193,6 +193,50 @@ function copyTask() {
   }
 }
 
+
+function doAddUser() {
+  var user = {
+    'username': $('#username').val(),
+    'role': parseInt($('#role').val()),
+    'mail': $('#mail').val(),
+  }
+  post('/user', user, function(data) {
+    alert(data.Message)
+    if (data.Error) {
+    } else {
+      location.href = '/user-list'      
+    }
+  })
+}
+
+function doDeleteUser(id) {
+  var user = {
+    'id': id,
+  }
+  del('/user', user, function(data) {
+    alert(data.Message)
+    if (data.Error) {
+    } else {
+      location.href = '/user-list'      
+    }
+  })
+}
+
+function doUpdateUser() {
+  var id = $('#id').val()
+  var user = {
+    'id': parseInt(id),
+    'role': parseInt($('#role').val()),
+  }
+  put('/user', user, function(data) {
+    alert(data.Message)
+    if (data.Error) {
+    } else {
+      location.href = '/user-edit/'+id     
+    }
+  })
+}
+
 $(function () {
   $("#pack-help").popover({
     trigger: 'hover',
@@ -238,3 +282,35 @@ $(function () {
     }
   });
 });
+
+function ajax(method, url, data, callback) {
+  $.ajax({
+    url: url,
+    type: method,
+    data: JSON.stringify(data),
+    contentType:'application/json',
+    success: function (data) {
+      callback(data)
+    },
+    error: function(jqXHR) {
+      console.log(jqXHR)
+      alert(jqXHR.responseText)
+    }
+  })
+}
+
+function get(url, data, callback) {
+  return ajax('get', url, data, callback)
+}
+
+function post(url, data, callback) {
+  return ajax('post', url, data, callback)
+}
+
+function put(url, data, callback) {
+  return ajax('put', url, data, callback)
+}
+
+function del(url, data, callback) {
+  return ajax('delete', url, data, callback)
+}

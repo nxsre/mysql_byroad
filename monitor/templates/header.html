@@ -8,6 +8,7 @@
   <title>旁路系统</title>
   <link rel="stylesheet" href="/css/bootstrap.min.css">
   <link rel="stylesheet" href="/css/main.css">
+  <script src="/js/vue.min.js"></script>
 </head>
 
 <body>
@@ -20,9 +21,25 @@
         <ul class="nav navbar-nav navbar-center">
           <li><a href="/addtask">任务添加</a></li>
           <li><a href="/task">任务管理</a></li>
-          {% if (isAdmin)%}
           <li><a href="/status">状态</a></li>
-          {% endif %}
+          <li>
+            <a href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                审计管理<span class="caret"></span>
+            </a>
+            <ul class="dropdown-menu">
+                <li><a href="/apply">我的申请</a></li>
+                <li><a href="/audit">我的审计</a></li>
+            </ul>
+          </li>
+          
+          <li>
+            <a href="/user-list" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+              用户管理<span class="caret"></span></a>
+            <ul class="dropdown-menu">
+                <li><a href="/user-add">添加用户</a></li>
+                <li><a href="/user-list">用户列表</a></li>
+            </ul>
+          </li>
           <li><a href="/help">帮助</a></li>
         </ul>
         <ul class="nav navbar-nav navbar-right">
@@ -40,3 +57,6 @@
       </div>
     </div>
   </nav>
+<div>
+  {{ error }}
+</div>

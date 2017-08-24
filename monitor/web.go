@@ -24,14 +24,36 @@ import (
 type httpJsonResponse struct {
 	Error   bool
 	Message string
+
+	Code   int
+	Status string
+	Data   interface{}
 }
 
+// {"username": "xiny1", "mail": "xiny1@jumei.com", "fullname": "\u6768\u946b"}
 type UserInfo struct {
 	UserName string `json:"username"`
 	Mail     string `json:"mail"`
 	FullName string `json:"fullname"`
 }
 
+/*
+group role: {
+  "all_warehouse": false,
+  "paths": [],
+  "categorys": [],
+  "all_category": false,
+  "all_sku_category": false,
+  "md5_change": true,
+  "groups": [
+    "admin"
+  ],
+  "brands": [],
+  "all_brand": false,
+  "warehouses": [],
+  "skus": []
+}
+*/
 type UserGroup struct {
 	Groups []string `json:"groups"`
 }
@@ -65,6 +87,15 @@ type TaskForm struct {
 	Fields         []*FieldsForm          `form:"noUse"`
 }
 
+type UserForm struct {
+	Id          int64    `json:"id"`
+	Username    string   `json:"username"`
+	Fullname    string   `json:"fullname"`
+	Permissions []string `json:"permissions"`
+	Role        int      `json:"role"`
+	Mail        string   `json:"mail"`
+}
+
 func StartServer() {
 	m := macaron.New()
 	m.Use(macaron.Recovery())
@@ -76,10 +107,8 @@ func StartServer() {
 	m.Use(pongo2.Pongoer())
 	m.Use(session.Sessioner(session.Options{
 		CookiePath:  "/",
-		Gclifetime:  3600,
-		Maxlifetime: 3600,
-		//Provider:       "redis",
-		//ProviderConfig: fmt.Sprintf("addr=%s:%s", redisHost, redisPort),
+		Gclifetime:  3600 * 24,
+		Maxlifetime: 3600 * 24,
 	}))
 	m.Use(gzip.Gziper())
 
@@ -87,20 +116,18 @@ func StartServer() {
 		if ctx.Req.URL.Path == "/auth/login" {
 			return
 		}
-		username := sess.Get("user")
+		user := sess.Get("user")
 		if !Conf.Debug {
-			if username == nil {
+			if user == nil {
 				ctx.Redirect(fmt.Sprintf("%s/api/login/?camefrom=%s", Conf.WebConfig.AuthURL, Conf.WebConfig.AliasName))
 			} else {
-				if checkAuth(ctx, sess, "admin") {
-					ctx.Data["isAdmin"] = true
-				}
-				ctx.Data["username"] = username.(string)
+				ctx.Data["username"] = user.(*model.User).Username
 				ctx.Data["clients"] = dispatcherManager.GetRPCClients()
 			}
 		} else {
-			sess.Set("user", "test")
-			ctx.Data["isAdmin"] = true
+			sess.Set("user", model.User{
+				Username: "test",
+			})
 			ctx.Data["username"] = "test"
 			ctx.Data["clients"] = dispatcherManager.GetRPCClients()
 		}
@@ -116,6 +143,15 @@ func StartServer() {
 	m.Get("/task/detail/:taskid", getTaskStatistic)
 	m.Get("/task/log/:taskid", loglist)
 	m.Get("/help", help)
+	m.Get("/audit", audit)
+
+	m.Get("/user-list", userList)
+	m.Get("/user-add", userAdd)
+	m.Get("/user-edit/:id", userEdit)
+
+	m.Post("/user", binding.Bind(UserForm{}), doUserAdd)
+	m.Put("/user", binding.Bind(UserForm{}), doUserUpdate)
+	m.Delete("/user", binding.Bind(UserForm{}), doUserDelete)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
@@ -129,11 +165,11 @@ func StartServer() {
 }
 
 func getUsername(sess session.Store) string {
-	username := sess.Get("user")
-	if username == nil {
+	user := sess.Get("user")
+	if user == nil {
 		return ""
 	}
-	return username.(string)
+	return user.(model.User).Username
 }
 
 //判断用户是否拥有flag的权限
@@ -207,24 +243,18 @@ func login(ctx *macaron.Context, sess session.Store) string {
 	client := newHttpClient(false)
 	resp, err := client.Get(fmt.Sprintf("%s/api/info/?session_id=%s", Conf.WebConfig.AuthURL, sessionId))
 	if err != nil {
-		return "api请求错误.#1"
+		return "api请求错误.#1: " + err.Error()
 	}
 
 	defer resp.Body.Close()
 	body, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "api请求错误.#2"
+		return "api请求错误.#2: " + err.Error()
 	}
-
 	var user UserInfo
 	err = json.Unmarshal(body, &user)
 	if err != nil {
-		return err.Error()
-	}
-
-	if user.FullName != "" {
-	} else {
-		return "登录失败.#3"
+		return "解析用户信息错误: " + err.Error()
 	}
 
 	apiUrl := fmt.Sprintf("%s/api/grouprole/?uid=%s&app_key=%s&app_name=%s", Conf.WebConfig.AuthURL, username, Conf.WebConfig.AppKey, Conf.WebConfig.AppName)
@@ -232,22 +262,30 @@ func login(ctx *macaron.Context, sess session.Store) string {
 	resp, err = client.Get(apiUrl)
 	body, err = ioutil.ReadAll(resp.Body)
 	if err != nil {
-		return "api请求错误.#4"
+		return "api请求错误.#4: " + err.Error()
 	}
 	defer resp.Body.Close()
 	var groups UserGroup
 	err = json.Unmarshal(body, &groups)
 	if err != nil {
-		return "api请求错误.#5"
+		return "解析用户组信息错误: " + err.Error()
 	}
 
 	if len(groups.Groups) == 0 {
 		return "你没有旁路平台权限."
 	}
-	sess.Set("username", user.FullName)
+	u := &model.User{
+		Username: user.UserName,
+		Fullname: user.FullName,
+		Mail:     user.Mail,
+	}
+	log.Infof("add user %+v", u)
+	err = u.GetOrAdd()
+	if err != nil {
+		return "获取用户信息错误: " + err.Error()
+	}
 	sess.Set("groups", array2string(groups.Groups))
-	sess.Set("user", user.UserName)
-
+	sess.Set("user", u)
 	ctx.Redirect("/")
 
 	return "登陆成功."
@@ -571,10 +609,6 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 }
 
 func tasklist(ctx *macaron.Context, sess session.Store) {
-	if !checkAuth(ctx, sess, "all") {
-		ctx.HTML(403, "403")
-		return
-	}
 	var sortTasks []*model.Task
 	schema := ctx.GetCookie("client")
 	client, ok := dispatcherManager.GetRPCClient(schema)
@@ -774,4 +808,107 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
 	ctx.Resp.WriteHeader(201)
 	log.Printf("%s: copy task %v", sess.Get("user").(string), task.Name)
 	return string(body)
+}
+
+func audit(ctx *macaron.Context, sess session.Store) {
+	ctx.HTML(200, "audit")
+}
+
+func apply(ctx *macaron.Context, sess session.Store) {
+
+	ctx.HTML(200, "apply")
+}
+
+func userList(ctx *macaron.Context, sess session.Store) {
+	users, err := model.GetAllUsers()
+	ctx.Data["users"] = users
+	ctx.Data["error"] = err
+	ctx.HTML(200, "user_list")
+}
+
+func userAdd(ctx *macaron.Context, sess session.Store) {
+	ctx.HTML(200, "user_add")
+}
+
+func userEdit(ctx *macaron.Context, sess session.Store) {
+	id := ctx.ParamsInt64("id")
+	user := &model.User{
+		Id: id,
+	}
+	err := user.GetById()
+	ctx.Data["user"] = user
+	ctx.Data["error"] = err
+	ctx.HTML(200, "user_edit")
+}
+
+func doUserAdd(u UserForm, ctx *macaron.Context, sess session.Store) {
+	resp := &httpJsonResponse{}
+	user := &model.User{
+		Username:    u.Username,
+		Fullname:    u.Fullname,
+		Permissions: strings.Join(u.Permissions, ","),
+		Role:        u.Role,
+		Mail:        u.Mail,
+	}
+	exists, err := user.NameExists()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
+	}
+	if exists {
+		resp.Error = true
+		resp.Message = "用户名已存在"
+		ctx.JSON(200, resp)
+		return
+	}
+	log.Printf("add user: %#v", user)
+	err = user.Add()
+
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+	} else {
+		resp.Error = false
+		resp.Message = "添加成功!"
+	}
+
+	ctx.JSON(200, resp)
+}
+
+func doUserUpdate(u UserForm, ctx *macaron.Context, sess session.Store) {
+	user := &model.User{
+		Id:   u.Id,
+		Role: u.Role,
+	}
+	log.Printf("update user: %#v", user)
+	_, err := user.UpdateRole()
+	resp := &httpJsonResponse{}
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+	} else {
+		resp.Error = false
+		resp.Message = "更新成功!"
+	}
+	ctx.JSON(200, resp)
+}
+
+func doUserDelete(u UserForm, ctx *macaron.Context, sess session.Store) {
+	user := &model.User{
+		Id: u.Id,
+	}
+	log.Printf("delete user: %#v", u)
+	_, err := user.Delete()
+	resp := &httpJsonResponse{}
+
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+	} else {
+		resp.Error = false
+		resp.Message = "删除成功!"
+	}
+	ctx.JSON(200, resp)
 }

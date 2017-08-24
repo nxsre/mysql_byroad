@@ -6,16 +6,16 @@ init-build-dir:
 	mkdir -p build
 
 byroad-dispatcher:
-	cd ${WORKPATH}/dispatcher && go build -ldflags ${LDFLAGS}  -o ${WORKPATH}/build/byroad-dispatcher
+	cd ${WORKPATH}/dispatcher && CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS}  -o ${WORKPATH}/build/byroad-dispatcher
 
 byroad-monitor:
-	cd ${WORKPATH}/monitor && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-monitor
+	cd ${WORKPATH}/monitor && CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-monitor
 
 byroad-pusher:
-	cd ${WORKPATH}/pusher && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-pusher
+	cd ${WORKPATH}/pusher && CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/byroad-pusher
 
 nsq-monitor:
-	cd ${WORKPATH}/nsq_monitor && go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/nsq_monitor
+	cd ${WORKPATH}/nsq_monitor && CGO_ENABLED=0 GOOS=linux go build -ldflags ${LDFLAGS} -o ${WORKPATH}/build/nsq_monitor
 
 build:init-build-dir byroad-dispatcher byroad-monitor byroad-pusher nsq-monitor
 
