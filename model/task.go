@@ -32,6 +32,7 @@ type Task struct {
 	Alert          int
 	SubscribeStat  int `db:"subscribe_stat"` // 任务是否开启订阅
 	PushStat       int `db:"push_stat"`      // 任务是否开启推送
+	AuditState     int `db:"audit_state"`    // 任务审计状态
 }
 
 func CreateTaskTable() {
@@ -133,6 +134,20 @@ func (task *Task) SetStat() error {
 
 func (task *Task) Update() error {
 	_, err := task._update()
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
+func (task *Task) UpdateAuditState() error {
+	sql := "UPDATE `task` SET `audit_state`=? WHERE `id`=?"
+	_, err := confdb.Exec(sql, task.AuditState, task.ID)
+	if err != nil {
+		return err
+	}
+	sql = "UPDATE `notify_field` SET `audit_state`=? WHERE `task_id`=?"
+	_, err = confdb.Exec(sql, task.AuditState, task.ID)
 	if err != nil {
 		return err
 	}

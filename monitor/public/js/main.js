@@ -237,6 +237,39 @@ function doUpdateUser() {
   })
 }
 
+function getDialogTask(el, id) {
+  if ($('#myModal-'+id).length > 0) {
+    $('#myModal-'+id).modal('toggle')
+  } else {
+    $.get('/task-dialog/'+id, function(data) {
+      $(el).after(data)
+      $('#myModal-'+id).modal('toggle')
+    })
+  }
+}
+
+function auditApprove(id) {
+  $.ajax({
+    url: '/audit/approve/'+id,
+    type: 'post',
+    success: function(data) {
+      alert(data.Message)
+      window.location.reload()
+    }
+  })
+}
+
+function auditDeny(id) {
+  $.ajax({
+    url: '/audit/deny/'+id,
+    type: 'post',
+    success: function(data) {
+      alert(data.Message)
+      window.location.reload()
+    }
+  })
+}
+
 $(function () {
   $("#pack-help").popover({
     trigger: 'hover',
@@ -293,7 +326,6 @@ function ajax(method, url, data, callback) {
       callback(data)
     },
     error: function(jqXHR) {
-      console.log(jqXHR)
       alert(jqXHR.responseText)
     }
   })

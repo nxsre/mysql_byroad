@@ -28,6 +28,7 @@ type NotifyField struct {
 	Table      string
 	Column     string
 	Send       int
+	AuditState int       `db:"audit_state"`
 	TaskID     int64     `db:"task_id"`
 	CreateTime time.Time `db:"create_time"`
 }
@@ -48,13 +49,13 @@ func CreateNotifyFieldTable() {
 type NotifyFields []*NotifyField
 
 func (field *NotifyField) _insert() (id int64, err error) {
-	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES(?, ?, ?, ?, ?, ?)"
+	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state` `task_id`,`create_time`) VALUES(?, ?, ?, ?, ?, ?, ?)"
 	stmt, err := confdb.Prepare(s)
 	if err != nil {
 		return 0, err
 	}
-	defer stmt.Close()    
-	res, err := stmt.Exec(field.Schema, field.Table, field.Column, field.Send, field.TaskID, time.Now())
+	defer stmt.Close()
+	res, err := stmt.Exec(field.Schema, field.Table, field.Column, field.Send, field.AuditState, field.TaskID, time.Now())
 	if err != nil {
 		return 0, err
 	}
@@ -65,19 +66,19 @@ func (fields NotifyFields) _insert(taskID int64) error {
 	if len(fields) == 0 {
 		return nil
 	}
-	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `task_id`,`create_time`) VALUES"
+	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state`, `task_id`,`create_time`) VALUES"
 	fs := []interface{}{}
 	for _, f := range fields {
 		f.TaskID = taskID
-		s += "(?, ?, ?, ?, ?, ?),"
-		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.TaskID, time.Now())
+		s += "(?, ?, ?, ?, ?, ?, ?),"
+		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.AuditState, f.TaskID, time.Now())
 	}
 	s = strings.TrimRight(s, ",")
 	stmt, err := confdb.Prepare(s)
 	if err != nil {
 		return err
 	}
-    defer stmt.Close()
+	defer stmt.Close()
 	res, err := stmt.Exec(fs...)
 	if err != nil {
 		return err

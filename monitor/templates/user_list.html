@@ -1,5 +1,6 @@
 {% include "header.html"%}
 <div class="container" id="user-app">
+  <div class="row user-form">
     <table class="table table-bordered table-striped">
       <tr>
           <td>用户名</td>
@@ -12,10 +13,10 @@
         <td>{{ user.Username }}</td>
         <td>{{ user.Mail }}</td>
         <td>
-            {%if user.Role == 0%}超级管理员{%endif%}
-            {%if user.Role == 1%}管理员{%endif%}
-            {%if user.Role == 2%}审计员{%endif%}
-            {%if user.Role == 3%}普通用户{%endif%}
+            {%if user.Role == 3%}超级管理员{%endif%}
+            {%if user.Role == 2%}管理员{%endif%}
+            {%if user.Role == 1%}审计员{%endif%}
+            {%if user.Role == 0%}普通用户{%endif%}
         </td>
         <td>
           <a class="btn btn-sm btn-primary" href="/user-edit/{{ user.Id }}">修改</a>
@@ -24,5 +25,6 @@
       </tr>
       {% endfor %}
     </table>
+  </div>
   </div>
 {% include "footer.html" %}

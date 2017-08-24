@@ -1,0 +1,39 @@
+<div class="modal fade" id="myModal-{{task.ID}}" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+                <h4 class="modal-title" id="myModalLabel">{{task.Name}}</h4>
+            </div>
+            <div class="modal-body">
+                <table class="table table-condensed table-striped">
+                    <tr>
+                        <th>数据库</th>
+                        <th>表名</th>
+                        <th>字段</th>
+                        <th>是否推送值</th>
+                    </tr>
+                    {% for field in task.Fields %}
+                    <tr>
+                        <td>
+                            {{field.Schema}}
+                        </td>
+                        <td>
+                            {{field.Table}}
+                        </td>
+                        <td>
+                            {{field.Column}}
+                        </td>
+                        <td>
+                            {%if field.Send%}是{%else%}否{%endif%}
+                        </td>
+                    </tr>
+                    {% endfor%}
+                </table>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-default" data-dismiss="modal">关闭</button>
+            </div>
+        </div>
+    </div>
+</div>

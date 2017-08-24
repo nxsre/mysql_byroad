@@ -14,10 +14,10 @@ type User struct {
 }
 
 const (
-	USER_SUPER = iota
-	USER_ADMIN
+	USER_NORMAL = iota
 	USER_AUDIT
-	USER_NORMAL
+	USER_ADMIN
+	USER_SUPER
 )
 
 func (u *User) Add() error {

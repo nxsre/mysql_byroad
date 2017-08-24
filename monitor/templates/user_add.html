@@ -1,7 +1,10 @@
 {% include "header.html"%}
 <div class="container">
+    <div class="row user-form">
+        <div class="page-header">
+            <h1><small>用户添加<small></h1>
+        </div>
     <div class="col-md-6">
-    <div>
         <div class="form-group col-md-12">
             <div class="form-inline">
                 <label for="username">用户名</label>
@@ -19,14 +22,14 @@
                 <label for="role">角色</label>
             </div>
             <select name="role" id="role">
-                <option value=0>超级管理员</option>
-                <option value=1>管理员</option>
-                <option value=2>审计员</option>
-                <option value=3>普通用户</option>
+                <option value=0>普通用户</option>
+                <option value=1>审计员</option>
+                <option value=2>管理员</option>
+                <option value=3>超级管理员</option>
             </select>
         </div>
-        <div class="form-group">
-            <button onclick="doAddUser()">添加</button>
+        <div class="form-group col-md-12">
+            <button class="btn btn-sm btn-primary"onclick="doAddUser()">添加</button>
         </div>
     </div>
     </div>

@@ -1,34 +1,39 @@
 {% include "header.html"%}
 <div class="container">
-    <input type="hidden" name="id" id="id" value="{{user.Id}}">
+    <div class="row user-form">
+        <div class="page-header">
+            <h1><small>用户更新<small></h1>
+        </div>
+    <input type="hidden" name="id" id="id" value="{{updateUser.Id}}">
     <div class="col-md-6">
         <div class="form-group col-md-12">
             <div class="form-inline">
                 <label for="username">用户名</label>
             </div>
-            <input class="form-control" type="text" name="username" id="username" value="{{user.Username}}" readonly>
+            <input class="form-control" type="text" name="username" id="username" value="{{updateUser.Username}}" readonly>
         </div>
         <div class="form-group col-md-12">
             <div class="form-inline">
                 <label for="Mail">邮箱</label>
             </div>
-            <input class="form-control" type="email" name="mail" id="mail" value="{{user.Mail}}" readonly> 
+            <input class="form-control" type="email" name="mail" id="mail" value="{{updateUser.Mail}}" readonly> 
         </div>
         <div class="form-group col-md-12">
                 <div class="form-inline">
                     <label for="role">角色</label>
                 </div>
                 <select name="role" id="role">
-                    <option value="0" {%if user.Role == 0%} selected {%endif%}>超级管理员</option>
-                    <option value="1" {%if user.Role == 1%} selected {%endif%}>管理员</option>
-                    <option value="2" {%if user.Role == 2%} selected {%endif%}>审计员</option>
-                    <option value="3" {%if user.Role == 3%} selected {%endif%}>普通用户</option>
+                    <option value="0" {%if updateUser.Role == 0%} selected {%endif%}>普通用户</option>
+                    <option value="1" {%if updateUser.Role == 1%} selected {%endif%}>审计员</option>
+                    <option value="2" {%if updateUser.Role == 2%} selected {%endif%}>管理员</option>
+                    <option value="3" {%if updateUser.Role == 3%} selected {%endif%}>超级管理员</option>
                 </select>
             </div>
 
-        <div class="form-group">
-            <button onclick="doUpdateUser()">修改</button>
+        <div class="form-group col-md-12">
+            <button class="btn btn-sm btn-primary" onclick="doUpdateUser()">修改</button>
         </div>
     </div>
+</div>
 </div>
 {% include "footer.html" %}
