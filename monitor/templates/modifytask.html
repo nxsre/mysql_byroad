@@ -90,25 +90,22 @@
             邮箱：<input class="form-control" type="text" name="emails" id="emails" value="{{task.Emails}}"  placeholder="email1;email2">
 					</div>
           <div class="form-group col-md-12">
-            <div class="form-inline">
-              <label for="state">状态：</label>
-              <div class="radio">
-                {%if (task.Stat=="正常")%}
-                <label>
-                    <input type="radio" name="state" id="state" value="正常" checked> 正常
-                </label>
-                {%endif%}
-                {%if (task.Stat=="停止")%}
-                <label>
-                    <input type="radio" name="state" id="state" value="停止" checked> 停止
-                </label>
-                {%endif%}
+              <div class="form-inline col-md-6">
+                <label for="state">审核人</label>
+                <div class="select">
+                  <select name="auditUser">
+                    <option value=""></option>
+                    {% for auditUser in auditUsers %}
+                    <option value="{{auditUser.Username}}">{{auditUser.Username}}</option>
+                    {% endfor %}
+                  </select>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="form-group col-md-12">
-            <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新</button>
-          </div>
+            <div class="form-group col-md-12">
+                <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新任务</button>
+                <button type="button" class="btn btn-info" id="submit" onclick="modifyTaskFields()">更新订阅</button>
+            </div>
         </div>
         <div id="rightdiv" class="form-inline">
           <div class="col-md-12">

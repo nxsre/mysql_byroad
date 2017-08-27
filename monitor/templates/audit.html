@@ -17,7 +17,7 @@
         <div>{{audit.Id}}</div>
       </td>
       <td>
-        <div>{{audit.CreateTime}}</div>
+        <div>{{audit.UpdateTime}}</div>
       </td>
       <td>
         <div>{{audit.ApplyUser}}</div>
@@ -33,7 +33,7 @@
       </td>
       <td>
         <div>
-          <button type="button" class="btn btn-info btn-sm" onclick="getDialogTask(this, {{audit.TaskId}})" data-toggle="modal">
+          <button type="button" class="btn btn-info btn-sm" onclick="getDialogAudit(this, {{audit.Id}})" data-toggle="modal">
               订阅详情
           </button>
         </div>
@@ -42,8 +42,9 @@
         <div>
             {% if audit.State == 0%} 未处理{% endif %}
             {% if audit.State == 1%} 处理中{% endif %}
-            {% if audit.State == 2%} 同意{% endif %}
+            {% if audit.State == 2%} 已同意{% endif %}
             {% if audit.State == 3%} 不同意{% endif %}
+            {% if audit.State == 4%} 已启用{% endif %}
         </div>
       </td>
       <td>

@@ -75,12 +75,12 @@ type TaskForm struct {
 	RetryCount     int                    `form:"retryCount" binding:"Range(0,10)"`
 	Timeout        int                    `form:"timeout" binding:"Range(1,30000)"`
 	Desc           string                 `form:"desc" binding:"MaxSize(255)"`
-	State          string                 `form:"state"`
 	PackProtocal   model.DataPackProtocal `form:"packProtocal"`
 	PhoneNunbers   string                 `form:"phoneNumbers"`
 	Emails         string                 `form:"emails"`
 	Alert          int                    `form:"alert"`
-	Fields         []*FieldsForm          `form:"noUse"`
+	Fields         []*FieldsForm          `form:"nouse"`
+	AuditUser      string                 `form:"auditUser"`
 }
 
 type UserForm struct {
@@ -143,17 +143,19 @@ func StartServer() {
 	m.Get("/task/detail/:taskid", getTaskStatistic)
 	m.Get("/task/log/:taskid", loglist)
 	m.Get("/help", help)
-	m.Get("/task-dialog/:taskid", authMiddle(model.USER_AUDIT), getTaskDialog)
 
+	m.Get("/task-dialog/:taskid", getEnabledTaskDialog)
+	m.Get("/audit-dialog/:auditid", getAuditTaskDialog)
 	m.Get("/audit", authMiddle(model.USER_AUDIT), audit)
-	m.Post("/audit/approve/:auditid", authMiddle(model.USER_AUDIT), auditApprove)
-	m.Post("/audit/deny/:auditid", authMiddle(model.USER_AUDIT), auditDeny)
-
 	m.Get("/apply", authMiddle(model.USER_AUDIT), apply)
 
 	m.Get("/user-list", authMiddle(model.USER_ADMIN), userList)
 	m.Get("/user-add", authMiddle(model.USER_ADMIN), userAdd)
 	m.Get("/user-edit/:id", authMiddle(model.USER_ADMIN), userEdit)
+
+	m.Post("/audit/approve/:auditid", authMiddle(model.USER_AUDIT), auditApprove)
+	m.Post("/audit/deny/:auditid", authMiddle(model.USER_AUDIT), auditDeny)
+	m.Post("/audit/enable/:auditid", enableAudit)
 
 	m.Post("/user", authMiddle(model.USER_ADMIN), binding.Bind(UserForm{}), doUserAdd)
 	m.Put("/user", authMiddle(model.USER_ADMIN), binding.Bind(UserForm{}), doUserUpdate)
@@ -163,19 +165,11 @@ func StartServer() {
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
 	m.Post("/task/copy/:taskid", copyTaskToDb)
 
-	m.Put("/task", binding.Bind(TaskForm{}), doUpdateTask)
+	m.Put("/task-fields", binding.Bind(TaskForm{}), doUpdateTask)
 
 	m.Delete("/task/:taskid", doDeleteTask)
 
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
-}
-
-func getUsername(sess session.Store) string {
-	user := sess.Get("user")
-	if user == nil {
-		return ""
-	}
-	return user.(model.User).Username
 }
 
 func authMiddle(flag int) func(ctx *macaron.Context, sess session.Store) {
@@ -188,19 +182,6 @@ func authMiddle(flag int) func(ctx *macaron.Context, sess session.Store) {
 			ctx.JSON(403, resp)
 			return
 		}
-	}
-}
-
-//判断用户是否拥有flag的权限
-func checkAuth(ctx *macaron.Context, sess session.Store, flag int) bool {
-	if Conf.Debug {
-		return true
-	}
-	user := sess.Get("user").(*model.User)
-	if user.Role >= flag {
-		return true
-	} else {
-		return false
 	}
 }
 
@@ -292,14 +273,13 @@ func login(ctx *macaron.Context, sess session.Store) string {
 		Fullname: user.FullName,
 		Mail:     user.Mail,
 	}
-	log.Infof("user login: %+v", u)
 	err = u.GetOrAdd()
 	if err != nil {
 		return "获取用户信息错误: " + err.Error()
 	}
 	sess.Set("user", u)
 	ctx.Redirect("/")
-
+	log.Infof("user login: %+v", u)
 	return "登陆成功."
 }
 
@@ -332,8 +312,12 @@ func status(ctx *macaron.Context, sess session.Store) {
 func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 	client := ctx.GetCookie("client")
 	colslist, _ := dispatcherManager.GetColumns(client)
+	auditUsers, err := model.GetUsersByRole(model.USER_AUDIT)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
 	ctx.Data["colslist"] = colslist
-
+	ctx.Data["auditUsers"] = auditUsers
 	ctx.HTML(200, "addtask")
 }
 
@@ -351,6 +335,15 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 		ctx.HTML(403, "403")
 		return
 	}
+	err := task.GetWithFieldsState(model.AUDIT_STATE_ENABLED)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
+	auditUsers, err := model.GetUsersByRole(model.USER_AUDIT)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
+	ctx.Data["auditUsers"] = auditUsers
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
 	client := ctx.GetCookie("client")
@@ -379,87 +372,55 @@ func parseFields2(fields []*FieldsForm) model.NotifyFields {
 	return notifyFields
 }
 
-func doAddTask2(t TaskForm, ctx *macaron.Context, sess session.Store) string {
-	resp := new(httpJsonResponse)
-	resp.Error = false
-	if len(t.Fields) == 0 {
-		resp.Error = true
-		resp.Message = "请添加字段信息"
-		body, _ := json.Marshal(resp)
-		return string(body)
-	}
-	task := new(model.Task)
-	copyTask(&t, task)
-	task.CreateUser = sess.Get("user").(string)
-	schema := ctx.GetCookie("client")
-	rpcclient, ok := dispatcherManager.GetRPCClient(schema)
-	if !ok {
-		resp.Error = true
-		resp.Message = "没有相应的数据库实例"
-		body, _ := json.Marshal(resp)
-		return string(body)
-	}
-	task.DBInstanceName = rpcclient.Desc
-	task.Fields = parseFields2(t.Fields)
-	if ex, err := task.NameExists(); ex {
-		if err != nil {
-			log.Errorf("task exists error: %s", err.Error())
-		}
-		resp.Error = true
-		resp.Message = "任务名已经存在!"
-		body, _ := json.Marshal(resp)
-		return string(body)
-	}
-
-	_, err := task.Add()
-	if err != nil {
-		resp.Error = true
-		resp.Message = "添加失败!"
-		log.Errorf("add task: %s", err.Error())
-	} else {
-		resp.Message = "添加成功!"
-	}
-	dispatcherManager.AddTask(task)
-	pusherManager.AddTask(task)
-	body, _ := json.Marshal(resp)
-	ctx.Resp.WriteHeader(201)
-	log.Printf("%s: add task %v", sess.Get("user").(string), task.Name)
-	return string(body)
-}
-
-func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
+func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
 	fields := ctx.QueryStrings("fields")
-	resp := new(httpJsonResponse)
+	resp := &httpJsonResponse{}
 	resp.Error = false
 	if len(fields) == 0 {
 		resp.Error = true
 		resp.Message = "请添加字段信息"
-		body, _ := json.Marshal(resp)
-		return string(body)
+		ctx.JSON(200, resp)
+		return
 	}
-	task := new(model.Task)
-	copyTask(&t, task)
-	task.CreateUser = sess.Get("user").(string)
+
 	schema := ctx.GetCookie("client")
 	rpcclient, ok := dispatcherManager.GetRPCClient(schema)
 	if !ok {
 		resp.Error = true
 		resp.Message = "没有相应的数据库实例"
-		body, _ := json.Marshal(resp)
-		return string(body)
+		ctx.JSON(200, resp)
+		return
 	}
-	task.DBInstanceName = rpcclient.Desc
-	task.Fields = *new(model.NotifyFields)
+
+	task := &model.Task{
+		Stat:           "停止",
+		CreateUser:     loginUser.Username,
+		AuditState:     model.AUDIT_STATE_UNHANDLE,
+		DBInstanceName: rpcclient.Desc,
+	}
+	copyTask(&t, task)
+	if ex, _ := task.NameExists(); ex {
+		resp.Error = true
+		resp.Message = "任务名已经存在!"
+		ctx.JSON(200, resp)
+		return
+	}
+
+	task.Fields = []*model.NotifyField{}
+	// 解析订阅字段信息
 	for _, c := range fields {
 		send := ctx.QueryInt(c)
-		f := new(model.NotifyField)
-		f.Send = send
+		f := &model.NotifyField{
+			Send:       send,
+			AuditState: model.AUDIT_STATE_UNHANDLE,
+		}
 		nfs := strings.Split(c, "@@")
 		if len(nfs) < 3 {
 			resp.Error = true
 			resp.Message = "参数错误"
-			body, _ := json.Marshal(resp)
-			return string(body)
+			ctx.JSON(200, resp)
+			return
 		}
 		f.Schema = nfs[0]
 		f.Table = nfs[1]
@@ -468,30 +429,28 @@ func doAddTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
 			task.Fields = append(task.Fields, f)
 		}
 	}
-	if ex, _ := task.NameExists(); ex {
-		resp.Error = true
-		resp.Message = "任务名已经存在!"
-		body, _ := json.Marshal(resp)
-		return string(body)
+
+	// 生成审核信息
+	audit := &model.Audit{
+		ApplyUser: loginUser.Username,
+		ApplyType: model.AUDIT_TYPE_CREATE,
+		AuditUser: t.AuditUser,
+		State:     model.AUDIT_STATE_UNHANDLE,
 	}
 
-	_, err := task.Add()
+	err := model.AddTaskWithAudit(task, audit)
 	if err != nil {
 		resp.Error = true
-		resp.Message = "添加失败!"
-		log.Errorf("add task: %s", err.Error())
-	} else {
-		resp.Message = "添加成功!"
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
 	}
-	/* dispatcherManager.AddTask(task)
-	pusherManager.AddTask(task) */
-	body, _ := json.Marshal(resp)
-	ctx.Resp.WriteHeader(201)
-	log.Printf("%s: add task %v", sess.Get("user").(string), task.Name)
-	return string(body)
+	log.Printf("%s: add task %+v", loginUser.Username, task)
+	ctx.JSON(200, resp)
 }
 
 func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
+	loginUser := sess.Get("user").(*model.User)
 	id := ctx.ParamsInt64("taskid")
 	resp := new(httpJsonResponse)
 	resp.Error = false
@@ -516,71 +475,98 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) string {
 	pusherManager.DeleteTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(204)
-	log.Printf("%s: delete task %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: delete task %v", loginUser.Username, task.Name)
 	return string(body)
 }
 
-func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) string {
+func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
 	taskid := ctx.QueryInt64("taskid")
-	resp := new(httpJsonResponse)
-	resp.Error = false
+	resp := &httpJsonResponse{}
 	task := &model.Task{
 		ID: taskid,
 	}
-	if ext, err := task.Exists(); !ext {
-		log.Errorf("do update task: %s", err.Error())
-		return return403(ctx)
-	}
 	if !checkTaskUser(task, sess) {
-		return return403(ctx)
+		resp.Error = true
+		resp.Message = "你无权操作"
+		ctx.JSON(200, resp)
+		return
 	}
+
 	fields := ctx.QueryStrings("fields")
 	if len(fields) == 0 {
 		resp.Error = true
 		resp.Message = "请添加字段信息"
-		body, _ := json.Marshal(resp)
-		return string(body)
+		ctx.JSON(200, resp)
+		return
+	}
+	err := task.GetById()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
 	}
 	if task.Name != t.Name {
 		resp.Error = true
 		resp.Message = "名字不能修改"
-		body, _ := json.Marshal(resp)
-		return string(body)
+		ctx.JSON(200, resp)
+		return
 	}
 	copyTask(&t, task)
-	task.Fields = *new(model.NotifyFields)
-	for _, c := range fields {
-		send := ctx.QueryInt(c)
-		f := new(model.NotifyField)
-		f.Send = send
-		nfs := strings.Split(c, "@@")
-		if len(nfs) < 3 {
-			resp.Error = true
-			resp.Message = "参数错误"
-			body, _ := json.Marshal(resp)
-			return string(body)
+	isUpdateFields := ctx.QueryInt("isUpdateFields")
+	if isUpdateFields == 1 {
+		task.Fields = []*model.NotifyField{}
+		for _, c := range fields {
+			send := ctx.QueryInt(c)
+			f := new(model.NotifyField)
+			f.Send = send
+			f.AuditState = model.AUDIT_STATE_UNHANDLE
+			nfs := strings.Split(c, "@@")
+			if len(nfs) < 3 {
+				resp.Error = true
+				resp.Message = "参数错误"
+				ctx.JSON(200, resp)
+				return
+			}
+			f.Schema = nfs[0]
+			f.Table = nfs[1]
+			f.Column = nfs[2]
+			if !FieldExists(task.Fields, f) {
+				task.Fields = append(task.Fields, f)
+			}
 		}
-		f.Schema = nfs[0]
-		f.Table = nfs[1]
-		f.Column = nfs[2]
-		if !FieldExists(task.Fields, f) {
-			task.Fields = append(task.Fields, f)
-		}
-	}
 
-	err := task.Update()
-	if err != nil {
-		resp.Error = true
-		resp.Message = err.Error()
-		log.Error("do update task: ", err.Error())
+		audit := &model.Audit{
+			ApplyUser: loginUser.Username,
+			ApplyType: model.AUDIT_TYPE_UPDATE,
+			AuditUser: t.AuditUser,
+			State:     model.AUDIT_STATE_UNHANDLE,
+		}
+		err := model.UpdateTaskFieldsWithAudit(task, audit)
+		if err != nil {
+			resp.Error = true
+			resp.Message = err.Error()
+			ctx.JSON(200, resp)
+			return
+		}
+
+		resp.Message = "提交审核成功!"
+		ctx.JSON(200, resp)
+
 	} else {
-		resp.Message = "更新成功!"
+		err := task.Update()
+		if err != nil {
+			resp.Error = true
+			resp.Message = err.Error()
+			log.Error("do update task: ", err.Error())
+		} else {
+			resp.Message = "更新成功!"
+		}
+		ctx.JSON(200, resp)
 	}
-	/* dispatcherManager.UpdateTask(task)
-	pusherManager.UpdateTask(task) */
-	body, _ := json.Marshal(resp)
-	log.Printf("%s: update task %v", sess.Get("user").(string), task.Name)
-	return string(body)
+	log.Printf("%s: update task %+v", loginUser.Username, task)
+
 }
 
 func tasklist(ctx *macaron.Context, sess session.Store) {
@@ -592,7 +578,7 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	var err error
-	sortTasks, err = model.GetTaskByInstanceName(client.Desc)
+	sortTasks, err = model.GetEnabledTasksByInstance(client.Desc)
 	if err != nil {
 		log.Error("get task by instance name: ", err.Error())
 	}
@@ -601,22 +587,36 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "tasklist")
 }
 
-func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
+func changeTaskStat(ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
 	taskid := ctx.ParamsInt64("taskid")
 	resp := new(httpJsonResponse)
 	resp.Error = false
 	task := &model.Task{
 		ID: taskid,
 	}
-	if ext, _ := task.Exists(); !ext {
-		return return403(ctx)
+	err := task.GetById()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, err.Error())
+		return
 	}
 	if !checkTaskUser(task, sess) {
-		return return403(ctx)
+		resp.Error = true
+		resp.Message = "权限不够"
+		ctx.JSON(403, resp)
+		return
+	}
+	if task.AuditState != model.AUDIT_STATE_ENABLED {
+		resp.Error = true
+		resp.Message = "该任务未执行！"
+		ctx.JSON(200, resp)
+		return
 	}
 	stat := ctx.Query("stat")
 	task.Stat = stat
-	err := task.SetStat()
+	err = task.UpdateStat()
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
@@ -635,9 +635,8 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) string {
 		pusherManager.StopTask(task)
 	}
 
-	body, _ := json.Marshal(resp)
-	log.Printf("%s: change task state %v", sess.Get("user").(string), task.Name)
-	return string(body)
+	log.Printf("%s: change task %s state to %s ", loginUser.Username, task.Name, task.Stat)
+	ctx.JSON(200, resp)
 }
 
 func loglist(ctx *macaron.Context, sess session.Store) {
@@ -677,7 +676,6 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.Timeout = src.Timeout
 	dst.CreateTime = time.Now()
 	dst.Desc = strings.TrimSpace(src.Desc)
-	dst.Stat = src.State
 	dst.PackProtocal = src.PackProtocal
 	dst.PhoneNumbers = src.PhoneNunbers
 	dst.Emails = src.Emails
@@ -716,6 +714,7 @@ func help(ctx *macaron.Context, sess session.Store) {
 }
 
 func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
+	loginUser := sess.Get("user").(*model.User)
 	taskid := ctx.ParamsInt64("taskid")
 	resp := new(httpJsonResponse)
 	resp.Error = false
@@ -748,7 +747,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
 		body, _ := json.Marshal(resp)
 		return string(body)
 	}
-	_, err := task.Add()
+	err := task.Add()
 	if err != nil {
 		resp.Error = true
 		resp.Message = "复制失败!"
@@ -760,13 +759,13 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) string {
 	pusherManager.AddTask(task)
 	body, _ := json.Marshal(resp)
 	ctx.Resp.WriteHeader(201)
-	log.Printf("%s: copy task %v", sess.Get("user").(string), task.Name)
+	log.Printf("%s: copy task %s", loginUser.Username, task.Name)
 	return string(body)
 }
 
 func audit(ctx *macaron.Context, sess session.Store) {
 	user := sess.Get("user").(*model.User)
-	audit, err := model.GetAuditByApplyUser(user.Username)
+	audit, err := model.GetAuditByAuditUser(user.Username)
 	ctx.Data["error"] = err
 	ctx.Data["audits"] = audit
 	ctx.HTML(200, "audit")
@@ -774,7 +773,7 @@ func audit(ctx *macaron.Context, sess session.Store) {
 
 func apply(ctx *macaron.Context, sess session.Store) {
 	user := sess.Get("user").(*model.User)
-	audit, err := model.GetAuditByAuditUser(user.Username)
+	audit, err := model.GetAuditByApplyUser(user.Username)
 	ctx.Data["error"] = err
 	ctx.Data["audits"] = audit
 	ctx.HTML(200, "apply")
@@ -803,6 +802,7 @@ func userEdit(ctx *macaron.Context, sess session.Store) {
 }
 
 func doUserAdd(u UserForm, ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
 	resp := &httpJsonResponse{}
 	user := &model.User{
 		Username:    u.Username,
@@ -824,7 +824,6 @@ func doUserAdd(u UserForm, ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 		return
 	}
-	log.Printf("add user: %#v", user)
 	err = user.Add()
 
 	if err != nil {
@@ -834,16 +833,16 @@ func doUserAdd(u UserForm, ctx *macaron.Context, sess session.Store) {
 		resp.Error = false
 		resp.Message = "添加成功!"
 	}
-
+	log.Infof("%s add user %+v", loginUser.Username, user)
 	ctx.JSON(200, resp)
 }
 
 func doUserUpdate(u UserForm, ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
 	user := &model.User{
 		Id:   u.Id,
 		Role: u.Role,
 	}
-	log.Printf("update user: %#v", user)
 	_, err := user.UpdateRole()
 	resp := &httpJsonResponse{}
 	if err != nil {
@@ -853,14 +852,15 @@ func doUserUpdate(u UserForm, ctx *macaron.Context, sess session.Store) {
 		resp.Error = false
 		resp.Message = "更新成功!"
 	}
+	log.Infof("%s update user: %+v", loginUser.Username, user)
 	ctx.JSON(200, resp)
 }
 
 func doUserDelete(u UserForm, ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
 	user := &model.User{
 		Id: u.Id,
 	}
-	log.Printf("delete user: %#v", u)
 	_, err := user.Delete()
 	resp := &httpJsonResponse{}
 
@@ -871,68 +871,130 @@ func doUserDelete(u UserForm, ctx *macaron.Context, sess session.Store) {
 		resp.Error = false
 		resp.Message = "删除成功!"
 	}
+	log.Infof("%s delete user: %+v", loginUser.Username, user)
 	ctx.JSON(200, resp)
 }
 
-func getTaskDialog(ctx *macaron.Context, sess session.Store) {
+func getEnabledTaskDialog(ctx *macaron.Context, sess session.Store) {
 	taskid := ctx.ParamsInt64("taskid")
 	task := &model.Task{
 		ID: taskid,
 	}
-	_, err := task.Get()
+
+	err := task.GetWithFieldsState(model.AUDIT_STATE_ENABLED)
 	if err != nil {
 		log.Errorf("get audit task: %s", err.Error())
 	}
 	ctx.Data["task"] = task
+	ctx.Data["Id"] = taskid
+	ctx.HTML(200, "taskDialog")
+}
+
+func getAuditTaskDialog(ctx *macaron.Context, sess session.Store) {
+	auditid := ctx.ParamsInt64("auditid")
+	audit := &model.Audit{
+		Id: auditid,
+	}
+	err := audit.GetById()
+	if err != nil {
+		ctx.HTML(200, "taskDialog")
+		return
+	}
+	task, err := model.GetTaskFieldsByAudit(audit)
+	if err != nil {
+		log.Errorf("get audit task: %s", err.Error())
+	}
+	ctx.Data["task"] = task
+	ctx.Data["Id"] = auditid
 	ctx.HTML(200, "taskDialog")
 }
 
 func auditApprove(ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
+	resp := &httpJsonResponse{}
+
 	id := ctx.ParamsInt64("auditid")
 	audit := &model.Audit{
-		Id:    id,
-		State: model.AUDIT_STATE_APPROVED,
+		Id: id,
 	}
-	resp := &httpJsonResponse{}
-	_, err := audit.UpdateState()
+	err := audit.GetById()
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
 		ctx.JSON(200, resp)
 		return
 	}
-	task := &model.Task{
-		ID: audit.TaskId,
+	if audit.AuditUser != loginUser.Username {
+		resp.Error = true
+		resp.Message = "你无权操作"
+		ctx.JSON(200, resp)
+		return
 	}
-	err = task.UpdateAuditState()
+	audit.State = model.AUDIT_STATE_APPROVED
+	err = model.UpdateAuditState(audit)
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
 		ctx.JSON(200, resp)
 		return
 	}
+
 	resp.Message = "操作成功!"
+	log.Infof("%s audit approve %+v", loginUser.Username, audit)
 	ctx.JSON(200, resp)
 }
 
 func auditDeny(ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
+	resp := &httpJsonResponse{}
+
 	id := ctx.ParamsInt64("auditid")
 	audit := &model.Audit{
 		Id:    id,
 		State: model.AUDIT_STATE_DENYED,
 	}
-	resp := &httpJsonResponse{}
-	_, err := audit.UpdateState()
+
+	err := audit.GetById()
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
 		ctx.JSON(200, resp)
 		return
 	}
-	task := &model.Task{
-		ID: audit.TaskId,
+	if audit.AuditUser != loginUser.Username {
+		resp.Error = true
+		resp.Message = "你无权操作"
+		ctx.JSON(200, resp)
+		return
 	}
-	err = task.UpdateAuditState()
+	err = model.UpdateAuditState(audit)
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
+	}
+
+	resp.Message = "操作成功!"
+	log.Infof("%s audit deny %+v", loginUser.Username, audit)
+	ctx.JSON(200, resp)
+}
+
+func enableAudit(ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
+	auditid := ctx.ParamsInt64("auditid")
+	resp := &httpJsonResponse{}
+	audit := &model.Audit{
+		Id: auditid,
+	}
+	err := audit.GetById()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		return
+	}
+	audit.State = model.AUDIT_STATE_ENABLED
+	err = model.EnableAudit(audit)
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
@@ -940,5 +1002,7 @@ func auditDeny(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	resp.Message = "操作成功!"
+	// TODO: 发送到dispatcher和pusher
+	log.Infof("%s enabled audit %+v", loginUser.Username, audit)
 	ctx.JSON(200, resp)
 }

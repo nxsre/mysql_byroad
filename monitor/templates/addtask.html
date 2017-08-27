@@ -90,19 +90,19 @@
 					</div>
 					<div class="form-group col-md-12">
 						<div class="form-inline">
-							<label for="state">初始状态：</label>
-							<div class="radio">
-								<label>
-                    				<input type="radio" name="state" id="state" value="正常" checked> 正常
-                				</label>
-								<label>
-                    				<input type="radio" name="state" id="state" value="停止"> 停止
-                				</label>
+							<label for="state">审核人</label>
+							<div class="select">
+								<select name="auditUser">
+									<option value=""></option>
+									{% for auditUser in auditUsers %}
+									<option value="{{auditUser.Username}}">{{auditUser.Username}}</option>
+									{% endfor %}
+								</select>
 							</div>
 						</div>
 					</div>
 					<div class="form-group col-md-12">
-						<button type="button" class="btn btn-primary" id="submit" onclick="addTask()">添加</button>
+						<button type="button" class="btn btn-primary" id="submit" onclick="addTask()">提交审核</button>
 					</div>
 				</div>
 				<div id="rightdiv" class="form-inline">

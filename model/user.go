@@ -1,6 +1,8 @@
 package model
 
-import "time"
+import (
+	"time"
+)
 
 type User struct {
 	Id          int64
@@ -86,8 +88,16 @@ func (u *User) GetOrAdd() error {
 		return err
 	}
 	if !exists {
+		u.Role = USER_NORMAL
 		return u.Add()
 	}
 	err = u.GetByName()
 	return err
+}
+
+func GetUsersByRole(role int) ([]*User, error) {
+	sql := "SELECT * FROM `user` WHERE `role` >= ?"
+	us := []*User{}
+	err := confdb.Select(&us, sql, role)
+	return us, err
 }

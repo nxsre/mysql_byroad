@@ -129,6 +129,29 @@ function modifyTask() {
   }
 }
 
+function modifyTaskFields() {
+  if (confirm('确认提交审核？')) {
+    var options = {
+      url: '/task-fields?isUpdateFields=1',
+      type: 'put',
+      dataType: 'json',
+      data: $('#form').serialize(),
+      success: function (data) {
+        alert(data.Message);
+      },
+      error: function (data) {
+        if (data.status == 422) {
+          alert("任务数据格式错误");
+        } else {
+          alert('修改失败');
+        }
+      }
+    };
+    $.ajax(options);
+    return false;
+  }
+}
+
 function deleteTask(taskid) {
   if (confirm("确认删除？")) {
     var option = {
@@ -195,46 +218,52 @@ function copyTask() {
 
 
 function doAddUser() {
-  var user = {
-    'username': $('#username').val(),
-    'role': parseInt($('#role').val()),
-    'mail': $('#mail').val(),
-  }
-  post('/user', user, function(data) {
-    alert(data.Message)
-    if (data.Error) {
-    } else {
-      location.href = '/user-list'      
+  if (confirm('确认添加该用户？')) {
+    var user = {
+      'username': $('#username').val(),
+      'role': parseInt($('#role').val()),
+      'mail': $('#mail').val(),
     }
-  })
+    post('/user', user, function(data) {
+      alert(data.Message)
+      if (data.Error) {
+      } else {
+        location.href = '/user-list'      
+      }
+    })
+  }
 }
 
 function doDeleteUser(id) {
-  var user = {
-    'id': id,
-  }
-  del('/user', user, function(data) {
-    alert(data.Message)
-    if (data.Error) {
-    } else {
-      location.href = '/user-list'      
+  if (confirm('确认删除该用户？')) {
+    var user = {
+      'id': id,
     }
-  })
+    del('/user', user, function(data) {
+      alert(data.Message)
+      if (data.Error) {
+      } else {
+        location.href = '/user-list'      
+      }
+    })
+  }
 }
 
 function doUpdateUser() {
-  var id = $('#id').val()
-  var user = {
-    'id': parseInt(id),
-    'role': parseInt($('#role').val()),
-  }
-  put('/user', user, function(data) {
-    alert(data.Message)
-    if (data.Error) {
-    } else {
-      location.href = '/user-edit/'+id     
+  if (confirm('确认更新该用户？')) {
+    var id = $('#id').val()
+    var user = {
+      'id': parseInt(id),
+      'role': parseInt($('#role').val()),
     }
-  })
+    put('/user', user, function(data) {
+      alert(data.Message)
+      if (data.Error) {
+      } else {
+        location.href = '/user-edit/'+id     
+      }
+    })
+  }
 }
 
 function getDialogTask(el, id) {
@@ -248,26 +277,56 @@ function getDialogTask(el, id) {
   }
 }
 
+
+
+function getDialogAudit(el, id) {
+  if ($('#myModal-'+id).length > 0) {
+    $('#myModal-'+id).modal('toggle')
+  } else {
+    $.get('/audit-dialog/'+id, function(data) {
+      $(el).after(data)
+      $('#myModal-'+id).modal('toggle')
+    })
+  }
+}
+
 function auditApprove(id) {
-  $.ajax({
-    url: '/audit/approve/'+id,
-    type: 'post',
-    success: function(data) {
-      alert(data.Message)
-      window.location.reload()
-    }
-  })
+  if (confirm('确认同意该任务？')) {
+    $.ajax({
+      url: '/audit/approve/'+id,
+      type: 'post',
+      success: function(data) {
+        alert(data.Message)
+        window.location.reload()
+      }
+    })
+  }
 }
 
 function auditDeny(id) {
-  $.ajax({
-    url: '/audit/deny/'+id,
-    type: 'post',
-    success: function(data) {
-      alert(data.Message)
-      window.location.reload()
-    }
-  })
+  if (confirm('确认不同意该任务？')) {
+    $.ajax({
+      url: '/audit/deny/'+id,
+      type: 'post',
+      success: function(data) {
+        alert(data.Message)
+        window.location.reload()
+      }
+    })
+  }
+}
+
+function enableAudit(auditid) {
+  if (confirm('确认启用该任务？')) {
+    $.ajax({
+      url: '/audit/enable/'+auditid,
+      type: 'post',
+      success: function(data) {
+        alert(data.Message)
+        window.location.reload()
+      }
+    })
+  }
 }
 
 $(function () {

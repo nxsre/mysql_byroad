@@ -35,109 +35,61 @@ type Task struct {
 	AuditState     int `db:"audit_state"`    // 任务审计状态
 }
 
-func CreateTaskTable() {
-	s := "CREATE TABLE IF NOT EXISTS `task` (" +
-		"`id` INTEGER PRIMARY KEY AUTO_INCREMENT," +
-		"`name` VARCHAR(120) NOT NULL," +
-		"`apiurl` VARCHAR(120) NOT NULL," +
-		"`event` VARCHAR(120) NOT NULL," +
-		"`stat` VARCHAR(120) NOT NULL," +
-		"`create_time` DATETIME NOT NULL," +
-		"`create_user` VARCHAR(120) NOT NULL," +
-		"`routine_count` INTEGER NOT NULL," +
-		"`re_routine_count` INTEGER NOT NULL," +
-		"`re_send_time` INTEGER NOT NULL," +
-		"`retry_count` INTEGER NOT NULL," +
-		"`timeout` INTEGER NOT NULL," +
-		"`desc` VARCHAR(255)," +
-		"`pack_protocal` INTEGER," +
-		"`db_instance_name` VARCHAR(255) NOT NULL," +
-		"`phone_numbers` VARCHAR(255) NOT NULL," +
-		"`emails` VARCHAR(255) NOT NULL," +
-		"`alert` INTEGER NOT NULL" +
-		")"
-	confdb.MustExec(s)
-}
-
-func (task *Task) _insert() (id int64, err error) {
+func (task *Task) Add() error {
 	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
 		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return res.LastInsertId()
-}
-
-func (task *Task) _getByID() (*Task, error) {
-	fields := make([]*NotifyField, 0)
-	s := "SELECT * FROM `task` WHERE `id`=?"
-	err := confdb.Get(task, s, task.ID)
-	if err != nil {
-		return nil, err
-	}
-	s = "SELECT * FROM `notify_field` WHERE `task_id`=?"
-	rows, err := confdb.Queryx(s, task.ID)
-	if err != nil {
-		return nil, err
-	}
-	defer rows.Close()
-	for rows.Next() {
-		f := new(NotifyField)
-		rows.StructScan(f)
-		f.TaskID = task.ID
-		fields = append(fields, f)
-	}
-	task.Fields = fields
-	return task, nil
-}
-
-func (task *Task) _update() (int64, error) {
-	task.Fields._delete(task.ID)
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
-	res, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount,
-		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.PhoneNumbers, task.Emails, task.Alert, task.ID)
-	if err != nil {
-		return 0, err
-	}
-	task.Fields._insert(task.ID)
-	return res.RowsAffected()
-}
-
-//delete task and its fields
-func (task *Task) _delete() (int64, error) {
-	s := "DELETE FROM `task` WHERE `id`=?"
-	res, err := confdb.Exec(s, task.ID)
-	if err != nil {
-		return 0, err
-	}
-	s = "DELETE FROM `notify_field` WHERE `task_id`=?"
-	res, err = confdb.Exec(s, task.ID)
-	if err != nil {
-		return 0, err
-	}
-	return res.RowsAffected()
-}
-func (task *Task) Get() (*Task, error) {
-	return task._getByID()
-}
-func (task *Task) SetStat() error {
-	_, err := task._update()
+	id, err := res.LastInsertId()
 	if err != nil {
 		return err
 	}
+	task.ID = id
 	return nil
+}
+
+func (task *Task) Delete() error {
+	s := "DELETE FROM `task` WHERE `id`=?"
+	_, err := confdb.Exec(s, task.ID)
+	if err != nil {
+		return err
+	}
+	return task.Fields.delete(task.ID)
 }
 
 func (task *Task) Update() error {
-	_, err := task._update()
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
+	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount,
+		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
+		task.PhoneNumbers, task.Emails, task.Alert, task.ID)
+	return err
+}
+
+func (task *Task) UpdateWithField() error {
+	task.Fields.delete(task.ID)
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
+	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount,
+		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
+		task.PhoneNumbers, task.Emails, task.Alert, task.ID)
 	if err != nil {
 		return err
 	}
-	return nil
+	return task.Fields.insert(task.ID)
+}
+
+func (task *Task) GetById() error {
+	s := "SELECT * FROM `task` WHERE `id`=?"
+	return confdb.Get(task, s, task.ID)
+}
+
+func (task *Task) UpdateStat() error {
+	sql := "UPDATE `task` SET `stat`=? WHERE `id`=?"
+	_, err := confdb.Exec(sql, task.Stat, task.ID)
+	return err
 }
 
 func (task *Task) UpdateAuditState() error {
@@ -146,17 +98,15 @@ func (task *Task) UpdateAuditState() error {
 	if err != nil {
 		return err
 	}
-	sql = "UPDATE `notify_field` SET `audit_state`=? WHERE `task_id`=?"
-	_, err = confdb.Exec(sql, task.AuditState, task.ID)
-	if err != nil {
-		return err
-	}
-	return nil
+	return task.Fields.updateAuditState(task.ID, task.AuditState)
 }
 
-func (task *Task) Delete() error {
-	_, err := task._delete()
-	return err
+func (task *Task) DeleteApprovedTaskFields() error {
+	return task.Fields.deleteApproved(task.ID)
+}
+
+func (task *Task) DeleteEnabledTaskFields() error {
+	return task.Fields.deleteEnabled(task.ID)
 }
 
 func (this *Task) FieldExists(field *NotifyField) bool {
@@ -178,19 +128,6 @@ func (task *Task) GetTaskColumnsMap() map[string]map[string]NotifyFields {
 		colsMap[field.Schema][field.Table] = append(colsMap[field.Schema][field.Table], field)
 	}
 	return colsMap
-}
-
-func (task *Task) Add() (id int64, err error) {
-	id, err = task._insert()
-	if err != nil {
-		return
-	}
-	err = task.Fields._insert(id)
-	if err != nil {
-		return
-	}
-	task.ID = id
-	return
 }
 
 func GetAllTask() ([]*Task, error) {
@@ -215,12 +152,11 @@ func GetAllTask() ([]*Task, error) {
 }
 
 func (task *Task) Exists() (bool, error) {
-	t, err := task._getByID()
-	if t != nil {
-		return true, nil
-	} else {
+	err := task.GetById()
+	if err != nil {
 		return false, err
 	}
+	return true, nil
 
 }
 
@@ -240,68 +176,66 @@ func (task *Task) NameExists() (bool, error) {
 func GetTasksByUser(createUser string) ([]*Task, error) {
 	ts := []*Task{}
 	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=?", createUser)
-	if err != nil {
-		return nil, err
-	}
-	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
-	if err != nil {
-		return nil, err
-	}
-	for _, task := range ts {
-		for _, field := range fields {
-			if task.ID == field.TaskID {
-				task.Fields = append(task.Fields, field)
-			}
-		}
-	}
-	return ts, nil
+	return ts, err
 }
 
 func GetTaskByInstanceName(name string) ([]*Task, error) {
 	ts := []*Task{}
 	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE db_instance_name=?", name)
-	if err != nil {
-		return nil, err
-	}
-	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
-	if err != nil {
-		return nil, err
-	}
-	for _, task := range ts {
-		for _, field := range fields {
-			if task.ID == field.TaskID {
-				task.Fields = append(task.Fields, field)
-			}
-		}
-	}
-	return ts, nil
+	return ts, err
 }
 
 func GetTasksByUserAndInstance(username, instance string) ([]*Task, error) {
 	ts := []*Task{}
 	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=? AND db_instance_name=?", username, instance)
-	if err != nil {
-		return nil, err
-	}
-	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
-	if err != nil {
-		return nil, err
-	}
-	for _, task := range ts {
-		for _, field := range fields {
-			if task.ID == field.TaskID {
-				task.Fields = append(task.Fields, field)
-			}
-		}
-	}
-	return ts, nil
+	return ts, err
 }
 
 func GetTaskByName(taskname string) (*Task, error) {
 	task := Task{}
 	err := confdb.Get(&task, "SELECT * FROM `task` WHERE name=?", taskname)
 	return &task, err
+}
+
+func GetEnabledTasksByInstance(instance string) ([]*Task, error) {
+	ts := []*Task{}
+	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND db_instance_name=?"
+	err := confdb.Select(&ts, sql, AUDIT_STATE_ENABLED, instance)
+	return ts, err
+}
+
+func (t *Task) GetWithFieldsState(state int) error {
+	sql := "SELECT * FROM `task` WHERE `id`=?"
+	err := confdb.Get(t, sql, t.ID)
+	if err != nil {
+		return err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field` WHERE `task_id`=? AND `audit_state`=?", t.ID, state)
+	t.Fields = fields
+	return err
+}
+
+func (t *Task) GetWithFieldsEnabled() error {
+	sql := "SELECT * FROM `task` WHERE `id`=?"
+	err := confdb.Get(t, sql, t.ID)
+	if err != nil {
+		return err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field` WHERE `task_id`=? AND `audit_state`=?", t.ID, AUDIT_STATE_ENABLED)
+	t.Fields = fields
+	return err
+}
+
+func (t *Task) GetWithFieldsUnenabled() error {
+	sql := "SELECT * FROM `task` WHERE `id`=?"
+	err := confdb.Get(t, sql, t.ID)
+	if err != nil {
+		return err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field` WHERE `task_id`=? AND `audit_state`!=?", t.ID, AUDIT_STATE_ENABLED)
+	t.Fields = fields
+	return err
 }
