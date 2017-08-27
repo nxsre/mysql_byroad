@@ -30,17 +30,17 @@ type Task struct {
 	PhoneNumbers   string           `db:"phone_numbers"`
 	Emails         string           `db:"emails"`
 	Alert          int
-	SubscribeStat  int `db:"subscribe_stat"` // 任务是否开启订阅
-	PushStat       int `db:"push_stat"`      // 任务是否开启推送
-	AuditState     int `db:"audit_state"`    // 任务审计状态
+	SubscribeState int `db:"subscribe_state"` // 任务是否开启订阅
+	PushState      int `db:"push_state"`      // 任务是否开启推送
+	AuditState     int `db:"audit_state"`     // 任务审计状态
 }
 
 func (task *Task) Add() error {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `push_state`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert)
+		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.PushState)
 	if err != nil {
 		return err
 	}
@@ -89,6 +89,12 @@ func (task *Task) GetById() error {
 func (task *Task) UpdateStat() error {
 	sql := "UPDATE `task` SET `stat`=? WHERE `id`=?"
 	_, err := confdb.Exec(sql, task.Stat, task.ID)
+	return err
+}
+
+func (task *Task) UpdatePushState() error {
+	sql := "UPDATE `task` SET `push_state`=? WHERE `id`=?"
+	_, err := confdb.Exec(sql, task.PushState, task.ID)
 	return err
 }
 

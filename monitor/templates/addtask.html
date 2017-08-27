@@ -22,6 +22,7 @@
 						<div class="form-inline">
 							<label for="apiurl">推送地址</label>
 							<p class="form-control-static">(HTTP POST推送消息)</p>
+							<!-- <span class="glyphicon glyphicon-plus " aria-hidden="true"></span> -->
 						</div>
 						<input class="form-control" type="text" name="apiurl" id="apiurl">
 					</div>
@@ -91,18 +92,14 @@
 					<div class="form-group col-md-12">
 						<div class="form-inline">
 							<label for="state">审核人</label>
-							<div class="select">
-								<select name="auditUser">
+								<select name="auditUser" id="auditUser" class="form-control">
 									<option value=""></option>
 									{% for auditUser in auditUsers %}
 									<option value="{{auditUser.Username}}">{{auditUser.Username}}</option>
 									{% endfor %}
 								</select>
-							</div>
+							<button type="button" class="btn btn-primary" id="addTaskFieldsBtn" onclick="addTask()">提交审核</button>
 						</div>
-					</div>
-					<div class="form-group col-md-12">
-						<button type="button" class="btn btn-primary" id="submit" onclick="addTask()">提交审核</button>
 					</div>
 				</div>
 				<div id="rightdiv" class="form-inline">

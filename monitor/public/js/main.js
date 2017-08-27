@@ -85,6 +85,10 @@ function changeFieldValue(obj) {
 
 function addTask() {
   if (confirm('确认添加？')) {
+    if ($('auditUser').val() == '') {
+      alert('审核人不能为空!')
+      return
+    }
     var options = {
       url: '/task',
       type: 'post',
@@ -131,6 +135,10 @@ function modifyTask() {
 
 function modifyTaskFields() {
   if (confirm('确认提交审核？')) {
+    if ($('#auditUser').val() == '') {
+      alert('审核人不能为空!')
+      return
+    }
     var options = {
       url: '/task-fields?isUpdateFields=1',
       type: 'put',
@@ -172,7 +180,23 @@ function deleteTask(taskid) {
 function changeTaskStat(taskid, stat) {
   var option = {
     type: 'post',
-    url: 'task/changeStat/' + taskid,
+    url: '/task/changeStat/' + taskid,
+    dataType: 'json',
+    data: { "stat": stat },
+    success: function (data) {
+      location.reload();
+    },
+    error: function (data) {
+      alert("操作失败")
+    }
+  };
+  $.ajax(option);
+}
+
+function changePushState(taskid, stat) {
+  var option = {
+    type: 'post',
+    url: '/task/changePushState/' + taskid,
     dataType: 'json',
     data: { "stat": stat },
     success: function (data) {
@@ -330,6 +354,27 @@ function enableAudit(auditid) {
 }
 
 $(function () {
+  $("#updateTaskFieldsBtn").popover({
+    trigger: 'hover',
+    title: '更新订阅字段',
+    html: true,
+    content: '<dd><dl>更新订阅字段需要提交审核</dl></dd>',
+  });
+
+  $("#updateTaskBtn").popover({
+    trigger: 'hover',
+    title: '更新任务信息',
+    html: true,
+    content: '<dd><dl>更新任务信息不需要提交审核</dl></dd>',
+  });
+
+  $("#addTaskFieldsBtn").popover({
+    trigger: 'hover',
+    title: '新增订阅字段',
+    html: true,
+    content: '<dd><dl>新增订阅字段需要提交审核</dl></dd>',
+  });
+
   $("#pack-help").popover({
     trigger: 'hover',
     title: '数据封装协议',

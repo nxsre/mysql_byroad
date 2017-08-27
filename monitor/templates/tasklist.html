@@ -7,7 +7,8 @@
       <th>描述</th>
       <th>推送/重推并发数</th>
       <th>推送队列</th>
-      <th>状态</th>
+      <th>订阅状态</th>
+      <th>推送状态</th>
       <th>订阅</th>
       <th>操作</th>
       {%if (isAdmin)%}
@@ -29,6 +30,14 @@
         {%endif%}
       </td>
       <td>
+          {%if task.PushState == 1%}
+          <span class="label label-success">正常</span> 
+          {% endif %}
+          {%if task.PushState == 0 %}
+          <span class="label label-danger">停止</span> 
+          {%endif%}
+      </td>
+      <td>
         <a class="btn btn-info btn-sm" data-toggle="modal" onclick="getDialogTask(this, {{task.ID}})">详情</a>
       </td>
       <td>
@@ -44,9 +53,14 @@
             <li><a href="javascript:void(0)" onclick="copyTaskDialog({{task.ID}}, '{{task.Name}}')" class="copy-task">复制</a></li>
             <li role="separator" class="divider"></li>
             {% if (task.Stat == "正常")%}
-            <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'停止')">停止</a></li>
+            <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'停止')">停止订阅</a></li>
             {% else %}
-            <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'正常')">启动</a></li>
+            <li><a href="javascript:void(0)" onclick="changeTaskStat({{task.ID}},'正常')">启动订阅</a></li>
+            {% endif %}
+            {% if task.PushState == 1%}
+            <li><a href="javascript:void(0)" onclick="changePushState({{task.ID}}, 0)">停止推送</a></li>
+            {% else %}
+            <li><a href="javascript:void(0)" onclick="changePushState({{task.ID}}, 1)">启动推送</a></li>
             {% endif %}
           </ul>
         </div>

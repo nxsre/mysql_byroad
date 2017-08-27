@@ -37,7 +37,7 @@ func (this *TaskConsumerManager) Init(tasks []*model.Task) {
 			log.Errorf("task consumer manager init: %s", err.Error())
 			continue
 		}
-		if task.Stat == model.TASK_STATE_START || task.PushStat == model.TASK_STAT_PUSH {
+		if task.PushState == model.TASK_STAT_PUSH {
 			err := taskConsumer.StartConsume()
 			if err != nil {
 				log.Errorf("task consumer manager start %s: %s", task.Name, err.Error())

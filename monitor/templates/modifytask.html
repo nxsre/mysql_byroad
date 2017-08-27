@@ -93,18 +93,16 @@
               <div class="form-inline col-md-6">
                 <label for="state">审核人</label>
                 <div class="select">
-                  <select name="auditUser">
+                  <select name="auditUser" id="auditUser" class="form-control">
                     <option value=""></option>
                     {% for auditUser in auditUsers %}
                     <option value="{{auditUser.Username}}">{{auditUser.Username}}</option>
                     {% endfor %}
                   </select>
+                  <button type="button" class="btn btn-primary" id="updateTaskBtn" onclick="modifyTask()">更新任务</button>
+                  <button type="button" class="btn btn-info" id="updateTaskFieldsBtn" onclick="modifyTaskFields()">更新订阅</button>
                 </div>
               </div>
-            </div>
-            <div class="form-group col-md-12">
-                <button type="button" class="btn btn-primary" id="submit" onclick="modifyTask()">更新任务</button>
-                <button type="button" class="btn btn-info" id="submit" onclick="modifyTaskFields()">更新订阅</button>
             </div>
         </div>
         <div id="rightdiv" class="form-inline">

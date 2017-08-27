@@ -164,6 +164,7 @@ func StartServer() {
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
 	m.Post("/task/copy/:taskid", copyTaskToDb)
+	m.Post("/task/changePushState/:taskid", changeTaskPushState)
 
 	m.Put("/task-fields", binding.Bind(TaskForm{}), doUpdateTask)
 
@@ -616,6 +617,13 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) {
 	}
 	stat := ctx.Query("stat")
 	task.Stat = stat
+
+	if stat == model.TASK_STATE_START {
+		dispatcherManager.StartTask(task)
+	} else if stat == model.TASK_STATE_STOP {
+		dispatcherManager.StopTask(task)
+	}
+
 	err = task.UpdateStat()
 	if err != nil {
 		resp.Error = true
@@ -625,14 +633,58 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) {
 		resp.Error = false
 		resp.Message = "操作成功"
 	}
-	if stat == model.TASK_STATE_START {
-		nsqManager.UnPauseTopic(task.Name)
-		dispatcherManager.StartTask(task)
+
+	log.Printf("%s: change task %s state to %s ", loginUser.Username, task.Name, task.Stat)
+	ctx.JSON(200, resp)
+}
+
+func changeTaskPushState(ctx *macaron.Context, sess session.Store) {
+	loginUser := sess.Get("user").(*model.User)
+	taskid := ctx.ParamsInt64("taskid")
+	resp := &httpJsonResponse{}
+	resp.Error = false
+	task := &model.Task{
+		ID: taskid,
+	}
+	err := task.GetById()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, err.Error())
+		return
+	}
+	if !checkTaskUser(task, sess) {
+		resp.Error = true
+		resp.Message = "权限不够"
+		ctx.JSON(403, resp)
+		return
+	}
+	if task.AuditState != model.AUDIT_STATE_ENABLED {
+		resp.Error = true
+		resp.Message = "该任务未执行！"
+		ctx.JSON(200, resp)
+		return
+	}
+	stat := ctx.QueryInt("stat")
+	task.PushState = stat
+
+	// TODO: error handle
+	if stat == model.TASK_STAT_PUSH {
+		// nsqManager.UnPauseTopic(task.Name)
 		pusherManager.StartTask(task)
-	} else if stat == model.TASK_STATE_STOP {
-		nsqManager.PauseTopic(task.Name)
-		dispatcherManager.StopTask(task)
+	} else if stat == model.TASK_STAT_UNPUSH {
+		// nsqManager.PauseTopic(task.Name)
 		pusherManager.StopTask(task)
+	}
+
+	err = task.UpdatePushState()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		log.Error("change task stat: ", err.Error())
+	} else {
+		resp.Error = false
+		resp.Message = "操作成功"
 	}
 
 	log.Printf("%s: change task %s state to %s ", loginUser.Username, task.Name, task.Stat)
