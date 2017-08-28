@@ -52,7 +52,7 @@ func (rs *RPCServer) AddTask(task *model.Task, status *string) error {
 	*status = "sucess"
 	rs.dispatcher.taskManager.taskIdMap.Set(task.ID, task)
 	if task.Stat == model.TASK_STATE_START {
-		rs.dispatcher.taskManager.notifyTaskMap.AddTask(task)
+		rs.dispatcher.taskManager.notifyTaskMap.UpdateNotifyTaskMap(rs.dispatcher.taskManager.taskIdMap)
 	}
 	return nil
 }

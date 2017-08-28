@@ -51,7 +51,7 @@ func (m *Monitor) GetAllTasks(username string, tasks *[]*model.Task) error {
 }
 
 func (m *Monitor) GetTaskByInstanceName(dbname string, tasks *[]*model.Task) error {
-	ts, err := model.GetTaskByInstanceName(dbname)
+	ts, err := model.GetEnabledTasksWithFieldsByInstance(dbname)
 	if err != nil {
 		return err
 	}

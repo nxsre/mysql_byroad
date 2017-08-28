@@ -145,7 +145,7 @@ func (this *TaskConsumerManager) UpdateTask(task *model.Task) (*model.Task, erro
 func (this *TaskConsumerManager) StopTask(task *model.Task) error {
 	obj, ok := this.taskConsumers.Get(task.Name)
 	if !ok {
-		return fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil
 	}
 	taskConsumer := obj.(*TaskConsumer)
 	taskConsumer.StopConsume()

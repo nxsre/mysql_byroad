@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -57,17 +58,24 @@ func GetAllUsers() ([]*User, error) {
 	return us, err
 }
 
-func (u *User) NameExists() (bool, error) {
-	user := []*User{}
-	sql := "SELECT `id` FROM `user` WHERE `username`=?"
-	err := confdb.Select(&user, sql, u.Username)
-	if err != nil {
-		return false, err
+func (u *User) NameExists() bool {
+	user := &User{}
+	s := "SELECT `id` FROM `user` WHERE `username`=?"
+	err := confdb.Get(user, s, u.Username)
+	if err == sql.ErrNoRows {
+		return false
 	}
-	if len(user) == 0 {
-		return false, nil
+	return true
+}
+
+func (u *User) IdExists() bool {
+	user := &User{}
+	s := "SELECT `id` FROM `user` WHERE `id`=?"
+	err := confdb.Get(user, s, u.Id)
+	if err == sql.ErrNoRows {
+		return false
 	}
-	return true, nil
+	return true
 }
 
 func (u *User) GetByName() error {
@@ -83,16 +91,12 @@ func (u *User) GetById() error {
 }
 
 func (u *User) GetOrAdd() error {
-	exists, err := u.NameExists()
-	if err != nil {
-		return err
-	}
+	exists := u.NameExists()
 	if !exists {
 		u.Role = USER_NORMAL
 		return u.Add()
 	}
-	err = u.GetByName()
-	return err
+	return u.GetByName()
 }
 
 func GetUsersByRole(role int) ([]*User, error) {

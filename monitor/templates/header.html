@@ -22,21 +22,21 @@
           <li><a href="/addtask">任务添加</a></li>
           <li><a href="/task">任务管理</a></li>
           <li><a href="/status">状态</a></li>
-          {% if user.Role > 0 %}
+          {% if user.Role >= 0 %}
           <li>
             <a href="#" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
                 审计管理<span class="caret"></span>
             </a>
             <ul class="dropdown-menu">
                 <li><a href="/apply">我的申请</a></li>
-                {% if user.Role > 1 %}
+                {% if user.Role >= 1 %}
                 <li><a href="/audit">我的审计</a></li>
                 {% endif %}
             </ul>
           </li>
           {% endif %}
           
-          {% if user.Role > 1 %}
+          {% if user.Role >= 2 %}
           <li>
             <a href="/user-list" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
               用户管理<span class="caret"></span></a>

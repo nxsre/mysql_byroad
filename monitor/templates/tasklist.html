@@ -11,9 +11,7 @@
       <th>推送状态</th>
       <th>订阅</th>
       <th>操作</th>
-      {%if (isAdmin)%}
       <th>用户</th>
-      {%endif%}
     </tr>
     {% for task in tasks%}
     <tr>
@@ -65,9 +63,7 @@
           </ul>
         </div>
       </td>
-      {%if (isAdmin)%}
       <td>{{task.CreateUser}}</td>
-      {%endif%}
     </tr>
     {% endfor%}
   </table>
@@ -81,7 +77,6 @@
       <div class="modal-body">
         <form id="copyTaskForm">
           <input type="hidden" name="taskid" value="">
-          <input type="hidden" name="stat" value="停止">
           <div class="form-group">
 						<div class="form-inline">
 							<label for="name">任务名称</label>

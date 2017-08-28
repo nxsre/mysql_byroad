@@ -32,6 +32,7 @@ type NotifyField struct {
 	TaskID     int64     `db:"task_id"`
 	AuditId    int64     `db:"audit_id"`
 	CreateTime time.Time `db:"create_time"`
+	UpdateTime time.Time `db:"update_time"`
 }
 
 type NotifyFields []*NotifyField
@@ -40,12 +41,12 @@ func (fields NotifyFields) insert(taskID int64) error {
 	if len(fields) == 0 {
 		return nil
 	}
-	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state`, `task_id`, `audit_id`, `create_time`) VALUES"
+	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state`, `task_id`, `audit_id`, `create_time`, `update_time`) VALUES"
 	fs := []interface{}{}
 	for _, f := range fields {
 		f.TaskID = taskID
-		s += "(?, ?, ?, ?, ?, ?, ?, ?),"
-		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.AuditState, f.TaskID, f.AuditId, time.Now())
+		s += "(?, ?, ?, ?, ?, ?, ?, ?, ?),"
+		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.AuditState, f.TaskID, f.AuditId, time.Now(), time.Now())
 	}
 	s = strings.TrimRight(s, ",")
 	stmt, err := confdb.Prepare(s)
@@ -84,7 +85,7 @@ func (field NotifyFields) deleteEnabled(taskid int64) error {
 }
 
 func (field NotifyFields) updateAuditState(taskid int64, state int) error {
-	s := "UPDATE `notify_field` SET `audit_state`=? WHERE `task_id`=?"
-	_, err := confdb.Exec(s, state, taskid)
+	s := "UPDATE `notify_field` SET `audit_state`=?, `update_time`=? WHERE `task_id`=?"
+	_, err := confdb.Exec(s, state, time.Now(), taskid)
 	return err
 }

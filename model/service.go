@@ -132,6 +132,36 @@ func EnableAudit(audit *Audit) (err error) {
 	return
 }
 
+func AddTaskFields(task *Task) (err error) {
+	tx, err := confdb.Beginx()
+	if err != nil {
+		return
+	}
+	defer func() {
+		if err != nil {
+			err := tx.Rollback()
+			if err != nil {
+				log.Errorf("enable audit: %s", err.Error())
+			}
+		}
+	}()
+
+	err = addTask(tx, task)
+	if err != nil {
+		return
+	}
+
+	audit := &Audit{}
+
+	err = addTaskFields(tx, task, audit)
+	if err != nil {
+		return
+	}
+
+	err = tx.Commit()
+	return
+}
+
 func GetTaskFieldsByAudit(audit *Audit) (*Task, error) {
 	fields := []*NotifyField{}
 	task := &Task{}
@@ -145,11 +175,12 @@ func GetTaskFieldsByAudit(audit *Audit) (*Task, error) {
 }
 
 func addTask(tx *sqlx.Tx, task *Task) (err error) {
-	sql := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sql := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state`, `push_state`, `update_time`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := tx.Exec(sql, task.Name, task.Apiurl, task.Event, task.Stat,
-		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
+		time.Now(), task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert)
+		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.AuditState,
+		task.PushState, time.Now())
 	if err != nil {
 		return
 	}
@@ -176,13 +207,13 @@ func addAudit(tx *sqlx.Tx, audit *Audit) (err error) {
 }
 
 func addTaskFields(tx *sqlx.Tx, task *Task, audit *Audit) (err error) {
-	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state`, `task_id`, `audit_id`, `create_time`) VALUES"
+	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state`, `task_id`, `audit_id`, `create_time`, `update_time`) VALUES"
 	fs := []interface{}{}
 	for _, f := range task.Fields {
 		f.TaskID = task.ID
 		f.AuditId = audit.Id
-		s += "(?, ?, ?, ?, ?, ?, ?, ?),"
-		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.AuditState, f.TaskID, f.AuditId, time.Now())
+		s += "(?, ?, ?, ?, ?, ?, ?, ?, ?),"
+		fs = append(fs, f.Schema, f.Table, f.Column, f.Send, f.AuditState, f.TaskID, f.AuditId, time.Now(), time.Now())
 	}
 	s = strings.TrimRight(s, ",")
 	_, err = tx.Exec(s, fs...)

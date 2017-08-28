@@ -85,7 +85,7 @@ function changeFieldValue(obj) {
 
 function addTask() {
   if (confirm('确认添加？')) {
-    if ($('auditUser').val() == '') {
+    if ($('#auditUser').val() == '') {
       alert('审核人不能为空!')
       return
     }
@@ -167,6 +167,9 @@ function deleteTask(taskid) {
       url: '/task/' + taskid,
       dataType: 'json',
       success: function (data) {
+        if (data.Error) {
+          alert(data.Message)
+        }
         location.reload();
       },
       error: function (data) {
@@ -184,6 +187,9 @@ function changeTaskStat(taskid, stat) {
     dataType: 'json',
     data: { "stat": stat },
     success: function (data) {
+      if (data.Error) {
+        alert(data.Message)
+      }
       location.reload();
     },
     error: function (data) {
@@ -200,6 +206,9 @@ function changePushState(taskid, stat) {
     dataType: 'json',
     data: { "stat": stat },
     success: function (data) {
+      if (data.Error) {
+        alert(data.Message)
+      }
       location.reload();
     },
     error: function (data) {
@@ -210,7 +219,6 @@ function changePushState(taskid, stat) {
 }
 
 function copyTaskDialog(taskid, taskName) {
-  console.log(taskid, taskName);
   $('#copyTaskModal [name="taskid"]').val(taskid);
   $('#copyTaskModal [name="taskName"]').val(taskName);
   $('#copyTaskModal').modal('toggle');

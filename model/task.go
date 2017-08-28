@@ -1,6 +1,7 @@
 package model
 
 import (
+	"database/sql"
 	"time"
 )
 
@@ -30,17 +31,19 @@ type Task struct {
 	PhoneNumbers   string           `db:"phone_numbers"`
 	Emails         string           `db:"emails"`
 	Alert          int
-	SubscribeState int `db:"subscribe_state"` // 任务是否开启订阅
-	PushState      int `db:"push_state"`      // 任务是否开启推送
-	AuditState     int `db:"audit_state"`     // 任务审计状态
+	SubscribeState int       `db:"subscribe_state"` // 任务是否开启订阅
+	PushState      int       `db:"push_state"`      // 任务是否开启推送
+	AuditState     int       `db:"audit_state"`     // 任务审计状态
+	UpdateTime     time.Time `db:"update_time"`
 }
 
 func (task *Task) Add() error {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `push_state`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state` `push_state`, `update_time`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
-		task.CreateTime, task.CreateUser, task.RoutineCount, task.ReRoutineCount,
+		time.Now(), task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.PushState)
+		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.AuditState,
+		task.PushState, time.Now())
 	if err != nil {
 		return err
 	}
@@ -50,6 +53,14 @@ func (task *Task) Add() error {
 	}
 	task.ID = id
 	return nil
+}
+
+func (task *Task) AddWithFields() error {
+	err := task.Add()
+	if err != nil {
+		return err
+	}
+	return task.Fields.Add(task.ID)
 }
 
 func (task *Task) Delete() error {
@@ -62,19 +73,19 @@ func (task *Task) Delete() error {
 }
 
 func (task *Task) Update() error {
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
-	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount,
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=? WHERE `id`=?"
+	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.RoutineCount,
 		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.PhoneNumbers, task.Emails, task.Alert, task.ID)
+		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.ID)
 	return err
 }
 
 func (task *Task) UpdateWithField() error {
 	task.Fields.delete(task.ID)
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `create_time`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=? WHERE `id`=?"
-	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.CreateTime, task.RoutineCount,
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=? WHERE `id`=?"
+	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.RoutineCount,
 		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.PhoneNumbers, task.Emails, task.Alert, task.ID)
+		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.ID)
 	if err != nil {
 		return err
 	}
@@ -84,6 +95,10 @@ func (task *Task) UpdateWithField() error {
 func (task *Task) GetById() error {
 	s := "SELECT * FROM `task` WHERE `id`=?"
 	return confdb.Get(task, s, task.ID)
+}
+
+func (task *Task) GetByName() error {
+	return confdb.Get(task, "SELECT * FROM `task` WHERE name=?", task.Name)
 }
 
 func (task *Task) UpdateStat() error {
@@ -157,26 +172,24 @@ func GetAllTask() ([]*Task, error) {
 	return ts, nil
 }
 
-func (task *Task) Exists() (bool, error) {
-	err := task.GetById()
-	if err != nil {
-		return false, err
+func (task *Task) IdExists() bool {
+	t := &Task{}
+	s := "SELECT `id` FROM `task` WHERE `id`=?"
+	err := confdb.Get(t, s, task.ID)
+	if err == sql.ErrNoRows {
+		return false
 	}
-	return true, nil
-
+	return true
 }
 
-func (task *Task) NameExists() (bool, error) {
-	var cnt int
-	err := confdb.Get(&cnt, "SELECT COUNT(*) FROM task WHERE name=?", task.Name)
-	if err != nil {
-		return true, err
+func (task *Task) NameExists() bool {
+	t := &Task{}
+	s := "SELECT `id` FROM `task` WHERE `name`=?"
+	err := confdb.Get(t, s, task.Name)
+	if err == sql.ErrNoRows {
+		return false
 	}
-	if cnt == 1 {
-		return true, nil
-	} else {
-		return false, nil
-	}
+	return true
 }
 
 func GetTasksByUser(createUser string) ([]*Task, error) {
@@ -208,6 +221,27 @@ func GetEnabledTasksByInstance(instance string) ([]*Task, error) {
 	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND db_instance_name=?"
 	err := confdb.Select(&ts, sql, AUDIT_STATE_ENABLED, instance)
 	return ts, err
+}
+
+func GetEnabledTasksWithFieldsByInstance(instance string) ([]*Task, error) {
+	ts := []*Task{}
+	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE `db_instance_name`=?", instance)
+	if err != nil {
+		return nil, err
+	}
+	fields := []*NotifyField{}
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field` WHERE `audit_state`=?", AUDIT_STATE_ENABLED)
+	if err != nil {
+		return nil, err
+	}
+	for _, task := range ts {
+		for _, field := range fields {
+			if task.ID == field.TaskID {
+				task.Fields = append(task.Fields, field)
+			}
+		}
+	}
+	return ts, nil
 }
 
 func (t *Task) GetWithFieldsState(state int) error {
