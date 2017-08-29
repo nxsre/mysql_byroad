@@ -230,7 +230,7 @@ func GetTaskByName(taskname string) (*Task, error) {
 
 func GetEnabledTasksByInstance(instance string) ([]*Task, error) {
 	ts := []*Task{}
-	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND db_instance_name=? ORDER BY `update_time`"
+	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND `db_instance_name`=? ORDER BY `update_time`"
 	err := confdb.Select(&ts, sql, AUDIT_STATE_ENABLED, instance)
 	return ts, err
 }

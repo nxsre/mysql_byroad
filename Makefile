@@ -33,13 +33,10 @@ tag:
 todo:
 	@grep --color=auto -r -n TODO ./*.go
 
-tarsource:
-	tar -czf byroad-src.tar.gz dispatcher model monitor nsq pusher vendor Makefile
-
 copyweb:
 	cd ${WORKPATH}/monitor && cp -R ${WORKPATH}/monitor/templates ${WORKPATH}/monitor/public ${WORKPATH}/build
 
-tarbin:build copyweb
+tar:build copyweb
 	tar -czf byroad-bin.tar.gz build
 
 

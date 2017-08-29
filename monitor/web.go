@@ -770,6 +770,10 @@ func getTaskStatistic(ctx *macaron.Context, sess session.Store) {
 	task := &model.Task{
 		ID: taskid,
 	}
+	err := task.GetById()
+	if err != nil {
+		ctx.Data["error"] = err
+	}
 	stats := nsqManager.GetTopicStats(task.Name)
 	ctx.Data["statistics"] = stats
 	ctx.HTML(200, "taskdetail")
@@ -802,7 +806,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
-		ctx.JSON(200, err.Error())
+		ctx.JSON(200, resp)
 		return
 	}
 
@@ -1069,6 +1073,7 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
+		ctx.JSON(200, resp)
 		return
 	}
 
@@ -1079,6 +1084,7 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
+		ctx.JSON(200, resp)
 		return
 	}
 	if !checkTaskUser(task, sess) {
@@ -1109,7 +1115,7 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
-		ctx.JSON(200, err.Error())
+		ctx.JSON(200, resp)
 		return
 	}
 
@@ -1117,7 +1123,7 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
-		ctx.JSON(200, err.Error())
+		ctx.JSON(200, resp)
 		return
 	}
 
@@ -1125,7 +1131,7 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
-		ctx.JSON(200, err.Error())
+		ctx.JSON(200, resp)
 		return
 	}
 
