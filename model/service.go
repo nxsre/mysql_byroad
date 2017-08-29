@@ -175,7 +175,7 @@ func GetTaskFieldsByAudit(audit *Audit) (*Task, error) {
 }
 
 func addTask(tx *sqlx.Tx, task *Task) (err error) {
-	sql := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state`, `push_state`, `update_time`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sql := "INSERT INTO `task` (`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state`, `push_state`, `update_time`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := tx.Exec(sql, task.Name, task.Apiurl, task.Event, task.Stat,
 		time.Now(), task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
@@ -207,7 +207,10 @@ func addAudit(tx *sqlx.Tx, audit *Audit) (err error) {
 }
 
 func addTaskFields(tx *sqlx.Tx, task *Task, audit *Audit) (err error) {
-	s := "INSERT INTO `notify_field`(`schema`, `table`, `column`, `send`, `audit_state`, `task_id`, `audit_id`, `create_time`, `update_time`) VALUES"
+	if len(task.Fields) == 0 {
+		return
+	}
+	s := "INSERT INTO `notify_field` (`schema`, `table`, `column`, `send`, `audit_state`, `task_id`, `audit_id`, `create_time`, `update_time`) VALUES"
 	fs := []interface{}{}
 	for _, f := range task.Fields {
 		f.TaskID = task.ID
@@ -227,19 +230,19 @@ func updateAuditStateById(tx *sqlx.Tx, audit *Audit) (err error) {
 }
 
 func updateTaskFieldsAuditStateByAuditId(tx *sqlx.Tx, audit *Audit) (err error) {
-	s := "UPDATE `notify_field` SET `audit_state`=? WHERE `audit_id`=?"
-	_, err = tx.Exec(s, audit.State, audit.Id)
+	s := "UPDATE `notify_field` SET `audit_state`=?, `update_time`=? WHERE `audit_id`=?"
+	_, err = tx.Exec(s, audit.State, time.Now(), audit.Id)
 	return err
 }
 
 func updateTaskAuditState(tx *sqlx.Tx, audit *Audit) (err error) {
-	s := "UPDATE `task` SET `audit_state`=? WHERE `id`=?"
-	_, err = tx.Exec(s, audit.State, audit.TaskId)
+	s := "UPDATE `task` SET `audit_state`=?, `update_time`=? WHERE `id`=?"
+	_, err = tx.Exec(s, audit.State, time.Now(), audit.TaskId)
 	return
 }
 
 func unenableTaskFields(tx *sqlx.Tx, audit *Audit) (err error) {
-	s := "UPDATE `notify_field` SET `audit_state`=? WHERE `audit_state`=?"
-	_, err = tx.Exec(s, AUDIT_STATE_UNENABLED, AUDIT_STATE_ENABLED)
+	s := "UPDATE `notify_field` SET `audit_state`=?, `update_time`=? WHERE `audit_state`=?"
+	_, err = tx.Exec(s, AUDIT_STATE_UNENABLED, time.Now(), AUDIT_STATE_ENABLED)
 	return
 }

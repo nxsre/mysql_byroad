@@ -248,6 +248,24 @@ function copyTask() {
   }
 }
 
+function doUpdateTaskUser() {
+  if (confirm('确认更新该任务的用户？')) {
+    var taskid = $('#id').val()
+    var createUser = $('#new-createuser').val()
+    $.ajax({
+      url:'/task/updateuser/'+id,
+      type:'post',
+      data: {
+        taskid: taskid,
+        createUser: createUser,
+      },
+      success: function (data) {
+        alert(data.Message)
+      }
+    })
+  }
+}
+
 
 function doAddUser() {
   if (confirm('确认添加该用户？')) {

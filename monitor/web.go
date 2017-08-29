@@ -166,8 +166,12 @@ func StartServer() {
 	m.Post("/task/changePushState/:taskid", changeTaskPushState)
 
 	m.Put("/task-fields", binding.Bind(TaskForm{}), doUpdateTask)
+	m.Put("/task", binding.Bind(TaskForm{}), doUpdateTask)
 
 	m.Delete("/task/:taskid", doDeleteTask)
+
+	m.Post("/task/updateuser/:taskid", authMiddle(model.USER_SUPER), doUpdateTaskUser)
+	m.Get("/task/updateuser/:taskid", authMiddle(model.USER_SUPER), updateTaskUser)
 
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
@@ -294,7 +298,10 @@ func status(ctx *macaron.Context, sess session.Store) {
 
 func addTaskHTML(ctx *macaron.Context, sess session.Store) {
 	client := ctx.GetCookie("client")
-	colslist, _ := dispatcherManager.GetColumns(client)
+	colslist, err := dispatcherManager.GetColumns(client)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
 	auditUsers, err := model.GetUsersByRole(model.USER_AUDIT)
 	if err != nil {
 		ctx.Data["error"] = err
@@ -309,10 +316,6 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	task := &model.Task{
 		ID: taskid,
 	}
-	if !task.IdExists() {
-		ctx.HTML(404, "404")
-		return
-	}
 	err := task.GetWithFieldsState(model.AUDIT_STATE_ENABLED)
 	if err != nil {
 		ctx.Data["error"] = err
@@ -325,7 +328,10 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
 	client := ctx.GetCookie("client")
-	colslist, _ := dispatcherManager.GetColumns(client)
+	colslist, err := dispatcherManager.GetColumns(client)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
 	ctx.Data["colslist"] = colslist
 
 	ctx.HTML(200, "modifytask")
@@ -426,7 +432,7 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) {
 
 	if !checkTaskUser(task, sess) {
 		resp.Error = true
-		resp.Message = "没有权限"
+		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
 	}
@@ -483,7 +489,7 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) {
 
 	if !checkTaskUser(task, sess) {
 		resp.Error = true
-		resp.Message = "没有权限"
+		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
 	}
@@ -536,7 +542,15 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 
 	} else {
-		err := task.Update()
+		// TODO: update pusher
+
+		err := pusherManager.UpdateTask(task)
+		if err != nil {
+			resp.Error = true
+			resp.Message = err.Error()
+			return
+		}
+		err = task.Update()
 		if err != nil {
 			resp.Error = true
 			resp.Message = err.Error()
@@ -586,7 +600,7 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) {
 
 	if !checkTaskUser(task, sess) {
 		resp.Error = true
-		resp.Message = "没有权限"
+		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
 	}
@@ -657,7 +671,7 @@ func changeTaskPushState(ctx *macaron.Context, sess session.Store) {
 	}
 	if !checkTaskUser(task, sess) {
 		resp.Error = true
-		resp.Message = "没有权限"
+		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
 	}
@@ -792,7 +806,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) {
 
 	if !checkTaskUser(task, sess) {
 		resp.Error = true
-		resp.Message = "没有权限"
+		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
 	}
@@ -812,14 +826,6 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 	originTaskName := task.Name
-
-	if task.CreateUser != loginUser.Username {
-		resp.Error = true
-		resp.Message = "不能复制他人的任务"
-		ctx.JSON(200, resp)
-		return
-	}
-
 	task.Name = name
 	task.DBInstanceName = rpcclient.Desc
 	task.Stat = "停止"
@@ -906,12 +912,13 @@ func doUserAdd(u UserForm, ctx *macaron.Context, sess session.Store) {
 
 func doUserUpdate(u UserForm, ctx *macaron.Context, sess session.Store) {
 	loginUser := sess.Get("user").(*model.User)
+	resp := &httpJsonResponse{}
+
 	user := &model.User{
 		Id:   u.Id,
 		Role: u.Role,
 	}
-	_, err := user.UpdateRole()
-	resp := &httpJsonResponse{}
+	err := user.UpdateRole()
 	if err != nil {
 		resp.Error = true
 		resp.Message = err.Error()
@@ -925,11 +932,12 @@ func doUserUpdate(u UserForm, ctx *macaron.Context, sess session.Store) {
 
 func doUserDelete(u UserForm, ctx *macaron.Context, sess session.Store) {
 	loginUser := sess.Get("user").(*model.User)
+	resp := &httpJsonResponse{}
+
 	user := &model.User{
 		Id: u.Id,
 	}
-	_, err := user.Delete()
-	resp := &httpJsonResponse{}
+	err := user.Delete()
 
 	if err != nil {
 		resp.Error = true
@@ -1072,7 +1080,14 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	}
 	if !checkTaskUser(task, sess) {
 		resp.Error = true
-		resp.Message = "没有权限"
+		resp.Message = "只能操作自己的任务"
+		ctx.JSON(200, resp)
+		return
+	}
+
+	if audit.State != model.AUDIT_STATE_APPROVED {
+		resp.Error = true
+		resp.Message = "任务没有通过审核"
 		ctx.JSON(200, resp)
 		return
 	}
@@ -1114,6 +1129,38 @@ func enableAudit(ctx *macaron.Context, sess session.Store) {
 	resp.Message = "操作成功!"
 	log.Printf("%s enabled audit %s", loginUser.Username, toJson(audit))
 	ctx.JSON(200, resp)
+}
+
+func doUpdateTaskUser(ctx *macaron.Context, sess session.Store) {
+	taskid := ctx.QueryInt64("taskid")
+	createUser := ctx.Query("createUser")
+	resp := &httpJsonResponse{}
+	task := &model.Task{
+		ID:         taskid,
+		CreateUser: createUser,
+	}
+	err := task.UpdateCreateUser()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
+	}
+	resp.Message = "更改成功!"
+	ctx.JSON(200, resp)
+}
+
+func updateTaskUser(ctx *macaron.Context, sess session.Store) {
+	taskid := ctx.ParamsInt64("taskid")
+	task := &model.Task{
+		ID: taskid,
+	}
+	err := task.GetById()
+	if err != nil {
+		ctx.Data["err"] = err
+	}
+	ctx.Data["task"] = task
+	ctx.HTML(200, "update_task_user")
 }
 
 func toJson(obj interface{}) string {

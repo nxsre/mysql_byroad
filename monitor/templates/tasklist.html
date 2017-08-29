@@ -60,6 +60,10 @@
             {% else %}
             <li><a href="javascript:void(0)" onclick="changePushState({{task.ID}}, 1)">启动推送</a></li>
             {% endif %}
+            {% if user.Role >= 3 %}
+            <li role="separator" class="divider"></li>
+            <li><a href="/task/updateuser/{{task.ID}}">更改任务用户</a></li>
+            {% endif %}
           </ul>
         </div>
       </td>

@@ -34,22 +34,24 @@ func (u *User) Add() error {
 	return err
 }
 
-func (u *User) UpdateRole() (int64, error) {
+func (u *User) UpdateRole() error {
 	sql := "UPDATE `user` SET `role`=?, `update_time`=? where `id`=?"
 	ret, err := confdb.Exec(sql, u.Role, time.Now(), u.Id)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return ret.RowsAffected()
+	_, err = ret.RowsAffected()
+	return err
 }
 
-func (u *User) Delete() (int64, error) {
+func (u *User) Delete() error {
 	sql := "DELETE FROM `user` WHERE `id`=?"
 	ret, err := confdb.Exec(sql, u.Id)
 	if err != nil {
-		return 0, err
+		return err
 	}
-	return ret.RowsAffected()
+	_, err = ret.RowsAffected()
+	return err
 }
 
 func GetAllUsers() ([]*User, error) {

@@ -73,8 +73,8 @@ func (task *Task) Delete() error {
 }
 
 func (task *Task) Update() error {
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=? WHERE `id`=?"
-	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.RoutineCount,
+	s := "UPDATE `task` SET `name`=?, `apiurl`=?, `event`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=? WHERE `id`=?"
+	_, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat, task.RoutineCount,
 		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
 		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.ID)
 	return err
@@ -192,6 +192,12 @@ func (task *Task) NameExists() bool {
 	return true
 }
 
+func (task *Task) UpdateCreateUser() error {
+	s := "UPDATE `task` SET `create_user`=? WHERE `id`=?"
+	_, err := confdb.Exec(s, task.CreateUser, task.ID)
+	return err
+}
+
 func GetTasksByUser(createUser string) ([]*Task, error) {
 	ts := []*Task{}
 	err := confdb.Select(&ts, "SELECT * FROM `task` WHERE create_user=?", createUser)
@@ -218,7 +224,7 @@ func GetTaskByName(taskname string) (*Task, error) {
 
 func GetEnabledTasksByInstance(instance string) ([]*Task, error) {
 	ts := []*Task{}
-	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND db_instance_name=?"
+	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND db_instance_name=? ORDER BY `update_time`"
 	err := confdb.Select(&ts, sql, AUDIT_STATE_ENABLED, instance)
 	return ts, err
 }
@@ -257,15 +263,7 @@ func (t *Task) GetWithFieldsState(state int) error {
 }
 
 func (t *Task) GetWithFieldsEnabled() error {
-	sql := "SELECT * FROM `task` WHERE `id`=?"
-	err := confdb.Get(t, sql, t.ID)
-	if err != nil {
-		return err
-	}
-	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field` WHERE `task_id`=? AND `audit_state`=?", t.ID, AUDIT_STATE_ENABLED)
-	t.Fields = fields
-	return err
+	return t.GetWithFieldsState(AUDIT_STATE_ENABLED)
 }
 
 func (t *Task) GetWithFieldsUnenabled() error {
