@@ -3,8 +3,6 @@ package main
 import (
 	"mysql_byroad/model"
 
-	"fmt"
-
 	"sync"
 
 	log "github.com/Sirupsen/logrus"
@@ -67,7 +65,7 @@ func (this *TaskConsumerManager) AddTask(task *model.Task) (*TaskConsumer, error
 func (this *TaskConsumerManager) StartTask(task *model.Task) error {
 	obj, ok := this.taskConsumers.Get(task.Name)
 	if !ok {
-		return fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil
 	}
 	taskConsumer := obj.(*TaskConsumer)
 	this.taskIdMap.Set(task.ID, task)
@@ -80,7 +78,7 @@ func (this *TaskConsumerManager) StartTask(task *model.Task) error {
 func (this *TaskConsumerManager) DeleteTask(task *model.Task) (*TaskConsumer, error) {
 	obj, ok := this.taskConsumers.Get(task.Name)
 	if !ok {
-		return nil, fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil, nil
 	}
 	taskConsumer := obj.(*TaskConsumer)
 	this.taskConsumers.Remove(task.Name)
@@ -95,7 +93,7 @@ func (this *TaskConsumerManager) DeleteTask(task *model.Task) (*TaskConsumer, er
 func (this *TaskConsumerManager) ChangeTaskRoutineCount(task *model.Task) error {
 	obj, ok := this.taskConsumers.Get(task.Name)
 	if !ok {
-		return fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil
 	}
 	taskConsumer := obj.(*TaskConsumer)
 	taskConsumer.ChangeConsume(task)
@@ -106,7 +104,7 @@ func (this *TaskConsumerManager) ChangeTaskRoutineCount(task *model.Task) error 
 func (this *TaskConsumerManager) PauseTask(task *model.Task) error {
 	obj, ok := this.taskConsumers.Get(task.Name)
 	if !ok {
-		return fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil
 	}
 	taskConsumer := obj.(*TaskConsumer)
 	taskConsumer.PauseConsume()
@@ -117,7 +115,7 @@ func (this *TaskConsumerManager) PauseTask(task *model.Task) error {
 func (this *TaskConsumerManager) UnPauseTask(task *model.Task) error {
 	obj, ok := this.taskConsumers.Get(task.Name)
 	if !ok {
-		return fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil
 	}
 	taskConsumer := obj.(*TaskConsumer)
 	taskConsumer.UnPauseConsume()
@@ -135,7 +133,7 @@ func (this *TaskConsumerManager) GetTask(taskid int64) *model.Task {
 func (this *TaskConsumerManager) UpdateTask(task *model.Task) (*model.Task, error) {
 	oldtask := this.taskIdMap.Get(task.ID)
 	if oldtask == nil {
-		return nil, fmt.Errorf("task consumer %s not exists", task.Name)
+		return nil, nil
 	}
 	this.taskIdMap.Set(task.ID, task)
 	err := this.ChangeTaskRoutineCount(task)

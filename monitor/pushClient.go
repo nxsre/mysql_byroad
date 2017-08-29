@@ -1,11 +1,11 @@
 package main
 
 import (
+	"fmt"
 	"mysql_byroad/model"
 	"time"
 
 	log "github.com/Sirupsen/logrus"
-	"fmt"
 )
 
 type PusherManager struct {
@@ -23,6 +23,14 @@ func NewPusherManager() *PusherManager {
 
 func (pm *PusherManager) GetPushClient(schema string) (*RPCClient, bool) {
 	return pm.rpcclients.Get(schema)
+}
+
+func (pm *PusherManager) GetPushClients() []*RPCClient {
+	clients := []*RPCClient{}
+	for client := range pm.rpcclients.Iter() {
+		clients = append(clients, client)
+	}
+	return clients
 }
 
 func (pm *PusherManager) AddPushClient(schema, desc string) {

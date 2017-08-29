@@ -22,6 +22,18 @@
         <td>系统总协程数</td>
         <td>{{routineNumber}}</td>
     </tr>
+    <tr>
+        <td>推送客户端</td>
+        <td>
+            <ul>
+                {% for client in pusherClients%}
+                    <li>
+                        {{client.Desc}}--{{client.Schema}}
+                    </li>
+                {% endfor %}
+            </ul>
+        </td>
+    </tr>
 </table>
 <table class="table table-bordered table-striped">
     <caption>binlog事件统计</caption>

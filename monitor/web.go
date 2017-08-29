@@ -285,6 +285,7 @@ func status(ctx *macaron.Context, sess session.Store) {
 		status, _ := rpcclient.GetBinlogStatistics()
 		masterStatus, _ := rpcclient.GetMasterStatus()
 		currentBinlogInfo, _ := rpcclient.GetCurrentBinlogInfo()
+		pusherClients := pusherManager.GetPushClients()
 		st, _ := rpcclient.GetSysStatus()
 		ctx.Data["Status"] = status
 		ctx.Data["MasterStatus"] = masterStatus
@@ -292,6 +293,7 @@ func status(ctx *macaron.Context, sess session.Store) {
 		ctx.Data["Start"] = st["Start"]
 		ctx.Data["Duration"] = st["Duration"]
 		ctx.Data["routineNumber"] = st["routineNumber"]
+		ctx.Data["pusherClients"] = pusherClients
 	}
 	ctx.HTML(200, "status")
 }
@@ -830,6 +832,7 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) {
 	task.DBInstanceName = rpcclient.Desc
 	task.Stat = "停止"
 	task.PushState = model.TASK_STAT_UNPUSH
+	task.CreateUser = loginUser.Username
 	err = model.AddTaskFields(task)
 	if err != nil {
 		resp.Error = true

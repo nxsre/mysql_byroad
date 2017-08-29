@@ -66,6 +66,12 @@ func (task *Task) AddWithFields() error {
 func (task *Task) Delete() error {
 	s := "DELETE FROM `task` WHERE `id`=?"
 	_, err := confdb.Exec(s, task.ID)
+	return err
+}
+
+func (task *Task) DeleteWithFields() error {
+	s := "DELETE FROM `task` WHERE `id`=?"
+	_, err := confdb.Exec(s, task.ID)
 	if err != nil {
 		return err
 	}
