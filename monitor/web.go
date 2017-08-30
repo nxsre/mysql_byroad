@@ -148,17 +148,17 @@ func StartServer() {
 	m.Get("/audit", authMiddle(model.USER_AUDIT), audit)
 	m.Get("/apply", apply)
 
-	m.Get("/user-list", authMiddle(model.USER_ADMIN), userList)
-	m.Get("/user-add", authMiddle(model.USER_ADMIN), userAdd)
-	m.Get("/user-edit/:id", authMiddle(model.USER_ADMIN), userEdit)
+	m.Get("/user-list", authMiddle(model.USER_SUPER), userList)
+	m.Get("/user-add", authMiddle(model.USER_SUPER), userAdd)
+	m.Get("/user-edit/:id", authMiddle(model.USER_SUPER), userEdit)
 
 	m.Post("/audit/approve/:auditid", authMiddle(model.USER_AUDIT), auditApprove)
 	m.Post("/audit/deny/:auditid", authMiddle(model.USER_AUDIT), auditDeny)
 	m.Post("/audit/enable/:auditid", enableAudit)
 
-	m.Post("/user", authMiddle(model.USER_ADMIN), binding.Bind(UserForm{}), doUserAdd)
-	m.Put("/user", authMiddle(model.USER_ADMIN), binding.Bind(UserForm{}), doUserUpdate)
-	m.Delete("/user", authMiddle(model.USER_ADMIN), binding.Bind(UserForm{}), doUserDelete)
+	m.Post("/user", authMiddle(model.USER_SUPER), binding.Bind(UserForm{}), doUserAdd)
+	m.Put("/user", authMiddle(model.USER_SUPER), binding.Bind(UserForm{}), doUserUpdate)
+	m.Delete("/user", authMiddle(model.USER_SUPER), binding.Bind(UserForm{}), doUserDelete)
 
 	m.Post("/task", binding.Bind(TaskForm{}), doAddTask)
 	m.Post("/task/changeStat/:taskid", changeTaskStat)
@@ -170,8 +170,8 @@ func StartServer() {
 
 	m.Delete("/task/:taskid", doDeleteTask)
 
-	m.Post("/task/updateuser/:taskid", authMiddle(model.USER_SUPER), doUpdateTaskUser)
-	m.Get("/task/updateuser/:taskid", authMiddle(model.USER_SUPER), updateTaskUser)
+	m.Post("/task/updateuser/:taskid", authMiddle(model.USER_ADMIN), doUpdateTaskUser)
+	m.Get("/task/updateuser/:taskid", authMiddle(model.USER_ADMIN), updateTaskUser)
 
 	m.Run(Conf.WebConfig.Host, Conf.WebConfig.Port)
 }
