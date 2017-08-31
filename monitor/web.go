@@ -1032,8 +1032,7 @@ func auditDeny(ctx *macaron.Context, sess session.Store) {
 
 	id := ctx.ParamsInt64("auditid")
 	audit := &model.Audit{
-		Id:    id,
-		State: model.AUDIT_STATE_DENYED,
+		Id: id,
 	}
 
 	err := audit.GetById()
@@ -1049,6 +1048,7 @@ func auditDeny(ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 		return
 	}
+	audit.State = model.AUDIT_STATE_DENYED
 	err = model.UpdateAuditState(audit)
 	if err != nil {
 		resp.Error = true
