@@ -91,3 +91,38 @@ CREATE TABLE IF NOT EXISTS `config` (
   `value` varchar(120) NOT NULL,
   `description` varchar(120)
 ) ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+ALTER TABLE `byroad`.`task` 
+ADD COLUMN `audit_state` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '任务审计状态' AFTER `alert`,
+ADD COLUMN `push_state` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '任务推送状态' AFTER `audit_state`,
+ADD COLUMN `update_time` DATETIME NOT NULL DEFAULT NOW() COMMENT '任务更新时间' AFTER `push_state`;
+ADD COLUMN `category` VARCHAR(120) NOT NULL DEFAULT '' COMMENT '任务分组' AFTER `update_time` ;
+
+ALTER TABLE `byroad`.`notify_field` 
+ADD COLUMN `audit_state` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '审计状态' AFTER `create_time`,
+ADD COLUMN `audit_id` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '审计数据id' AFTER `audit_state`,
+ADD COLUMN `update_time` DATETIME DEFAULT NOW() COMMENT '字段更新时间' AFTER `audit_id`;
+
+CREATE TABLE `audit` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `apply_user` varchar(255) NOT NULL DEFAULT '' COMMENT '申请人',
+  `audit_user` varchar(255) NOT NULL DEFAULT '' COMMENT '审计人',
+  `apply_type` int(11) NOT NULL DEFAULT 0 COMMENT '申请类型（新建或更新等）',
+  `state` int(11) NOT NULL DEFAULT 0 COMMENT '审计状态',
+  `task_id` int(11) NOT NULL DEFAULT 0 COMMENT '审计的任务id',
+  `create_time` datetime NOT NULL DEFAULT NOW() COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT NOW() COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) COMMENT='任务审计表' ENGINE=InnoDB  DEFAULT CHARSET=utf8;
+
+CREATE TABLE `user` (
+  `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
+  `username` varchar(255) NOT NULL DEFAULT '' COMMENT 'auth用户名',
+  `fullname` varchar(255) NOT NULL DEFAULT '' COMMENT '用户全名',
+  `role` int(11) NOT NULL DEFAULT '0' COMMENT '用户角色',
+  `permissions` varchar(255) NOT NULL DEFAULT '' COMMENT '用户权限',
+  `mail` varchar(255) NOT NULL DEFAULT '' COMMENT '用户邮箱',
+  `create_time` datetime NOT NULL DEFAULT NOW() COMMENT '创建时间',
+  `update_time` datetime NOT NULL DEFAULT NOW() COMMENT '更新时间',
+  PRIMARY KEY (`id`)
+) COMMENT='用户表' ENGINE=InnoDB  DEFAULT CHARSET=utf8;

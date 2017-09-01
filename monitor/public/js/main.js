@@ -393,8 +393,12 @@ $(function () {
   categorySelector = $('#category_select').prop("outerHTML");
   var instanceName = $('#client').val() || 'default'
   if (location.pathname.startsWith('/addtask')) {
-    var optionHtml = '<option selected value="'+instanceName+'">'+instanceName+'</option>'
-    $('#category_select').append(optionHtml)
+    if ($('#category_select option[value="'+instanceName+'"]').length > 0) {
+      $('#category_select option[value="'+instanceName+'"]').attr('selected', true)
+    } else {
+      var optionHtml = '<option selected value="'+instanceName+'">'+instanceName+'</option>'
+      $('#category_select').append(optionHtml)
+    }
   }
   $("#updateTaskFieldsBtn").popover({
     trigger: 'hover',
