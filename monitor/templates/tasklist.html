@@ -12,6 +12,7 @@
       <th>订阅</th>
       <th>操作</th>
       <th>用户</th>
+      <th>分组</th>
     </tr>
     {% for task in tasks%}
     <tr>
@@ -68,6 +69,7 @@
         </div>
       </td>
       <td>{{task.CreateUser}}</td>
+      <td>{{task.Category}}</td>
     </tr>
     {% endfor%}
   </table>

@@ -89,8 +89,9 @@
 						电话：<input class="form-control" type="text" name="phoneNumbers" id="phoneNumbers" value="{{task.PhoneNumbers}}"  placeholder="number1;number2">
             邮箱：<input class="form-control" type="text" name="emails" id="emails" value="{{task.Emails}}"  placeholder="email1;email2">
 					</div>
-          <div class="form-group col-md-12">
-              <div class="form-inline col-md-6">
+          <div class="col-md-6">
+            <div class="form-group col-md-12">
+              <div class="form-inline col-md-12">
                 <label for="state">审核人</label>
                 <div class="select">
                   <select name="auditUser" id="auditUser" class="form-control">
@@ -104,6 +105,18 @@
                 </div>
               </div>
             </div>
+            <div class="form-group">            
+              <div class="form-inline col-md-6">
+                  <label>自定义分组</label>
+                  <a href="javascript:void(0)" onclick="addCategory(this)" title="新增分组" class="glyphicon glyphicon-plus"></a>																						
+                  <select class="form-control" id="category_select" name="category">
+                    {%for category in categories %}
+                      <option value="{{category}}" {%if category == task.Category%} selected {%endif%}>{{category}}</option>
+                    {%endfor%}
+                  </select>
+              </div>
+            </div>
+          </div>
         </div>
         <div id="rightdiv" class="form-inline">
           <div class="col-md-12">

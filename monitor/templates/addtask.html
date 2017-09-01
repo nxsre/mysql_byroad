@@ -89,8 +89,8 @@
 						电话：<input class="form-control" type="text" name="phoneNumbers" id="phoneNumbers" placeholder="number1;number2">
             			邮箱：<input class="form-control" type="text" name="emails" id="emails" placeholder="email1;email2">
 					</div>
-					<div class="form-group col-md-12">
-						<div class="form-inline">
+					<div class="form-group col-md-6">
+						<div class="form-inline col-md-6">
 							<label for="state">审核人</label>
 								<select name="auditUser" id="auditUser" class="form-control">
 									<option value=""></option>
@@ -99,6 +99,15 @@
 									{% endfor %}
 								</select>
 							<button type="button" class="btn btn-primary" id="addTaskFieldsBtn" onclick="addTask()">提交审核</button>
+						</div>
+						<div class="form-inline col-md-6">
+							<label>自定义分组</label>
+							<a href="javascript:void(0)" onclick="addCategory(this)" title="新增分组" class="glyphicon glyphicon-plus"></a>																						
+							<select class="form-control" id="category_select" name="category">
+								{%for category in categories %}
+									<option value="{{category}}">{{category}}</option>
+								{%endfor%}
+							</select>
 						</div>
 					</div>
 				</div>

@@ -80,6 +80,7 @@ type TaskForm struct {
 	Alert          int                    `form:"alert"`
 	Fields         []*FieldsForm          `form:"nouse"`
 	AuditUser      string                 `form:"auditUser"`
+	Category       string                 `form:"category"`
 }
 
 type UserForm struct {
@@ -119,6 +120,11 @@ func StartServer() {
 				ctx.Data["username"] = user.(*model.User).Username
 				ctx.Data["user"] = user
 				ctx.Data["clients"] = dispatcherManager.GetRPCClients()
+				cs, err := model.GetAllTaskCategories()
+				if err != nil {
+					ctx.Data["error"] = err
+				}
+				ctx.Data["categories"] = cs
 			}
 		} else {
 			user := &model.User{
@@ -129,6 +135,11 @@ func StartServer() {
 			ctx.Data["user"] = user
 			ctx.Data["username"] = "test"
 			ctx.Data["clients"] = dispatcherManager.GetRPCClients()
+			cs, err := model.GetAllTaskCategories()
+			if err != nil {
+				ctx.Data["error"] = err
+			}
+			ctx.Data["categories"] = cs
 		}
 	})
 
@@ -142,6 +153,8 @@ func StartServer() {
 	m.Get("/task/detail/:taskid", getTaskStatistic)
 	m.Get("/task/log/:taskid", loglist)
 	m.Get("/help", help)
+	m.Get("/task/createuser/:createuser", userTaskList)
+	m.Get("/task/category/:category", categoryTaskList)
 
 	m.Get("/task-dialog/:taskid", getEnabledTaskDialog)
 	m.Get("/audit-dialog/:auditid", getAuditTaskDialog)
@@ -584,6 +597,38 @@ func tasklist(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "tasklist")
 }
 
+func userTaskList(ctx *macaron.Context, sess session.Store) {
+	createUser := ctx.Params("createuser")
+	var sortTasks []*model.Task
+	schema := ctx.GetCookie("client")
+	client, ok := dispatcherManager.GetRPCClient(schema)
+	if !ok {
+		ctx.HTML(200, "tasklist")
+		return
+	}
+	var err error
+	sortTasks, err = model.GetEnabledTasksByInstanceAndUser(client.Desc, createUser)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
+	sort.Sort(TaskSlice(sortTasks))
+	ctx.Data["tasks"] = sortTasks
+	ctx.HTML(200, "tasklist")
+}
+
+func categoryTaskList(ctx *macaron.Context, sess session.Store) {
+	category := ctx.Params("category")
+	var sortTasks []*model.Task
+	var err error
+	sortTasks, err = model.GetEnabledTasksByCategory(category)
+	if err != nil {
+		ctx.Data["error"] = err
+	}
+	sort.Sort(TaskSlice(sortTasks))
+	ctx.Data["tasks"] = sortTasks
+	ctx.HTML(200, "tasklist")
+}
+
 func changeTaskStat(ctx *macaron.Context, sess session.Store) {
 	loginUser := sess.Get("user").(*model.User)
 	taskid := ctx.ParamsInt64("taskid")
@@ -754,6 +799,7 @@ func copyTask(src *TaskForm, dst *model.Task) {
 	dst.PhoneNumbers = src.PhoneNunbers
 	dst.Emails = src.Emails
 	dst.Alert = src.Alert
+	dst.Category = src.Category
 }
 
 func FieldExists(fields []*model.NotifyField, field *model.NotifyField) bool {

@@ -379,10 +379,27 @@ function enableAudit(auditid) {
   }
 }
 
+function addCategory(obj) {
+	if ($('#category_input').length > 0 ) {
+		$(obj).attr('class', 'glyphicon glyphicon-plus');
+		$('#category_input').replaceWith(categorySelector);
+	}else if ($('#category_select').length > 0 ) {
+		$(obj).attr('class', 'glyphicon glyphicon-circle-arrow-left');		
+		$('#category_select').replaceWith('<input id="category_input" class="form-control" type="text" name="category"></input>');		
+	}
+}
+var categorySelector;
 $(function () {
+  categorySelector = $('#category_select').prop("outerHTML");
+  var instanceName = $('#client').val() || 'default'
+  if (location.pathname.startsWith('/addtask')) {
+    var optionHtml = '<option selected value="'+instanceName+'">'+instanceName+'</option>'
+    $('#category_select').append(optionHtml)
+  }
   $("#updateTaskFieldsBtn").popover({
     trigger: 'hover',
     title: '更新订阅字段',
+    placement: 'top',
     html: true,
     content: '<dd><dl>更新订阅字段需要提交审核</dl></dd>',
   });
@@ -390,6 +407,7 @@ $(function () {
   $("#updateTaskBtn").popover({
     trigger: 'hover',
     title: '更新任务信息',
+    placement: 'top',
     html: true,
     content: '<dd><dl>更新任务信息不需要提交审核</dl></dd>',
   });
@@ -397,6 +415,7 @@ $(function () {
   $("#addTaskFieldsBtn").popover({
     trigger: 'hover',
     title: '新增订阅字段',
+    placement: 'top',
     html: true,
     content: '<dd><dl>新增订阅字段需要提交审核</dl></dd>',
   });

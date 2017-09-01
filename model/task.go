@@ -35,15 +35,16 @@ type Task struct {
 	PushState      int       `db:"push_state"`      // 任务是否开启推送
 	AuditState     int       `db:"audit_state"`     // 任务审计状态
 	UpdateTime     time.Time `db:"update_time"`
+	Category       string    // 任务分组
 }
 
 func (task *Task) Add() error {
-	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state` `push_state`, `update_time`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	s := "INSERT INTO `task`(`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state` `push_state`, `update_time`, `category`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat,
 		time.Now(), task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
 		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.AuditState,
-		task.PushState, time.Now())
+		task.PushState, time.Now(), task.Category)
 	if err != nil {
 		return err
 	}
@@ -79,19 +80,19 @@ func (task *Task) DeleteWithFields() error {
 }
 
 func (task *Task) Update() error {
-	s := "UPDATE `task` SET `name`=?, `apiurl`=?, `event`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=? WHERE `id`=?"
+	s := "UPDATE `task` SET `name`=?, `apiurl`=?, `event`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=?, `category`=? WHERE `id`=?"
 	_, err := confdb.Exec(s, task.Name, task.Apiurl, task.Event, task.Stat, task.RoutineCount,
 		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.ID)
+		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.Category, task.ID)
 	return err
 }
 
 func (task *Task) UpdateWithField() error {
 	task.Fields.delete(task.ID)
-	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=? WHERE `id`=?"
+	s := "UPDATE `task` SET `apiurl`=?, `event`=?, `name`=?, `stat`=?, `routine_count`=?, `re_routine_count`=?, `re_send_time`=?, `retry_count`=?, `timeout`=?, `desc`=?, `pack_protocal`=?, `phone_numbers`=?, `emails`=?, `alert`=?, `push_state`=?, `update_time`=?, `category`=? WHERE `id`=?"
 	_, err := confdb.Exec(s, task.Apiurl, task.Event, task.Name, task.Stat, task.RoutineCount,
 		task.ReRoutineCount, task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
-		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.ID)
+		task.PhoneNumbers, task.Emails, task.Alert, task.PushState, time.Now(), task.Category, task.ID)
 	if err != nil {
 		return err
 	}
@@ -232,6 +233,20 @@ func GetEnabledTasksByInstance(instance string) ([]*Task, error) {
 	ts := []*Task{}
 	sql := "SELECT * FROM `task` WHERE `audit_state`=? AND `db_instance_name`=? ORDER BY `update_time`"
 	err := confdb.Select(&ts, sql, AUDIT_STATE_ENABLED, instance)
+	return ts, err
+}
+
+func GetEnabledTasksByInstanceAndUser(instance string, username string) ([]*Task, error) {
+	ts := []*Task{}
+	s := "SELECT * FROM `task` WHERE `audit_state`=? AND `db_instance_name`=? AND `create_user`=? ORDER BY `update_time`"
+	err := confdb.Select(&ts, s, AUDIT_STATE_ENABLED, instance, username)
+	return ts, err
+}
+
+func GetEnabledTasksByCategory(category string) ([]*Task, error) {
+	ts := []*Task{}
+	s := "SELECT * FROM `task` WHERE `audit_state`=? AND `category`=? ORDER BY `update_time`"
+	err := confdb.Select(&ts, s, AUDIT_STATE_ENABLED, category)
 	return ts, err
 }
 

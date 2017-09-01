@@ -174,13 +174,19 @@ func GetTaskFieldsByAudit(audit *Audit) (*Task, error) {
 	return task, err
 }
 
+func GetAllTaskCategories() ([]string, error) {
+	cs := []string{}
+	err := confdb.Select(&cs, "SELECT DISTINCT `category` FROM `task`")
+	return cs, err
+}
+
 func addTask(tx *sqlx.Tx, task *Task) (err error) {
-	sql := "INSERT INTO `task` (`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state`, `push_state`, `update_time`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
+	sql := "INSERT INTO `task` (`name`, `apiurl`, `event`, `stat`, `create_time`, `create_user`, `routine_count`, `re_routine_count`, `re_send_time`, `retry_count`, `timeout`, `desc`, `pack_protocal`, `db_instance_name`, `phone_numbers`, `emails`, `alert`, `audit_state`, `push_state`, `update_time`, `category`) VALUES(?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?);"
 	res, err := tx.Exec(sql, task.Name, task.Apiurl, task.Event, task.Stat,
 		time.Now(), task.CreateUser, task.RoutineCount, task.ReRoutineCount,
 		task.ReSendTime, task.RetryCount, task.Timeout, task.Desc, task.PackProtocal,
 		task.DBInstanceName, task.PhoneNumbers, task.Emails, task.Alert, task.AuditState,
-		task.PushState, time.Now())
+		task.PushState, time.Now(), task.Category)
 	if err != nil {
 		return
 	}
