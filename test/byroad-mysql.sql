@@ -95,7 +95,7 @@ CREATE TABLE IF NOT EXISTS `config` (
 ALTER TABLE `byroad`.`task` 
 ADD COLUMN `audit_state` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '任务审计状态' AFTER `alert`,
 ADD COLUMN `push_state` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '任务推送状态' AFTER `audit_state`,
-ADD COLUMN `update_time` DATETIME NOT NULL DEFAULT NOW() COMMENT '任务更新时间' AFTER `push_state`;
+ADD COLUMN `update_time` DATETIME NOT NULL DEFAULT NOW() COMMENT '任务更新时间' AFTER `push_state`,
 ADD COLUMN `category` VARCHAR(120) NOT NULL DEFAULT '' COMMENT '任务分组' AFTER `update_time` ;
 
 ALTER TABLE `byroad`.`notify_field` 
