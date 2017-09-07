@@ -340,6 +340,7 @@ func modifytask(ctx *macaron.Context, sess session.Store) {
 	if err != nil {
 		ctx.Data["error"] = err
 	}
+	ctx.SetCookie("client", task.DBInstanceName)
 	ctx.Data["auditUsers"] = auditUsers
 	ctx.Data["task"] = task
 	ctx.Data["taskColumnsMap"] = task.GetTaskColumnsMap()
