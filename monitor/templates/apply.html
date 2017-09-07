@@ -52,7 +52,7 @@
             </div>
         </td>
         <td>
-          <button class="btn btn-sm btn-primary" {% if audit.State != 2 %} disabled {% endif %}onclick="enableAudit({{audit.Id}})">启用任务</button>
+          <button class="btn btn-sm btn-success" {% if audit.State != 2 %} disabled {% endif %}onclick="enableAudit({{audit.Id}})">启用任务</button>
         </td>
       </tr>
       {% endfor %}

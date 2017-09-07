@@ -85,10 +85,10 @@ function changeFieldValue(obj) {
 
 function addTask() {
   if (confirm('确认添加？')) {
-    if ($('#auditUser').val() == '') {
+    /* if ($('#auditUser').val() == '') {
       alert('审核人不能为空!')
       return
-    }
+    } */
     var options = {
       url: '/task',
       type: 'post',

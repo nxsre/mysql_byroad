@@ -160,6 +160,7 @@ func StartServer() {
 	m.Get("/audit-dialog/:auditid", getAuditTaskDialog)
 	m.Get("/audit", authMiddle(model.USER_AUDIT), audit)
 	m.Get("/apply", apply)
+	m.Get("/allaudit", authMiddle(model.USER_AUDIT), allAudit)
 
 	m.Get("/user-list", authMiddle(model.USER_SUPER), userList)
 	m.Get("/user-add", authMiddle(model.USER_SUPER), userAdd)
@@ -903,6 +904,13 @@ func audit(ctx *macaron.Context, sess session.Store) {
 	ctx.HTML(200, "audit")
 }
 
+func allAudit(ctx *macaron.Context, sess session.Store) {
+	audit, err := model.GetAllAudits()
+	ctx.Data["error"] = err
+	ctx.Data["audits"] = audit
+	ctx.HTML(200, "audit")
+}
+
 func apply(ctx *macaron.Context, sess session.Store) {
 	user := sess.Get("user").(*model.User)
 	audit, err := model.GetAuditByApplyUser(user.Username)
@@ -1052,12 +1060,13 @@ func auditApprove(ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 		return
 	}
-	if audit.AuditUser != loginUser.Username {
+	/* if audit.AuditUser != loginUser.Username {
 		resp.Error = true
 		resp.Message = "你无权操作"
 		ctx.JSON(200, resp)
 		return
-	}
+	} */
+	audit.AuditUser = loginUser.Username
 	audit.State = model.AUDIT_STATE_APPROVED
 	err = model.UpdateAuditState(audit)
 	if err != nil {

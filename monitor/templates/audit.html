@@ -49,7 +49,7 @@
       </td>
       <td>
         <div>
-          <button class="btn btn-sm btn-primary" {% if audit.State >= 1 %} disabled {% endif %} onclick="auditApprove({{audit.Id}})">同意</button>
+          <button class="btn btn-sm btn-success" {% if audit.State >= 1 %} disabled {% endif %} onclick="auditApprove({{audit.Id}})">同意</button>
           <button class="btn btn-sm btn-danger" {% if audit.State >= 1 %} disabled {% endif %} onclick="auditDeny({{audit.Id}})">不同意</button>
         </div>
       </td>

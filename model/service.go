@@ -230,8 +230,8 @@ func addTaskFields(tx *sqlx.Tx, task *Task, audit *Audit) (err error) {
 }
 
 func updateAuditStateById(tx *sqlx.Tx, audit *Audit) (err error) {
-	sql := "UPDATE `audit` SET `state`=?, `update_time`=? WHERE `id`=?"
-	_, err = tx.Exec(sql, audit.State, time.Now(), audit.Id)
+	sql := "UPDATE `audit` SET `state`=?, `audit_user`=?, `update_time`=? WHERE `id`=?"
+	_, err = tx.Exec(sql, audit.State, audit.AuditUser, time.Now(), audit.Id)
 	return
 }
 
