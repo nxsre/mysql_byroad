@@ -165,7 +165,7 @@ func GetAllTask() ([]*Task, error) {
 		return nil, err
 	}
 	fields := []*NotifyField{}
-	err = confdb.Select(&fields, "SELECT * FROM `notify_field`")
+	err = confdb.Select(&fields, "SELECT * FROM `notify_field` WHERE `audit_state`=?", AUDIT_STATE_ENABLED)
 	if err != nil {
 		return nil, err
 	}

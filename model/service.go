@@ -248,7 +248,7 @@ func updateTaskAuditState(tx *sqlx.Tx, audit *Audit) (err error) {
 }
 
 func unenableTaskFields(tx *sqlx.Tx, audit *Audit) (err error) {
-	s := "UPDATE `notify_field` SET `audit_state`=?, `update_time`=? WHERE `audit_state`=? AND `audit_id`=?"
-	_, err = tx.Exec(s, AUDIT_STATE_UNENABLED, time.Now(), AUDIT_STATE_ENABLED, audit.Id)
+	s := "UPDATE `notify_field` SET `audit_state`=?, `update_time`=? WHERE `audit_state`=? AND `task_id`=?"
+	_, err = tx.Exec(s, AUDIT_STATE_UNENABLED, time.Now(), AUDIT_STATE_ENABLED, audit.TaskId)
 	return
 }
