@@ -24,7 +24,7 @@ const (
 )
 
 func (u *User) Add() error {
-	sql := "INSERT INTO `user` (`username`, `fullname`, `role`, `permissions`, `mail`, `create_time`, `update_time`) VALUES (?,?,?,?,?,?,?)"
+	sql := "INSERT INTO `byroad_user` (`username`, `fullname`, `role`, `permissions`, `mail`, `create_time`, `update_time`) VALUES (?,?,?,?,?,?,?)"
 	ret, err := confdb.Exec(sql, u.Username, u.Fullname, u.Role, u.Permissions, u.Mail, time.Now(), time.Now())
 	if err != nil {
 		return err
@@ -35,7 +35,7 @@ func (u *User) Add() error {
 }
 
 func (u *User) UpdateRole() error {
-	sql := "UPDATE `user` SET `role`=?, `update_time`=? where `id`=?"
+	sql := "UPDATE `byroad_user` SET `role`=?, `update_time`=? where `id`=?"
 	ret, err := confdb.Exec(sql, u.Role, time.Now(), u.Id)
 	if err != nil {
 		return err
@@ -45,7 +45,7 @@ func (u *User) UpdateRole() error {
 }
 
 func (u *User) Delete() error {
-	sql := "DELETE FROM `user` WHERE `id`=?"
+	sql := "DELETE FROM `byroad_user` WHERE `id`=?"
 	ret, err := confdb.Exec(sql, u.Id)
 	if err != nil {
 		return err
@@ -56,13 +56,13 @@ func (u *User) Delete() error {
 
 func GetAllUsers() ([]*User, error) {
 	us := []*User{}
-	err := confdb.Select(&us, "SELECT * FROM `user` order by `username`")
+	err := confdb.Select(&us, "SELECT * FROM `byroad_user` order by `username`")
 	return us, err
 }
 
 func (u *User) NameExists() bool {
 	user := &User{}
-	s := "SELECT `id` FROM `user` WHERE `username`=?"
+	s := "SELECT `id` FROM `byroad_user` WHERE `username`=?"
 	err := confdb.Get(user, s, u.Username)
 	if err == sql.ErrNoRows {
 		return false
@@ -72,7 +72,7 @@ func (u *User) NameExists() bool {
 
 func (u *User) IdExists() bool {
 	user := &User{}
-	s := "SELECT `id` FROM `user` WHERE `id`=?"
+	s := "SELECT `id` FROM `byroad_user` WHERE `id`=?"
 	err := confdb.Get(user, s, u.Id)
 	if err == sql.ErrNoRows {
 		return false
@@ -81,13 +81,13 @@ func (u *User) IdExists() bool {
 }
 
 func (u *User) GetByName() error {
-	sql := "SELECT * FROM `user` WHERE `username`=?"
+	sql := "SELECT * FROM `byroad_user` WHERE `username`=?"
 	err := confdb.Get(u, sql, u.Username)
 	return err
 }
 
 func (u *User) GetById() error {
-	sql := "SELECT * FROM `user` WHERE `id`=?"
+	sql := "SELECT * FROM `byroad_user` WHERE `id`=?"
 	err := confdb.Get(u, sql, u.Id)
 	return err
 }
@@ -102,7 +102,7 @@ func (u *User) GetOrAdd() error {
 }
 
 func GetUsersByRole(role int) ([]*User, error) {
-	sql := "SELECT * FROM `user` WHERE `role` >= ?"
+	sql := "SELECT * FROM `byroad_user` WHERE `role` >= ?"
 	us := []*User{}
 	err := confdb.Select(&us, sql, role)
 	return us, err

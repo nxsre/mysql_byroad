@@ -28,7 +28,7 @@ const (
 )
 
 func (a *Audit) Add() error {
-	sql := "INSERT INTO `audit` (`apply_user`, `audit_user`, `apply_type`, `state`, `task_id`, `create_time`, `update_time`) VALUES (?,?,?,?,?,?,?)"
+	sql := "INSERT INTO `byroad_audit` (`apply_user`, `audit_user`, `apply_type`, `state`, `task_id`, `create_time`, `update_time`) VALUES (?,?,?,?,?,?,?)"
 	ret, err := confdb.Exec(sql, a.ApplyUser, a.AuditUser, a.ApplyType, a.State, a.TaskId, time.Now(), time.Now())
 	if err != nil {
 		return err
@@ -39,7 +39,7 @@ func (a *Audit) Add() error {
 }
 
 func (a *Audit) UpdateState() error {
-	sql := "UPDATE `audit` SET `state`=?, `update_time`=? WHERE `id`=?"
+	sql := "UPDATE `byroad_audit` SET `state`=?, `update_time`=? WHERE `id`=?"
 	ret, err := confdb.Exec(sql, a.State, time.Now(), a.Id)
 	if err != nil {
 		return err
@@ -49,7 +49,7 @@ func (a *Audit) UpdateState() error {
 }
 
 func (a *Audit) Delete() error {
-	sql := "DELETE FROM `audit` WHERE `id`=?"
+	sql := "DELETE FROM `byroad_audit` WHERE `id`=?"
 	ret, err := confdb.Exec(sql, a.Id)
 	if err != nil {
 		return err
@@ -59,27 +59,27 @@ func (a *Audit) Delete() error {
 }
 
 func (a *Audit) GetById() error {
-	sql := "SELECT * FROM `audit` WHERE `id`=?"
+	sql := "SELECT * FROM `byroad_audit` WHERE `id`=?"
 	return confdb.Get(a, sql, a.Id)
 }
 
 func GetAuditByApplyUser(user string) ([]*Audit, error) {
 	as := []*Audit{}
-	sql := "SELECT * FROM `audit` WHERE `apply_user`=? ORDER BY `update_time` DESC"
+	sql := "SELECT * FROM `byroad_audit` WHERE `apply_user`=? ORDER BY `update_time` DESC"
 	err := confdb.Select(&as, sql, user)
 	return as, err
 }
 
 func GetAuditByAuditUser(user string) ([]*Audit, error) {
 	as := []*Audit{}
-	sql := "SELECT * FROM `audit` WHERE `audit_user`=? ORDER BY `state`,`update_time` DESC LIMIT 100"
+	sql := "SELECT * FROM `byroad_audit` WHERE `audit_user`=? ORDER BY `state`,`update_time` DESC LIMIT 100"
 	err := confdb.Select(&as, sql, user)
 	return as, err
 }
 
 func GetAllAudits() ([]*Audit, error) {
 	as := []*Audit{}
-	sql := "SELECT * FROM `audit` ORDER BY `update_time` DESC"
+	sql := "SELECT * FROM `byroad_audit` ORDER BY `update_time` DESC"
 	err := confdb.Select(&as, sql)
 	return as, err
 }

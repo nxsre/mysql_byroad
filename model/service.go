@@ -199,7 +199,7 @@ func addTask(tx *sqlx.Tx, task *Task) (err error) {
 }
 
 func addAudit(tx *sqlx.Tx, audit *Audit) (err error) {
-	sql := "INSERT INTO `audit` (`apply_user`, `audit_user`, `apply_type`, `state`, `task_id`, `create_time`, `update_time`) VALUES (?,?,?,?,?,?,?)"
+	sql := "INSERT INTO `byroad_audit` (`apply_user`, `audit_user`, `apply_type`, `state`, `task_id`, `create_time`, `update_time`) VALUES (?,?,?,?,?,?,?)"
 	res, err := tx.Exec(sql, audit.ApplyUser, audit.AuditUser, audit.ApplyType, audit.State, audit.TaskId, time.Now(), time.Now())
 	if err != nil {
 		return
@@ -230,7 +230,7 @@ func addTaskFields(tx *sqlx.Tx, task *Task, audit *Audit) (err error) {
 }
 
 func updateAuditStateById(tx *sqlx.Tx, audit *Audit) (err error) {
-	sql := "UPDATE `audit` SET `state`=?, `audit_user`=?, `update_time`=? WHERE `id`=?"
+	sql := "UPDATE `byroad_audit` SET `state`=?, `audit_user`=?, `update_time`=? WHERE `id`=?"
 	_, err = tx.Exec(sql, audit.State, audit.AuditUser, time.Now(), audit.Id)
 	return
 }

@@ -103,7 +103,7 @@ ADD COLUMN `audit_state` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '审计状态' AF
 ADD COLUMN `audit_id` TINYINT(1) NOT NULL DEFAULT 0 COMMENT '审计数据id' AFTER `audit_state`,
 ADD COLUMN `update_time` DATETIME DEFAULT NOW() COMMENT '字段更新时间' AFTER `audit_id`;
 
-CREATE TABLE `audit` (
+CREATE TABLE `byroad_audit` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
   `apply_user` varchar(255) NOT NULL DEFAULT '' COMMENT '申请人',
   `audit_user` varchar(255) NOT NULL DEFAULT '' COMMENT '审计人',
@@ -115,7 +115,7 @@ CREATE TABLE `audit` (
   PRIMARY KEY (`id`)
 ) COMMENT='任务审计表' ENGINE=InnoDB  DEFAULT CHARSET=utf8;
 
-CREATE TABLE `user` (
+CREATE TABLE `byroad_user` (
   `id` int(11) unsigned NOT NULL AUTO_INCREMENT COMMENT '自增id',
   `username` varchar(255) NOT NULL DEFAULT '' COMMENT 'auth用户名',
   `fullname` varchar(255) NOT NULL DEFAULT '' COMMENT '用户全名',
