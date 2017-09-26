@@ -447,12 +447,12 @@ func doDeleteTask(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 
-	if !checkTaskUser(task, sess) {
+	/* 	if !checkTaskUser(task, sess) {
 		resp.Error = true
 		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
-	}
+	} */
 
 	err = task.Delete()
 	if err != nil {
@@ -504,13 +504,13 @@ func doUpdateTask(t TaskForm, ctx *macaron.Context, sess session.Store) {
 		return
 	}
 
-	if !checkTaskUser(task, sess) {
-		resp.Error = true
-		resp.Message = "只能操作自己的任务"
-		ctx.JSON(200, resp)
-		return
-	}
-
+	/* 	if !checkTaskUser(task, sess) {
+	   		resp.Error = true
+	   		resp.Message = "只能操作自己的任务"
+	   		ctx.JSON(200, resp)
+	   		return
+	   	}
+	*/
 	if task.Name != t.Name {
 		resp.Error = true
 		resp.Message = "名字不能修改"
@@ -647,12 +647,12 @@ func changeTaskStat(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 
-	if !checkTaskUser(task, sess) {
+	/* 	if !checkTaskUser(task, sess) {
 		resp.Error = true
 		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
-	}
+	} */
 
 	if task.AuditState != model.AUDIT_STATE_ENABLED {
 		resp.Error = true
@@ -718,12 +718,12 @@ func changeTaskPushState(ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 		return
 	}
-	if !checkTaskUser(task, sess) {
+	/* 	if !checkTaskUser(task, sess) {
 		resp.Error = true
 		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
-	}
+	} */
 	if task.AuditState != model.AUDIT_STATE_ENABLED {
 		resp.Error = true
 		resp.Message = "该任务未执行！"
@@ -858,12 +858,12 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) {
 		return
 	}
 
-	if !checkTaskUser(task, sess) {
+	/* 	if !checkTaskUser(task, sess) {
 		resp.Error = true
 		resp.Message = "只能操作自己的任务"
 		ctx.JSON(200, resp)
 		return
-	}
+	} */
 	task.Name = name
 	if ex := task.NameExists(); ex {
 		resp.Error = true
