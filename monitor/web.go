@@ -1067,6 +1067,17 @@ func auditApprove(ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 		return
 	} */
+	task := &model.Task{
+		ID:         audit.TaskId,
+		CreateUser: audit.ApplyUser,
+	}
+	err = task.UpdateCreateUser()
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
+	}
 	audit.AuditUser = loginUser.Username
 	audit.State = model.AUDIT_STATE_APPROVED
 	err = model.UpdateAuditState(audit)
