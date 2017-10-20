@@ -892,6 +892,21 @@ func copyTaskToDb(ctx *macaron.Context, sess session.Store) {
 		ctx.JSON(200, resp)
 		return
 	}
+	err = dispatcherManager.AddTask(task)
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
+	}
+
+	err = pusherManager.AddTask(task)
+	if err != nil {
+		resp.Error = true
+		resp.Message = err.Error()
+		ctx.JSON(200, resp)
+		return
+	}
 	resp.Message = "复制成功!"
 	log.Printf("%s: copy task %s to %s", loginUser.Username, originTaskName, toJson(task))
 	ctx.JSON(200, resp)
