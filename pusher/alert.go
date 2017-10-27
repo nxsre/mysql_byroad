@@ -114,7 +114,7 @@ func NewAlertMap() *AlertMap {
 		m: make(map[*model.Task]string),
 	}
 	go func() {
-		ticker := time.NewTicker(time.Second * 10)
+		ticker := time.NewTicker(Conf.AlertConfig.Interval.Duration)
 		for {
 			select {
 			case <-ticker.C:

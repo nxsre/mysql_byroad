@@ -32,6 +32,7 @@ sms_addr = "http://localhost:12344"
 email_addr = "http://localhost:3123"
 max_count = 10 #单位时间内超过次数将报警
 period = "1m" #单位时间
+interval = "30m" #报警消息合并推送的时间间隔
 
 [log]
 islog = true

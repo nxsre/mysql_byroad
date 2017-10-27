@@ -65,6 +65,7 @@ type AlertConfig struct {
 	EmailAddr string   `toml:"email_addr"`
 	MaxCount  int      `toml:"max_count"`
 	Period    duration `toml:"period"`
+	Interval  duration `toml:"interval"`
 }
 
 type LogConfig struct {
